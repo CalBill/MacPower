@@ -14,8 +14,6 @@ sudo xattr -rd com.apple.quarantine /Applications/MacPower.app
 
 然后再从「应用程序」打开 MacPower。
 
-不要把这个 .txt 改成 .sh 再双击。网上下载的文件改后缀也带隔离属性，照样会被拦截。
-
 ---
 
 Install: download MacPower-1.2.4.dmg, drag to Applications.
@@ -30,5 +28,3 @@ sudo xattr -rd com.apple.quarantine /Applications/MacPower.app
 3. Terminal will ask for this Mac’s login password. Nothing appears on screen as you type — no dots, no asterisks. That is normal; it does not mean the password was not entered. Press Enter when you are done.
 
 Then open MacPower from Applications.
-
-Do not rename this .txt to .sh and double-click it. Quarantine stays on a downloaded file; renaming does not remove it.
