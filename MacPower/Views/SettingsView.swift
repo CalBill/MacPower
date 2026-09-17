@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 struct SettingsView: View {
@@ -63,9 +64,20 @@ struct SettingsView: View {
                 }
                 Toggle("settings.launchAtLogin", isOn: launchAtLoginBinding)
             }
+
+            Section {
+                Button("settings.quit") {
+                    NSApp.terminate(nil)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.red)
+                .frame(maxWidth: .infinity)
+            }
         }
         .formStyle(.grouped)
-        .frame(width: 420, height: 600)
+        .scrollDisabled(true)
+        .frame(width: 420)
+        .fixedSize(horizontal: true, vertical: true)
         .navigationTitle("settings.title")
     }
 

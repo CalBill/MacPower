@@ -60,15 +60,12 @@ final class AppState {
             settingsWindow.makeKeyAndOrderFront(nil)
             return
         }
-        let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 420, height: 600),
-            styleMask: [.titled, .closable, .fullSizeContentView],
-            backing: .buffered,
-            defer: false
-        )
+        let hosting = NSHostingController(rootView: SettingsView(appState: self))
+        hosting.sizingOptions = [.intrinsicContentSize]
+        let window = NSWindow(contentViewController: hosting)
+        window.styleMask = [.titled, .closable, .fullSizeContentView]
         window.title = Localization.string("settings.title", language: settings.language)
         window.isReleasedWhenClosed = false
-        window.contentView = NSHostingView(rootView: SettingsView(appState: self))
         window.center()
         window.makeKeyAndOrderFront(nil)
         settingsWindow = window

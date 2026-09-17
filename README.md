@@ -55,7 +55,7 @@ MacBook 菜单栏电池监视器。不进程序坞，在菜单栏显示电量和
 
 ## 安装（GitHub Release）
 
-1. 从 [Releases](https://github.com/RyanStarFox/MacPower/releases) 下载 `MacPower-1.2.2.dmg`。
+1. 从 [Releases](https://github.com/RyanStarFox/MacPower/releases) 下载 `MacPower-1.2.3.dmg`。
 2. 打开镜像，把 **MacPower** 拖进 **应用程序**。
 3. 从应用程序里打开，菜单栏会出现电池图标。
 
