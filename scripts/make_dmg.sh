@@ -2,7 +2,7 @@
 set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
-version="${1:-1.2.3}"
+version="${1:-1.2.4}"
 derived="$root/dist/DerivedData"
 app="$derived/Build/Products/Release/MacPower.app"
 stage="$root/dist/dmg-root"
@@ -31,6 +31,8 @@ rm -rf "$stage"
 mkdir -p "$stage"
 ditto "$app" "$stage/MacPower.app"
 ln -s /Applications "$stage/Applications"
+cp "$root/scripts/damage-restoration.sh" "$stage/Damage Restoration.sh"
+chmod +x "$stage/Damage Restoration.sh"
 
 rm -f "$dmg"
 hdiutil create \
