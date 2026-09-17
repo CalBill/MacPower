@@ -31,8 +31,6 @@ rm -rf "$stage"
 mkdir -p "$stage"
 ditto "$app" "$stage/MacPower.app"
 ln -s /Applications "$stage/Applications"
-cp "$root/scripts/damage-restoration.sh" "$stage/Damage Restoration.sh"
-chmod +x "$stage/Damage Restoration.sh"
 
 rm -f "$dmg"
 hdiutil create \
