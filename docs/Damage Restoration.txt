@@ -1,9 +1,11 @@
 Damage Restoration
 ==================
 
-先把 MacPower 拖进「应用程序」，然后：
+安装：下载 MacPower-1.2.4.dmg，拖进应用程序。
 
-1. 按下 Command（⌘）+ 空格，在 Spotlight 里搜索「终端」或 Terminal，打开它。
+若提示 App 已损坏，再按下面做：
+
+1. 按下 Command（⌘）+ 空格，在 Spotlight 里搜索「终端」，打开它。
 2. 复制下面整行指令，粘贴到终端里，按下 Enter：
 
 sudo xattr -rd com.apple.quarantine /Applications/MacPower.app
@@ -16,9 +18,11 @@ sudo xattr -rd com.apple.quarantine /Applications/MacPower.app
 
 ---
 
-Drag MacPower into Applications first, then:
+Install: download MacPower-1.2.4.dmg, drag to Applications.
 
-1. Press Command (⌘) + Space, search Spotlight for Terminal or 终端, and open it.
+If macOS says the app is damaged:
+
+1. Press Command (⌘) + Space, search Spotlight for Terminal, and open it.
 2. Copy the whole line below, paste it into Terminal, and press Enter:
 
 sudo xattr -rd com.apple.quarantine /Applications/MacPower.app

@@ -59,9 +59,11 @@ Four capsule shapes, one for each power path:
 2. Open the disk image and drag **MacPower** into **Applications**.
 3. Launch it from Applications. Look for the battery in the menu bar.
 
-The Release build is **ad-hoc signed, not Developer ID notarized**. Other people’s Macs will usually quarantine it after download. If macOS says the app is **damaged** or cannot be opened, drag MacPower into **Applications** first, then:
+## If the app is damaged
 
-1. Press **Command (⌘) + Space**, search Spotlight for **Terminal** or **终端**, and open it.
+The Release build is **ad-hoc signed, not Developer ID notarized**. Other people’s Macs will usually quarantine it after download. If macOS says the app is **damaged** or cannot be opened:
+
+1. Press **Command (⌘) + Space**, search Spotlight for **Terminal**, and open it.
 2. Copy the whole line below, paste it into Terminal, and press **Enter / Return**:
 
 ```bash
