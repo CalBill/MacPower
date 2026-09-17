@@ -1,41 +1,23 @@
 # MacPower
 
-<p align="center">
-  <img src="docs/readme/icon.png" width="128" alt="MacPower">
-</p>
+![MacPower](docs/readme/icon.png)
 
 [中文](README.md) | English
 
 A native menu-bar battery monitor for MacBook. It stays out of the Dock, shows charge and charging state in the menu bar, and opens a Liquid Glass panel with live energy flow plus remaining runtime or time-to-full.
 
-Unofficial. Not affiliated with Apple. Not a charge limiter.
-
 ## Energy flow
 
 Four capsule shapes, one for each power path:
 
-<table>
-<tr>
-<td align="center" width="50%">
-<img src="docs/readme/flow-discharging.png" alt="Battery to Mac"><br>
-<strong>Battery → Mac</strong>
-</td>
-<td align="center" width="50%">
-<img src="docs/readme/flow-adapter-hold.png" alt="Adapter to Mac"><br>
-<strong>Adapter → Mac</strong>
-</td>
-</tr>
-<tr>
-<td align="center" width="50%">
-<img src="docs/readme/flow-underpowered.png" alt="Adapter and battery to Mac"><br>
-<strong>Adapter + battery → Mac</strong>
-</td>
-<td align="center" width="50%">
-<img src="docs/readme/flow-charging.png" alt="Adapter to battery and Mac"><br>
-<strong>Adapter → battery + Mac</strong>
-</td>
-</tr>
-</table>
+
+|                                                                                              |                                                                                          |
+| -------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| ![Battery to Mac](docs/readme/flow-discharging.png) **Battery → Mac**                        | ![Adapter to Mac](docs/readme/flow-adapter-hold.png) **Adapter → Mac**                   |
+| ![Adapter and battery to Mac](docs/readme/flow-underpowered.png) **Adapter + battery → Mac** | ![Adapter to battery and Mac](docs/readme/flow-charging.png) **Adapter → battery + Mac** |
+
+
+
 
 ## Features
 
@@ -47,17 +29,22 @@ Four capsule shapes, one for each power path:
 - Energy-flow motion: white sheen, plus gradient / color / white filaments and particles (or off); particle / line rate 15–120 Hz
 - Optional panel arrow; hides flush under the menu bar
 - **On battery:** estimated remaining runtime  
-  **Plugged in:** estimated time to full
+**Plugged in:** estimated time to full
 - Colors follow energy state (green charging, orange discharging, blue holding / underpowered)
 - Optional low-battery yellow / red tint at 20% and 10%
 - Appearance palettes, light / dark, and 11 languages that switch live in Settings
 - Open at login
+- Optional automatic GitHub update checks; Settings footer shows the version and GitHub mark
+
+
 
 ## Install (GitHub Release)
 
-1. Download `MacPower-1.2.4.dmg` from [Releases](https://github.com/RyanStarFox/MacPower/releases).
+1. Download `MacPower-1.2.5.dmg` from [Releases](https://github.com/RyanStarFox/MacPower/releases).
 2. Open the disk image and drag **MacPower** into **Applications**.
 3. Launch it from Applications. Look for the battery in the menu bar.
+
+
 
 ## If the app is damaged
 
@@ -80,6 +67,8 @@ A Developer ID + notarized build would skip this step. This project currently on
 
 - macOS 26 or later (developed on macOS 27)
 - Apple Silicon MacBook with a battery
+
+
 
 ## Build from source
 

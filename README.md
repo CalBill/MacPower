@@ -1,41 +1,23 @@
 # MacPower
 
-<p align="center">
-  <img src="docs/readme/icon.png" width="128" alt="MacPower">
-</p>
+![MacPower](docs/readme/icon.png)
 
 中文 | [English](README.en.md)
 
 MacBook 菜单栏电池监视器。不进程序坞，在菜单栏显示电量和充放电状态，点开后是 Liquid Glass 面板：实时能量流向，以及续航或充满时间。
 
-非官方应用，与 Apple 无关，也不是充电限制工具。
-
 ## 能量流向
 
 四种胶囊形态，随充放电状态切换：
 
-<table>
-<tr>
-<td align="center" width="50%">
-<img src="docs/readme/flow-discharging.png" alt="电池给电脑"><br>
-<strong>电池给电脑</strong>
-</td>
-<td align="center" width="50%">
-<img src="docs/readme/flow-adapter-hold.png" alt="电源给电脑"><br>
-<strong>电源给电脑</strong>
-</td>
-</tr>
-<tr>
-<td align="center" width="50%">
-<img src="docs/readme/flow-underpowered.png" alt="电源和电池给电脑"><br>
-<strong>电源和电池给电脑</strong>
-</td>
-<td align="center" width="50%">
-<img src="docs/readme/flow-charging.png" alt="电源给电池和电脑"><br>
-<strong>电源给电池和电脑</strong>
-</td>
-</tr>
-</table>
+
+|                                                             |                                                         |
+| ----------------------------------------------------------- | ------------------------------------------------------- |
+| ![电池给电脑](docs/readme/flow-discharging.png) **电池给电脑**        | ![电源给电脑](docs/readme/flow-adapter-hold.png) **电源给电脑**   |
+| ![电源和电池给电脑](docs/readme/flow-underpowered.png) **电源和电池给电脑** | ![电源给电池和电脑](docs/readme/flow-charging.png) **电源给电池和电脑** |
+
+
+
 
 ## 功能
 
@@ -47,17 +29,22 @@ MacBook 菜单栏电池监视器。不进程序坞，在菜单栏显示电量和
 - 能量流动画：白色高光，渐变/彩色/白色细线与粒子，可关；粒子/细线帧率 15–120 Hz
 - 可开关面板箭头；隐藏后贴紧菜单栏
 - **拔电：** 预计续航  
-  **插电：** 预计充满
+**插电：** 预计充满
 - 颜色跟能量状态走（充电绿、放电橙、插电维持/功率不够为蓝）
 - 可选低电量着色：20% 黄、10% 红
 - 多套配色、浅色/深色；11 种语言，设置里即时切换
 - 登录时启动
+- 可自动检查 GitHub 更新；设置底部显示版本号和 GitHub 标志
+
+
 
 ## 安装（GitHub Release）
 
-1. 从 [Releases](https://github.com/RyanStarFox/MacPower/releases) 下载 `MacPower-1.2.4.dmg`。
+1. 从 [Releases](https://github.com/RyanStarFox/MacPower/releases) 下载 `MacPower-1.2.5.dmg`。
 2. 打开镜像，把 **MacPower** 拖进 **应用程序**。
 3. 从应用程序里打开，菜单栏会出现电池图标。
+
+
 
 ## 修复损坏
 
@@ -80,6 +67,8 @@ sudo xattr -rd com.apple.quarantine /Applications/MacPower.app
 
 - macOS 26 或更高（在 macOS 27 上开发）
 - 带电池的 Apple 芯片 MacBook
+
+
 
 ## 从源码编译
 
