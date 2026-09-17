@@ -59,7 +59,7 @@ MacBook 菜单栏电池监视器。不进程序坞，在菜单栏显示电量和
 2. 打开镜像，把 **MacPower** 拖进 **应用程序**。
 3. 从应用程序里打开，菜单栏会出现电池图标。
 
-Release 里的包是 **ad-hoc 签名，没有走 Developer ID 公证**。别人下载后，系统几乎一定会加上隔离属性。如果提示 **App 已损坏** 或无法打开，先把 MacPower 拖进应用程序，然后运行 Release 里的 **Damage Restoration.sh**（会向你要一次密码）：
+Release 里的包是 **ad-hoc 签名，没有走 Developer ID 公证**。别人下载后，系统几乎一定会加上隔离属性。如果提示 **App 已损坏** 或无法打开，先把 MacPower 拖进应用程序，再打开「终端」**复制粘贴**下面这一行（会要一次密码）。不要下载 `.sh` 去运行：从网上拿到的脚本同样会被拦截。
 
 ```bash
 sudo xattr -rd com.apple.quarantine /Applications/MacPower.app
