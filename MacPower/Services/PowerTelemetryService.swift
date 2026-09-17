@@ -238,6 +238,7 @@ final class PowerTelemetryService {
     private var liveTimer: Timer?
     private var idleTimer: Timer?
     private var powerSourceLoop: CFRunLoopSource?
+    private var powerSourceCallback: PowerSourceCallback?
     private var smoothed: PowerSnapshot?
     private var estimateLoadWatts: Double?
     private var popoverOpen = false
@@ -259,12 +260,7 @@ final class PowerTelemetryService {
 
         if open {
             refresh(smooth: true)
-            liveTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
-                Task { @MainActor in
-                    self?.refresh(smooth: true)
-                }
-            }
-            liveTimer?.tolerance = 0.1
+            liveTimer = makeTimer(interval: 0.5, tolerance: 0.1, selector: #selector(handleLiveTimer))
         } else {
             scheduleIdleTimer()
         }
@@ -275,30 +271,46 @@ final class PowerTelemetryService {
         idleTimer?.invalidate()
         liveTimer = nil
         idleTimer = nil
+        powerSourceCallback?.invalidate()
         if let powerSourceLoop {
             CFRunLoopRemoveSource(CFRunLoopGetMain(), powerSourceLoop, .defaultMode)
             self.powerSourceLoop = nil
         }
+        powerSourceCallback = nil
     }
 
     private func scheduleIdleTimer() {
-        idleTimer = Timer.scheduledTimer(withTimeInterval: 10, repeats: true) { [weak self] _ in
-            Task { @MainActor in
-                self?.refresh(smooth: true)
-            }
-        }
-        idleTimer?.tolerance = 2
+        idleTimer = makeTimer(interval: 10, tolerance: 2, selector: #selector(handleIdleTimer))
+    }
+
+    private func makeTimer(interval: TimeInterval, tolerance: TimeInterval, selector: Selector) -> Timer {
+        let timer = Timer(timeInterval: interval, target: self, selector: selector, userInfo: nil, repeats: true)
+        timer.tolerance = tolerance
+        RunLoop.main.add(timer, forMode: .common)
+        return timer
+    }
+
+    @objc
+    private func handleLiveTimer() {
+        refresh(smooth: true)
+    }
+
+    @objc
+    private func handleIdleTimer() {
+        refresh(smooth: true)
     }
 
     private func listenForPowerSourceChanges() {
-        let context = UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque())
+        let callback = PowerSourceCallback { [weak self] in
+            self?.refresh(smooth: false)
+        }
+        powerSourceCallback = callback
+        let context = Unmanaged.passUnretained(callback).toOpaque()
         guard let source = IOPSNotificationCreateRunLoopSource({ context in
             guard let context else { return }
-            let service = Unmanaged<PowerTelemetryService>.fromOpaque(context).takeUnretainedValue()
-            Task { @MainActor in
-                service.refresh(smooth: false)
-            }
+            Unmanaged<PowerSourceCallback>.fromOpaque(context).takeUnretainedValue().invoke()
         }, context)?.takeRetainedValue() else {
+            powerSourceCallback = nil
             return
         }
         powerSourceLoop = source
@@ -364,5 +376,31 @@ final class PowerTelemetryService {
 
     private func ema(_ previous: Double, _ next: Double, alpha: Double) -> Double {
         previous * (1 - alpha) + next * alpha
+    }
+}
+
+/// IOPS delivers on the run loop we registered (main). Keep a dedicated trampoline so
+/// `stop()` can drop the handler before the CF source is released — no Task hop, no
+/// `Unmanaged` of the `@MainActor` service itself.
+private final class PowerSourceCallback: @unchecked Sendable {
+    private var handler: (@MainActor () -> Void)?
+
+    init(handler: @escaping @MainActor () -> Void) {
+        self.handler = handler
+    }
+
+    func invalidate() {
+        handler = nil
+    }
+
+    func invoke() {
+        guard let handler else { return }
+        if Thread.isMainThread {
+            MainActor.assumeIsolated(handler)
+        } else {
+            DispatchQueue.main.async {
+                MainActor.assumeIsolated(handler)
+            }
+        }
     }
 }

@@ -48,10 +48,13 @@ struct TimeEstimateRow: View {
         HStack(alignment: .firstTextBaseline) {
             Text(title)
                 .foregroundStyle(.secondary)
-            Spacer()
+                .autoFittingCaption(minimumScale: 0.7)
+            Spacer(minLength: 8)
             Text(value)
                 .foregroundStyle(.primary)
                 .multilineTextAlignment(.trailing)
+                .autoFittingCaption(minimumScale: 0.7)
+                .layoutPriority(1)
         }
     }
 }

@@ -1788,13 +1788,13 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "经典：图标旁显示百分比"
+            "value": "无边框：图标旁显示百分比"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "經典：圖示旁顯示百分比"
+            "value": "無邊框：圖示旁顯示百分比"
           }
         },
         "ja": {
@@ -1859,13 +1859,13 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "系统风：百分比在电池内"
+            "value": "无边框：百分比在电池内"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "系統風：百分比在電池內"
+            "value": "無邊框：百分比在電池內"
           }
         },
         "ja": {
@@ -2001,13 +2001,13 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "系统风：仅填充"
+            "value": "无边框：仅填充"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "系統風：僅填充"
+            "value": "無邊框：僅填充"
           }
         },
         "ja": {
@@ -3121,6 +3121,77 @@
           "stringUnit": {
             "state": "translated",
             "value": "Стиль"
+          }
+        }
+      }
+    },
+    "settings.motion.frameRate": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Particle / line frame rate"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "粒子/细线帧率"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "粒子/細線幀率"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "粒子/細線のフレームレート"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "입자/선 프레임 레이트"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fréquence (particules / lignes)"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bildrate (Partikel / Linien)"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frecuencia (partículas / líneas)"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taxa de quadros (partículas / linhas)"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frequenza (particelle / linee)"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Частота кадров (частицы / линии)"
           }
         }
       }
@@ -4328,6 +4399,77 @@
           "stringUnit": {
             "state": "translated",
             "value": "Контур: проценты рядом"
+          }
+        }
+      }
+    },
+    "settings.popover.arrow": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show panel arrow"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "显示面板箭头"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示面板箭頭"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "パネルの矢印を表示"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "패널 화살표 표시"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afficher la flèche du panneau"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Panel-Pfeil anzeigen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostrar flecha del panel"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostrar seta do painel"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostra freccia del riquadro"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Показывать стрелку панели"
           }
         }
       }

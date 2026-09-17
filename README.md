@@ -1,10 +1,41 @@
 # MacPower
 
+<p align="center">
+  <img src="docs/readme/icon.png" width="128" alt="MacPower">
+</p>
+
 中文 | [English](README.en.md)
 
 MacBook 菜单栏电池监视器。不进程序坞，在菜单栏显示电量和充放电状态，点开后是 Liquid Glass 面板：实时能量流向，以及续航或充满时间。
 
 非官方应用，与 Apple 无关，也不是充电限制工具。
+
+## 能量流向
+
+四种胶囊形态，随充放电状态切换：
+
+<table>
+<tr>
+<td align="center" width="50%">
+<img src="docs/readme/flow-discharging.png" alt="电池给电脑"><br>
+<strong>电池给电脑</strong>
+</td>
+<td align="center" width="50%">
+<img src="docs/readme/flow-adapter-hold.png" alt="电源给电脑"><br>
+<strong>电源给电脑</strong>
+</td>
+</tr>
+<tr>
+<td align="center" width="50%">
+<img src="docs/readme/flow-underpowered.png" alt="电源和电池给电脑"><br>
+<strong>电源和电池给电脑</strong>
+</td>
+<td align="center" width="50%">
+<img src="docs/readme/flow-charging.png" alt="电源给电池和电脑"><br>
+<strong>电源给电池和电脑</strong>
+</td>
+</tr>
+</table>
 
 ## 功能
 
@@ -13,7 +44,8 @@ MacBook 菜单栏电池监视器。不进程序坞，在菜单栏显示电量和
 - 可开关充电标志（闪电），各样式都生效
 - 弹层显示充电器、电池、电脑的实时功率；充电时为 Y 形分流
 - 电量 / CPU / GPU / 内存圆环，以及续航或充满时间
-- 能量流动画：白色高光，渐变/彩色/白色细线与粒子，可关
+- 能量流动画：白色高光，渐变/彩色/白色细线与粒子，可关；粒子/细线帧率 15–120 Hz
+- 可开关面板箭头；隐藏后贴紧菜单栏
 - **拔电：** 预计续航  
   **插电：** 预计充满
 - 颜色跟能量状态走（充电绿、放电橙、插电维持/功率不够为蓝）
@@ -23,7 +55,7 @@ MacBook 菜单栏电池监视器。不进程序坞，在菜单栏显示电量和
 
 ## 安装（GitHub Release）
 
-1. 从 [Releases](https://github.com/RyanStarFox/MacPower/releases) 下载 `MacPower-1.2.1.dmg`。
+1. 从 [Releases](https://github.com/RyanStarFox/MacPower/releases) 下载 `MacPower-1.2.2.dmg`。
 2. 打开镜像，把 **MacPower** 拖进 **应用程序**。
 3. 从应用程序里打开，菜单栏会出现电池图标。
 

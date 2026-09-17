@@ -5,67 +5,40 @@ struct EnergyFlowView: View {
     var theme: AppTheme
     var isAnimating: Bool
     var motion: EnergyMotionStyle
+    var motionFrameRate: EnergyMotionFrameRate = .hz60
     var pulseFlowIcons: Bool
     var language: AppLanguage
+    var showsFooter: Bool = true
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             diagram
-            footer
+            if showsFooter {
+                footer
+            }
         }
     }
 
     private var diagram: some View {
         GeometryReader { geo in
             let layout = layout(in: geo.size)
-            ZStack {
-                ribbonGlass(layout: layout, size: geo.size)
-
-                if isAnimating, motion.usesCanvasTimeline {
-                    TimelineView(.periodic(from: .now, by: 1.0 / motion.framesPerSecond)) { timeline in
-                        let phase = timeline.date.timeIntervalSinceReferenceDate / 4.6
-                        Canvas { context, _ in
-                            context.clip(to: layout.body, style: FillStyle(eoFill: false, antialiased: true))
-                            switch motion {
-                            case .sheen:
-                                drawSheen(context: &context, layout: layout, phase: phase)
-                            case .filaments, .filamentsSolid, .filamentsWhite:
-                                for lane in layout.lanes {
-                                    drawFilaments(context: &context, lane: lane, phase: phase, pigment: motion.pigment ?? .gradient)
-                                }
-                            case .particles, .particlesSolid, .particlesWhite:
-                                for lane in layout.lanes {
-                                    drawPowder(context: &context, lane: lane, phase: phase, pigment: motion.pigment ?? .gradient)
-                                }
-                            case .off:
-                                break
-                            }
-                        }
-                    }
-                }
-
-                Canvas { context, _ in
-                    for lane in layout.lanes {
-                        drawWattLabel(context: &context, lane: lane)
-                    }
-                }
-
-                if isAnimating, pulseFlowIcons {
-                    TimelineView(.periodic(from: .now, by: 1.0 / 30.0)) { timeline in
-                        let breath = iconBreath(at: timeline.date)
-                        ZStack {
-                            ForEach(layout.bubbles) { bubble in
-                                flowNode(bubble, breath: breath)
-                                    .position(bubble.point)
-                            }
-                        }
-                    }
-                    .frame(width: geo.size.width, height: geo.size.height)
-                } else {
-                    ForEach(layout.bubbles) { bubble in
-                        flowNode(bubble, breath: 0)
-                            .position(bubble.point)
-                    }
+            // Glass is Equatable and only depends on shape/tint. Motion lives in an
+            // overlay rasterized with drawingGroup so 60 fps Canvas ticks do not
+            // resample glassEffect.
+            RibbonGlassSlot(
+                size: geo.size,
+                mode: snapshot.flowMode,
+                fill: layout.fill,
+                splitOrMerge: splitOrMerge,
+                bodyPath: layout.body,
+                laneSignature: laneSignature(layout)
+            )
+            .equatable()
+            .overlay {
+                ZStack {
+                    motionOverlay(layout: layout)
+                    wattLabels(layout: layout)
+                    iconLayer(layout: layout, size: geo.size)
                 }
             }
         }
@@ -73,22 +46,113 @@ struct EnergyFlowView: View {
     }
 
     @ViewBuilder
-    private func ribbonGlass(layout: Layout, size: CGSize) -> some View {
-        let tint = layout.fill.opacity(FlowRibbon.glassTintOpacity)
-        let stadium = RoundedRectangle(
-            cornerRadius: FlowRibbon.capRadius(for: FlowRibbon.trunkWidth(totalWatts: 1)),
-            style: .continuous
-        )
-        let sampled = Color.clear
+    private func motionOverlay(layout: Layout) -> some View {
+        if isAnimating, motion.usesCanvasTimeline {
+            TimelineView(.periodic(from: .now, by: 1.0 / motionFrameRate.framesPerSecond)) { timeline in
+                let phase = timeline.date.timeIntervalSinceReferenceDate / 4.6
+                Canvas { context, _ in
+                    context.clip(to: layout.body, style: FillStyle(eoFill: false, antialiased: true))
+                    switch motion {
+                    case .sheen:
+                        drawSheen(context: &context, layout: layout, phase: phase)
+                    case .filaments, .filamentsSolid, .filamentsWhite:
+                        for lane in layout.lanes {
+                            drawFilaments(context: &context, lane: lane, phase: phase, pigment: motion.pigment ?? .gradient)
+                        }
+                    case .particles, .particlesSolid, .particlesWhite:
+                        for lane in layout.lanes {
+                            drawPowder(context: &context, lane: lane, phase: phase, pigment: motion.pigment ?? .gradient)
+                        }
+                    case .off:
+                        break
+                    }
+                }
+                .drawingGroup(opaque: false)
+            }
+            .allowsHitTesting(false)
+        }
+    }
+
+    private func wattLabels(layout: Layout) -> some View {
+        Canvas { context, _ in
+            for lane in layout.lanes {
+                drawWattLabel(context: &context, lane: lane)
+            }
+        }
+        .allowsHitTesting(false)
+    }
+
+    @ViewBuilder
+    private func iconLayer(layout: Layout, size: CGSize) -> some View {
+        if isAnimating, pulseFlowIcons {
+            TimelineView(.periodic(from: .now, by: 1.0 / 30.0)) { timeline in
+                let breath = iconBreath(at: timeline.date)
+                ZStack {
+                    ForEach(layout.bubbles) { bubble in
+                        flowNode(bubble, breath: breath)
+                            .position(bubble.point)
+                    }
+                }
+            }
             .frame(width: size.width, height: size.height)
-            .glassEffect(.regular.tint(tint), in: stadium)
-        if splitOrMerge {
-            // Light a system stadium SDF, then mask to the Y. Sampling glass
-            // in the custom fork path plants a vertex specular on each round
-            // finger cap (the blob next to the laptop).
-            sampled.mask { FlowRibbonShape(path: layout.body) }
+            .allowsHitTesting(false)
         } else {
-            sampled
+            ForEach(layout.bubbles) { bubble in
+                flowNode(bubble, breath: 0)
+                    .position(bubble.point)
+            }
+            .allowsHitTesting(false)
+        }
+    }
+
+    private func laneSignature(_ layout: Layout) -> Int {
+        var hasher = Hasher()
+        for lane in layout.lanes {
+            hasher.combine(Int((lane.width * 10).rounded()))
+            hasher.combine(Int((lane.watts * 10).rounded()))
+        }
+        return hasher.finalize()
+    }
+
+    /// Liquid Glass for the ribbon. Equality ignores animation phase so SwiftUI
+    /// can skip resampling when only the particle overlay ticks.
+    private struct RibbonGlassSlot: View, @MainActor Equatable {
+        var size: CGSize
+        var mode: EnergyFlowMode
+        var fill: Color
+        var splitOrMerge: Bool
+        var bodyPath: Path
+        var laneSignature: Int
+
+        static func == (lhs: Self, rhs: Self) -> Bool {
+            lhs.size == rhs.size
+                && lhs.mode == rhs.mode
+                && lhs.fill == rhs.fill
+                && lhs.splitOrMerge == rhs.splitOrMerge
+                && lhs.laneSignature == rhs.laneSignature
+        }
+
+        var body: some View {
+            let tint = fill.opacity(FlowRibbon.glassTintOpacity)
+            let stadium = RoundedRectangle(
+                cornerRadius: FlowRibbon.capRadius(for: FlowRibbon.trunkWidth(totalWatts: 1)),
+                style: .continuous
+            )
+            let sampled = Color.clear
+                .frame(width: size.width, height: size.height)
+                .glassEffect(.regular.tint(tint), in: stadium)
+            ZStack {
+                FlowRibbonShape(path: bodyPath)
+                    .fill(tint)
+                if splitOrMerge {
+                    // Light a system stadium SDF, then mask to the Y. Sampling glass
+                    // in the custom fork path plants a vertex specular on each round
+                    // finger cap (the blob next to the laptop).
+                    sampled.mask { FlowRibbonShape(path: bodyPath) }
+                } else {
+                    sampled
+                }
+            }
         }
     }
 
@@ -579,9 +643,12 @@ struct EnergyFlowView: View {
         HStack {
             Text(title)
                 .foregroundStyle(.secondary)
-            Spacer()
+                .autoFittingCaption(minimumScale: 0.7)
+            Spacer(minLength: 8)
             Text(value)
                 .font(.caption.monospacedDigit().weight(.medium))
+                .autoFittingCaption(minimumScale: 0.7)
+                .layoutPriority(1)
         }
     }
 }

@@ -14,6 +14,8 @@ final class AppState {
     var launchAtLoginError: String?
     @ObservationIgnored
     var onLanguageChange: (() -> Void)?
+    @ObservationIgnored
+    var onPopoverChromeChange: (() -> Void)?
 
     let telemetry = PowerTelemetryService()
     let metricsService = SystemMetricsService()

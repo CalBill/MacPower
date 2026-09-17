@@ -37,8 +37,7 @@ struct StatusRingView: View {
             Text(caption)
                 .font(.system(size: 10, weight: .semibold, design: .rounded).monospacedDigit())
                 .foregroundStyle(.primary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.75)
+                .autoFittingCaption()
         }
         .frame(maxWidth: .infinity)
         .accessibilityElement(children: .ignore)
@@ -49,7 +48,7 @@ struct StatusRingView: View {
     private var glassTrack: some View {
         Color.clear
             .frame(width: diameter, height: diameter)
-            .glassEffect(.regular.interactive(), in: Circle())
+            .glassEffect(.regular, in: Circle())
             .mask {
                 Circle()
                     .stroke(style: StrokeStyle(lineWidth: lineWidth, lineCap: .butt))
@@ -72,5 +71,15 @@ struct StatusRingView: View {
                 .font(.system(size: 17, weight: .semibold))
                 .symbolRenderingMode(.hierarchical)
         }
+    }
+}
+
+extension View {
+    /// Shrinks to a single line instead of wrapping when the label is longer than the slot.
+    func autoFittingCaption(minimumScale: CGFloat = 0.6) -> some View {
+        self
+            .lineLimit(1)
+            .minimumScaleFactor(minimumScale)
+            .allowsTightening(true)
     }
 }

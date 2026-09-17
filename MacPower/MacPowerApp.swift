@@ -19,12 +19,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var snapshotWatch: Task<Void, Never>?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        #if DEBUG
+        if ReadmeAssetCapture.startIfNeeded() { return }
+        #endif
         NSApp.setActivationPolicy(.accessory)
         let state = AppState()
         appState = state
         statusItemController = StatusItemController(appState: state)
         state.onLanguageChange = { [weak statusItemController] in
             statusItemController?.applyLocalization()
+        }
+        state.onPopoverChromeChange = { [weak statusItemController] in
+            statusItemController?.applyArrowVisibility()
         }
         snapshotWatch = Task { [weak self, weak state] in
             guard let state else { return }

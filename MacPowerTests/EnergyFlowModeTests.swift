@@ -163,9 +163,6 @@ final class EnergyMotionStyleTests: XCTestCase {
         XCTAssertTrue(EnergyMotionStyle.sheen.usesCanvasTimeline)
         XCTAssertTrue(EnergyMotionStyle.filamentsWhite.usesCanvasTimeline)
         XCTAssertFalse(EnergyMotionStyle.off.usesCanvasTimeline)
-        XCTAssertEqual(EnergyMotionStyle.sheen.framesPerSecond, 60)
-        XCTAssertEqual(EnergyMotionStyle.particles.framesPerSecond, 60)
-        XCTAssertEqual(EnergyMotionStyle.off.framesPerSecond, 1)
         XCTAssertEqual(EnergyMotionStyle.filaments.pigment, .gradient)
         XCTAssertEqual(EnergyMotionStyle.particlesSolid.pigment, .solid)
         XCTAssertEqual(EnergyMotionStyle.filamentsWhite.pigment, .white)
@@ -222,6 +219,22 @@ final class EnergyMotionStyleTests: XCTestCase {
         XCTAssertEqual(try decoder.decode(EnergyMotionStyle.self, from: encoded), .filaments)
     }
 
+    func testMotionFrameRateDefaultsTo60AndPersists() {
+        let suite = "MacPower.MotionFrameRateTests"
+        let defaults = UserDefaults(suiteName: suite)!
+        defaults.removePersistentDomain(forName: suite)
+        let first = AppSettings(defaults: defaults)
+        XCTAssertEqual(first.motionFrameRate, .hz60)
+        XCTAssertEqual(EnergyMotionFrameRate.allCases.map(\.rawValue), [15, 24, 30, 45, 60, 75, 90, 120])
+        first.motionFrameRate = .hz30
+        let second = AppSettings(defaults: defaults)
+        XCTAssertEqual(second.motionFrameRate, .hz30)
+        XCTAssertEqual(EnergyMotionFrameRate.resolved(stored: 24), .hz24)
+        XCTAssertEqual(EnergyMotionFrameRate.resolved(stored: 7), .hz60)
+        XCTAssertEqual(EnergyMotionFrameRate.resolved(stored: nil), .hz60)
+        defaults.removePersistentDomain(forName: suite)
+    }
+
     func testPulseFlowIconsDefaultsOnAndPersists() {
         let suite = "MacPower.PulseFlowIconsTests"
         let defaults = UserDefaults(suiteName: suite)!
@@ -231,6 +244,18 @@ final class EnergyMotionStyleTests: XCTestCase {
         first.pulseFlowIcons = false
         let second = AppSettings(defaults: defaults)
         XCTAssertFalse(second.pulseFlowIcons)
+        defaults.removePersistentDomain(forName: suite)
+    }
+
+    func testShowPopoverArrowDefaultsOnAndPersists() {
+        let suite = "MacPower.PopoverArrowTests"
+        let defaults = UserDefaults(suiteName: suite)!
+        defaults.removePersistentDomain(forName: suite)
+        let first = AppSettings(defaults: defaults)
+        XCTAssertTrue(first.showPopoverArrow)
+        first.showPopoverArrow = false
+        let second = AppSettings(defaults: defaults)
+        XCTAssertFalse(second.showPopoverArrow)
         defaults.removePersistentDomain(forName: suite)
     }
 

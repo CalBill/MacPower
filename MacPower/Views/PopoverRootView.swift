@@ -5,13 +5,22 @@ struct PopoverRootView: View {
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        let theme = AppTheme.resolved(palette: appState.settings.palette, colorScheme: colorScheme)
-        content(theme: theme)
-            .padding(14)
-            .frame(width: 420)
-            .fixedSize(horizontal: false, vertical: true)
-            .environment(\.locale, appState.settings.resolvedLocale)
-            .id(appState.settings.language)
+        Group {
+            if appState.isPopoverOpen {
+                let theme = AppTheme.resolved(palette: appState.settings.palette, colorScheme: colorScheme)
+                content(theme: theme)
+                    .padding(14)
+                    .frame(width: 420)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                // Keep the hosting graph mounted, but never build glass / TimelineView
+                // while the menu extra is idle. Interactive Liquid Glass in a hidden
+                // NSPopover was burning CPU and UAFing NSViewFocusProxy ~2s after launch.
+                Color.clear.frame(width: 420, height: 1)
+            }
+        }
+        .environment(\.locale, appState.settings.resolvedLocale)
+        .id(appState.settings.language)
     }
 
     @ViewBuilder
@@ -30,6 +39,7 @@ struct PopoverRootView: View {
                     theme: theme,
                     isAnimating: appState.isPopoverOpen,
                     motion: appState.settings.motionStyle,
+                    motionFrameRate: appState.settings.motionFrameRate,
                     pulseFlowIcons: appState.settings.pulseFlowIcons,
                     language: appState.settings.language
                 )
@@ -90,6 +100,8 @@ struct PopoverRootView: View {
                 Text(Localization.string("settings.title", language: language))
                     .font(.system(size: 11, weight: .semibold, design: .rounded))
                     .foregroundStyle(.primary)
+                    .autoFittingCaption(minimumScale: 0.55)
+                    .frame(maxWidth: .infinity)
             }
             .frame(maxWidth: .infinity)
         }

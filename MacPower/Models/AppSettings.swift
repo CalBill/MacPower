@@ -9,7 +9,9 @@ final class AppSettings {
         static let lowBatteryTintEnabled = "lowBatteryTintEnabled"
         static let showChargeGlyphs = "showChargeGlyphs"
         static let motionStyle = "motionStyle"
+        static let motionFrameRate = "motionFrameRate"
         static let pulseFlowIcons = "pulseFlowIcons"
+        static let showPopoverArrow = "showPopoverArrow"
         static let language = "appLanguage"
         static let appleLanguages = "AppleLanguages"
         static let legacyEnergyMotion = "energyMotion"
@@ -38,8 +40,16 @@ final class AppSettings {
         didSet { store.set(motionStyle.rawValue, forKey: Keys.motionStyle) }
     }
 
+    var motionFrameRate: EnergyMotionFrameRate {
+        didSet { store.set(motionFrameRate.rawValue, forKey: Keys.motionFrameRate) }
+    }
+
     var pulseFlowIcons: Bool {
         didSet { store.set(pulseFlowIcons, forKey: Keys.pulseFlowIcons) }
+    }
+
+    var showPopoverArrow: Bool {
+        didSet { store.set(showPopoverArrow, forKey: Keys.showPopoverArrow) }
     }
 
     var language: AppLanguage {
@@ -77,10 +87,21 @@ final class AppSettings {
             pulseFlowIcons = defaults.bool(forKey: Keys.pulseFlowIcons)
         }
 
+        if defaults.object(forKey: Keys.showPopoverArrow) == nil {
+            showPopoverArrow = true
+        } else {
+            showPopoverArrow = defaults.bool(forKey: Keys.showPopoverArrow)
+        }
+
         let storedMotion = defaults.string(forKey: Keys.motionStyle)
             ?? defaults.string(forKey: Keys.legacyEnergyMotion)
         let resolvedMotion = EnergyMotionStyle.resolved(stored: storedMotion)
         motionStyle = resolvedMotion
+        if defaults.object(forKey: Keys.motionFrameRate) == nil {
+            motionFrameRate = .hz60
+        } else {
+            motionFrameRate = EnergyMotionFrameRate.resolved(stored: defaults.integer(forKey: Keys.motionFrameRate))
+        }
         language = AppLanguage.resolved(stored: defaults.string(forKey: Keys.language))
 
         store.set(resolvedMotion.rawValue, forKey: Keys.motionStyle)

@@ -35,8 +35,6 @@ enum EnergyMotionStyle: String, CaseIterable, Identifiable, Sendable, Codable {
 
     var usesCanvasTimeline: Bool { self != .off }
 
-    var framesPerSecond: Double { self == .off ? 1 : 60 }
-
     var pigment: FlowMotionPigment? {
         switch self {
         case .filaments, .particles: .gradient

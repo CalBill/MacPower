@@ -9,6 +9,7 @@ final class SystemMetricsService {
     private var lastCPU: Double?
     private var lastGPU: Double = 0
     private var lastMemory: Double = 0
+    private var heavySampling = false
 
     var onChange: ((SystemSnapshot) -> Void)?
 
@@ -34,13 +35,23 @@ final class SystemMetricsService {
     }
 
     private func schedule(heavy: Bool) {
+        heavySampling = heavy
         let interval: TimeInterval = 1
-        timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
-            Task { @MainActor in
-                self?.refresh(heavy: heavy)
-            }
-        }
-        timer?.tolerance = interval * 0.2
+        let timer = Timer(
+            timeInterval: interval,
+            target: self,
+            selector: #selector(handleTimer),
+            userInfo: nil,
+            repeats: true
+        )
+        timer.tolerance = interval * 0.2
+        RunLoop.main.add(timer, forMode: .common)
+        self.timer = timer
+    }
+
+    @objc
+    private func handleTimer() {
+        refresh(heavy: heavySampling)
     }
 
     private func refresh(heavy: Bool) {

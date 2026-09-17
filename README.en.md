@@ -1,10 +1,41 @@
 # MacPower
 
+<p align="center">
+  <img src="docs/readme/icon.png" width="128" alt="MacPower">
+</p>
+
 [中文](README.md) | English
 
 A native menu-bar battery monitor for MacBook. It stays out of the Dock, shows charge and charging state in the menu bar, and opens a Liquid Glass panel with live energy flow plus remaining runtime or time-to-full.
 
 Unofficial. Not affiliated with Apple. Not a charge limiter.
+
+## Energy flow
+
+Four capsule shapes, one for each power path:
+
+<table>
+<tr>
+<td align="center" width="50%">
+<img src="docs/readme/flow-discharging.png" alt="Battery to Mac"><br>
+<strong>Battery → Mac</strong>
+</td>
+<td align="center" width="50%">
+<img src="docs/readme/flow-adapter-hold.png" alt="Adapter to Mac"><br>
+<strong>Adapter → Mac</strong>
+</td>
+</tr>
+<tr>
+<td align="center" width="50%">
+<img src="docs/readme/flow-underpowered.png" alt="Adapter and battery to Mac"><br>
+<strong>Adapter + battery → Mac</strong>
+</td>
+<td align="center" width="50%">
+<img src="docs/readme/flow-charging.png" alt="Adapter to battery and Mac"><br>
+<strong>Adapter → battery + Mac</strong>
+</td>
+</tr>
+</table>
 
 ## Features
 
@@ -13,7 +44,8 @@ Unofficial. Not affiliated with Apple. Not a charge limiter.
 - Optional charging mark (lightning bolt) on all styles
 - Popover with live watts: charger, battery, and Mac, including a Y-split while charging
 - Battery / CPU / GPU / memory rings, plus remaining runtime or time-to-full
-- Energy-flow motion: white sheen, plus gradient / color / white filaments and particles (or off)
+- Energy-flow motion: white sheen, plus gradient / color / white filaments and particles (or off); particle / line rate 15–120 Hz
+- Optional panel arrow; hides flush under the menu bar
 - **On battery:** estimated remaining runtime  
   **Plugged in:** estimated time to full
 - Colors follow energy state (green charging, orange discharging, blue holding / underpowered)
@@ -23,7 +55,7 @@ Unofficial. Not affiliated with Apple. Not a charge limiter.
 
 ## Install (GitHub Release)
 
-1. Download `MacPower-1.2.1.dmg` from [Releases](https://github.com/RyanStarFox/MacPower/releases).
+1. Download `MacPower-1.2.2.dmg` from [Releases](https://github.com/RyanStarFox/MacPower/releases).
 2. Open the disk image and drag **MacPower** into **Applications**.
 3. Launch it from Applications. Look for the battery in the menu bar.
 

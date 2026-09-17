@@ -30,6 +30,10 @@ struct SettingsView: View {
                     }
                 }
                 Toggle("settings.lowBatteryTint", isOn: $appState.settings.lowBatteryTintEnabled)
+                Toggle("settings.popover.arrow", isOn: $appState.settings.showPopoverArrow)
+                    .onChange(of: appState.settings.showPopoverArrow) { _, _ in
+                        appState.onPopoverChromeChange?()
+                    }
             }
 
             Section {
@@ -38,16 +42,24 @@ struct SettingsView: View {
                         Text(LocalizedStringKey(style.localizationKey)).tag(style)
                     }
                 }
+                Picker("settings.motion.frameRate", selection: $appState.settings.motionFrameRate) {
+                    ForEach(EnergyMotionFrameRate.allCases) { rate in
+                        Text(rate.title).tag(rate)
+                    }
+                }
+                .disabled(appState.settings.motionStyle == .off)
                 Toggle("settings.motion.pulseIcons", isOn: $appState.settings.pulseFlowIcons)
             } header: {
                 Text("settings.section.motion")
             }
 
             Section("settings.section.general") {
-                Picker("settings.language", selection: $appState.settings.language) {
+                Picker(selection: $appState.settings.language) {
                     ForEach(AppLanguage.allCases) { language in
                         Text(title(for: language)).tag(language)
                     }
+                } label: {
+                    Text("settings.language") + Text("（文/A）")
                 }
                 Toggle("settings.launchAtLogin", isOn: launchAtLoginBinding)
             }
