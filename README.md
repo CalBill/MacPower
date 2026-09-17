@@ -59,15 +59,18 @@ MacBook 菜单栏电池监视器。不进程序坞，在菜单栏显示电量和
 2. 打开镜像，把 **MacPower** 拖进 **应用程序**。
 3. 从应用程序里打开，菜单栏会出现电池图标。
 
-Release 里的包是 **ad-hoc 签名，没有走 Developer ID 公证**。别人下载后，系统几乎一定会加上隔离属性。如果提示 **App 已损坏** 或无法打开，先把 MacPower 拖进应用程序，再打开「终端」**复制粘贴**下面这一行（会要一次密码）。
+Release 里的包是 **ad-hoc 签名，没有走 Developer ID 公证**。别人下载后，系统几乎一定会加上隔离属性。如果提示 **App 已损坏** 或无法打开，先把 MacPower 拖进「应用程序」，再按下面做：
 
-不要把 Release 里的 `.txt` 改成 `.sh` 再双击：网上下来的文件带着隔离属性，改后缀去不掉，脚本同样会被拦。
+1. 按下 **Command（⌘）+ 空格**，在 Spotlight 里搜索 **终端** 或 **Terminal**，打开它。
+2. 复制下面整行指令，粘贴到终端里，按下 **Enter / Return**：
 
 ```bash
 sudo xattr -rd com.apple.quarantine /Applications/MacPower.app
 ```
 
-然后再打开 MacPower。
+3. 终端会要求输入这台 Mac 的登录密码。输入时**屏幕上不会出现圆点或星号**，这是正常现象，不是没有输入成功。输完直接按 Enter。
+
+然后再从「应用程序」打开 MacPower。不要把 Release 里的 `.txt` 改成 `.sh` 再双击：网上下来的文件改后缀也带隔离属性，照样会被拦。
 
 如果用 Developer ID 签名并公证，这一步可以省掉。目前只有 Apple Development 证书，不能用来给别人分发（用它打包，对方更容易看到「已损坏」）。在有 Developer ID 之前，Release 放未公证/ad-hoc 的 DMG，并写明上面这行 `xattr` 命令。
 

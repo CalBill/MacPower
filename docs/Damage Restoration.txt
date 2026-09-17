@@ -1,16 +1,30 @@
 Damage Restoration
 ==================
 
-把 MacPower 拖进「应用程序」后，打开「终端」，复制下面这一行并回车（会要一次密码）：
+先把 MacPower 拖进「应用程序」，然后：
+
+1. 按下 Command（⌘）+ 空格，在 Spotlight 里搜索「终端」或 Terminal，打开它。
+2. 复制下面整行指令，粘贴到终端里，按下 Enter：
 
 sudo xattr -rd com.apple.quarantine /Applications/MacPower.app
 
-不要把这个 .txt 改成 .sh 再双击。从网上下载的文件带着隔离属性，改后缀去不掉，系统照样会拦截。
+3. 终端会要求输入这台 Mac 的登录密码。输入时屏幕上不会出现圆点或星号，这是正常现象，不是没有输入成功。输完直接按 Enter。
+
+然后再从「应用程序」打开 MacPower。
+
+不要把这个 .txt 改成 .sh 再双击。网上下载的文件改后缀也带隔离属性，照样会被拦截。
 
 ---
 
-Drag MacPower into Applications, open Terminal, paste this line, and press Return (it asks for your password):
+Drag MacPower into Applications first, then:
+
+1. Press Command (⌘) + Space, search Spotlight for Terminal or 终端, and open it.
+2. Copy the whole line below, paste it into Terminal, and press Enter:
 
 sudo xattr -rd com.apple.quarantine /Applications/MacPower.app
 
-Do not rename this .txt to .sh and double-click it. Quarantine stays on the downloaded file; renaming does not remove it.
+3. Terminal will ask for this Mac’s login password. Nothing appears on screen as you type — no dots, no asterisks. That is normal; it does not mean the password was not entered. Press Enter when you are done.
+
+Then open MacPower from Applications.
+
+Do not rename this .txt to .sh and double-click it. Quarantine stays on a downloaded file; renaming does not remove it.

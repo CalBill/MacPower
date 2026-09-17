@@ -59,15 +59,18 @@ Four capsule shapes, one for each power path:
 2. Open the disk image and drag **MacPower** into **Applications**.
 3. Launch it from Applications. Look for the battery in the menu bar.
 
-The Release build is **ad-hoc signed, not Developer ID notarized**. Other people’s Macs will usually quarantine it after download. If macOS says the app is **damaged** or cannot be opened, drag MacPower into Applications first, then **copy and paste** this line into Terminal (it asks for your password).
+The Release build is **ad-hoc signed, not Developer ID notarized**. Other people’s Macs will usually quarantine it after download. If macOS says the app is **damaged** or cannot be opened, drag MacPower into **Applications** first, then:
 
-Do not rename the Release `.txt` to `.sh` and double-click it. Quarantine stays on a downloaded file; renaming does not remove it.
+1. Press **Command (⌘) + Space**, search Spotlight for **Terminal** or **终端**, and open it.
+2. Copy the whole line below, paste it into Terminal, and press **Enter / Return**:
 
 ```bash
 sudo xattr -rd com.apple.quarantine /Applications/MacPower.app
 ```
 
-Then open MacPower again.
+3. Terminal will ask for this Mac’s login password. **Nothing appears on screen as you type** — no dots, no asterisks. That is normal; it does not mean the password was not entered. Press Enter when you are done.
+
+Then open MacPower from Applications. Do not rename the Release `.txt` to `.sh` and double-click it. Quarantine stays on a downloaded file; renaming does not remove it.
 
 A Developer ID + notarized build would skip this step. This project currently only has an Apple Development certificate, which cannot be used to distribute to other Macs (and often *causes* the “damaged” dialog if you ship it). Until a Developer ID is available, the unsigned/ad-hoc DMG plus the `xattr` command is the honest option.
 
