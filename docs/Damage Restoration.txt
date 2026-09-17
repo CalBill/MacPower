@@ -1,22 +1,16 @@
 Damage Restoration
 ==================
 
-macOS 会拦截从网上下载、且未经公证的 MacPower。不要下载脚本来运行（.sh 同样会被隔离）。
-
-1. 先把 MacPower.app 拖进「应用程序」
-2. 打开「终端」，整行复制并回车（会要一次密码）：
+把 MacPower 拖进「应用程序」后，打开「终端」，复制下面这一行并回车（会要一次密码）：
 
 sudo xattr -rd com.apple.quarantine /Applications/MacPower.app
 
-3. 再从「应用程序」打开 MacPower
+不要把这个 .txt 改成 .sh 再双击。从网上下载的文件带着隔离属性，改后缀去不掉，系统照样会拦截。
 
 ---
 
-macOS quarantines unsigned downloads. Do not download a .sh to run — it is blocked the same way.
-
-1. Drag MacPower.app into Applications
-2. Open Terminal, paste this line, and press Return (it asks for your password):
+Drag MacPower into Applications, open Terminal, paste this line, and press Return (it asks for your password):
 
 sudo xattr -rd com.apple.quarantine /Applications/MacPower.app
 
-3. Open MacPower from Applications
+Do not rename this .txt to .sh and double-click it. Quarantine stays on the downloaded file; renaming does not remove it.

@@ -59,7 +59,9 @@ Four capsule shapes, one for each power path:
 2. Open the disk image and drag **MacPower** into **Applications**.
 3. Launch it from Applications. Look for the battery in the menu bar.
 
-The Release build is **ad-hoc signed, not Developer ID notarized**. Other people’s Macs will usually quarantine it after download. If macOS says the app is **damaged** or cannot be opened, drag MacPower into Applications first, then **copy and paste** this line into Terminal (it asks for your password). Do not download a `.sh` to run — a script from the internet is blocked the same way:
+The Release build is **ad-hoc signed, not Developer ID notarized**. Other people’s Macs will usually quarantine it after download. If macOS says the app is **damaged** or cannot be opened, drag MacPower into Applications first, then **copy and paste** this line into Terminal (it asks for your password).
+
+Do not rename the Release `.txt` to `.sh` and double-click it. Quarantine stays on a downloaded file; renaming does not remove it.
 
 ```bash
 sudo xattr -rd com.apple.quarantine /Applications/MacPower.app
