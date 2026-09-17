@@ -316,6 +316,14 @@ final class LocalizationTests: XCTestCase {
             Localization.bundle(for: .brazilianPortuguese).bundlePath.hasSuffix("pt-BR.lproj"),
             true
         )
+        XCTAssertEqual(
+            Localization.string("settings.updates.automatic", language: .simplifiedChinese),
+            "自动检查更新"
+        )
+        XCTAssertEqual(
+            Localization.string("settings.about.version %@", language: .english, "1.2.4"),
+            "Version 1.2.4"
+        )
     }
 }
 

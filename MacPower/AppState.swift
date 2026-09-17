@@ -19,6 +19,8 @@ final class AppState {
 
     let telemetry = PowerTelemetryService()
     let metricsService = SystemMetricsService()
+    @ObservationIgnored
+    private let updateChecker = UpdateChecker()
 
     private var settingsWindow: NSWindow?
 
@@ -32,6 +34,7 @@ final class AppState {
         telemetry.start()
         metricsService.start()
         launchAtLoginEnabled = SMAppService.mainApp.status == .enabled
+        checkForUpdates()
     }
 
     func setPopoverOpen(_ open: Bool) {
@@ -51,6 +54,54 @@ final class AppState {
             launchAtLoginError = nil
         } catch {
             launchAtLoginError = error.localizedDescription
+        }
+    }
+
+    func checkForUpdates(force: Bool = false) {
+        guard !Self.isRunningTests else { return }
+        let enabled = settings.automaticallyCheckForUpdates
+        let version = Self.marketingVersion
+        let language = settings.language
+        Task { [weak self] in
+            guard let self else { return }
+            guard let release = await updateChecker.checkIfNeeded(
+                enabled: enabled,
+                force: force,
+                currentVersion: version
+            ) else { return }
+            presentUpdateAlert(release: release, currentVersion: version, language: language)
+        }
+    }
+
+    static var marketingVersion: String {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0"
+    }
+
+    private static var isRunningTests: Bool {
+        ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+    }
+
+    private func presentUpdateAlert(
+        release: GitHubLatestRelease,
+        currentVersion: String,
+        language: AppLanguage
+    ) {
+        NSApp.activate(ignoringOtherApps: true)
+        let alert = NSAlert()
+        alert.messageText = Localization.string(
+            "update.available.title %@",
+            language: language,
+            AppVersion.display(release.tagName)
+        )
+        alert.informativeText = Localization.string(
+            "update.available.message %@",
+            language: language,
+            currentVersion
+        )
+        alert.addButton(withTitle: Localization.string("update.available.open", language: language))
+        alert.addButton(withTitle: Localization.string("update.available.later", language: language))
+        if alert.runModal() == .alertFirstButtonReturn {
+            NSWorkspace.shared.open(release.htmlURL)
         }
     }
 

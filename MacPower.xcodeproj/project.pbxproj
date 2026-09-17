@@ -10,9 +10,11 @@
 		02568E8BE7F9038DBCF40765 /* TimeEstimateRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = D014F62CBF5CA300F430CDA1 /* TimeEstimateRow.swift */; };
 		0F789E41829F0C0E6B8AA796 /* ThemePalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20A295272AA067DB3D994259 /* ThemePalette.swift */; };
 		13E0F3C8CE126FBD27A68889 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB22BA21030C6770FD5A2BE1 /* AppState.swift */; };
+		19EB4249A938149F93DF7BB5 /* AppVersion.swift in Sources */ = {isa = PBXBuildFile; fileRef = F95C96E9DDFF3C8713B85B2C /* AppVersion.swift */; };
 		1F38AC8223B7A29811F3B13E /* EnergyFlowModeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9B0E2FB7D8D2AA02DDF0C93 /* EnergyFlowModeTests.swift */; };
 		2A95F446F5027526CFD94321 /* MacPowerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 531C675B6E0118D153F44918 /* MacPowerApp.swift */; };
 		32BB523DC26D6D16D0B912B1 /* MenuBarBatteryIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA21DF4EFAFE0D26294AD728 /* MenuBarBatteryIcon.swift */; };
+		5F595B872BFAA1196FE69194 /* UpdateChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0BE273AFEFD0F7B157013AE /* UpdateChecker.swift */; };
 		683634EED54AA3FB20C4DBC6 /* EnergyFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A5D8AFD1B7F1B45F51B583B /* EnergyFlowView.swift */; };
 		6A4700B5CC53C0C3E8118460 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 88590B5A04281A553757B0B3 /* AppIcon.icon */; };
 		6F9C22DA2FCF1138F03E58BD /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4989CA67625E8BAE3ED36794 /* AppTheme.swift */; };
@@ -22,6 +24,7 @@
 		8BC313899864F57596DC06B5 /* EnergyMotionFrameRate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B07D3EE64903A4F05FF797FF /* EnergyMotionFrameRate.swift */; };
 		92376D10D7128EA67F7F408D /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3968B1F4514587C19DC9E189 /* AppSettings.swift */; };
 		9C2C68B2B7510476A25638C2 /* SystemMetricsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 657F5C7C59BE6E53B6C0E514 /* SystemMetricsService.swift */; };
+		9E659D7B3BD2BA25A30E6A45 /* UpdateCheckTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D09AF92F89E2A37C369790FB /* UpdateCheckTests.swift */; };
 		9F239D2C7E9D949A0C6BDFEF /* AppLanguage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 454450EE2CEBB979127C313E /* AppLanguage.swift */; };
 		ABA7EF228F0C5E68544CD5E2 /* FlowGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC8ABD41752590181D0D4236 /* FlowGeometry.swift */; };
 		ACDD4EE1BC69433B15D4113D /* PowerTelemetryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A37FA8D0166A96191F3B552B /* PowerTelemetryService.swift */; };
@@ -70,6 +73,7 @@
 		88590B5A04281A553757B0B3 /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = wrapper.icon; path = AppIcon.icon; sourceTree = "<group>"; };
 		9C2FEFC39A66B680FA815B74 /* MacPower.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MacPower.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9E3AC898FC0E9E06A6F67EF0 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
+		A0BE273AFEFD0F7B157013AE /* UpdateChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateChecker.swift; sourceTree = "<group>"; };
 		A37FA8D0166A96191F3B552B /* PowerTelemetryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PowerTelemetryService.swift; sourceTree = "<group>"; };
 		AA21DF4EFAFE0D26294AD728 /* MenuBarBatteryIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarBatteryIcon.swift; sourceTree = "<group>"; };
 		B07D3EE64903A4F05FF797FF /* EnergyMotionFrameRate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnergyMotionFrameRate.swift; sourceTree = "<group>"; };
@@ -79,7 +83,9 @@
 		CF97ADE4B8CDD69AECEE68E7 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		CFC5BF114A1B6DF65790D248 /* StatusItemController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusItemController.swift; sourceTree = "<group>"; };
 		D014F62CBF5CA300F430CDA1 /* TimeEstimateRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeEstimateRow.swift; sourceTree = "<group>"; };
+		D09AF92F89E2A37C369790FB /* UpdateCheckTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateCheckTests.swift; sourceTree = "<group>"; };
 		EBEE380CB6A3631813F77B9B /* EnergyFlowMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnergyFlowMode.swift; sourceTree = "<group>"; };
+		F95C96E9DDFF3C8713B85B2C /* AppVersion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppVersion.swift; sourceTree = "<group>"; };
 		F9B0E2FB7D8D2AA02DDF0C93 /* EnergyFlowModeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnergyFlowModeTests.swift; sourceTree = "<group>"; };
 		FC8ABD41752590181D0D4236 /* FlowGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowGeometry.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -111,6 +117,7 @@
 				CFC5BF114A1B6DF65790D248 /* StatusItemController.swift */,
 				657F5C7C59BE6E53B6C0E514 /* SystemMetricsService.swift */,
 				C2AFE15BB6E2593BA442FDA8 /* TimeEstimateService.swift */,
+				A0BE273AFEFD0F7B157013AE /* UpdateChecker.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -133,6 +140,7 @@
 			isa = PBXGroup;
 			children = (
 				F9B0E2FB7D8D2AA02DDF0C93 /* EnergyFlowModeTests.swift */,
+				D09AF92F89E2A37C369790FB /* UpdateCheckTests.swift */,
 			);
 			path = MacPowerTests;
 			sourceTree = "<group>";
@@ -169,6 +177,7 @@
 			children = (
 				454450EE2CEBB979127C313E /* AppLanguage.swift */,
 				3968B1F4514587C19DC9E189 /* AppSettings.swift */,
+				F95C96E9DDFF3C8713B85B2C /* AppVersion.swift */,
 				EBEE380CB6A3631813F77B9B /* EnergyFlowMode.swift */,
 				B07D3EE64903A4F05FF797FF /* EnergyMotionFrameRate.swift */,
 				67BAA20C54FB8A583F882002 /* EnergyMotionStyle.swift */,
@@ -287,6 +296,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				1F38AC8223B7A29811F3B13E /* EnergyFlowModeTests.swift in Sources */,
+				9E659D7B3BD2BA25A30E6A45 /* UpdateCheckTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -298,6 +308,7 @@
 				92376D10D7128EA67F7F408D /* AppSettings.swift in Sources */,
 				13E0F3C8CE126FBD27A68889 /* AppState.swift in Sources */,
 				6F9C22DA2FCF1138F03E58BD /* AppTheme.swift in Sources */,
+				19EB4249A938149F93DF7BB5 /* AppVersion.swift in Sources */,
 				FB4B3DAE9DADFC5B54C7AA51 /* EnergyFlowMode.swift in Sources */,
 				683634EED54AA3FB20C4DBC6 /* EnergyFlowView.swift in Sources */,
 				8BC313899864F57596DC06B5 /* EnergyMotionFrameRate.swift in Sources */,
@@ -319,6 +330,7 @@
 				0F789E41829F0C0E6B8AA796 /* ThemePalette.swift in Sources */,
 				02568E8BE7F9038DBCF40765 /* TimeEstimateRow.swift in Sources */,
 				85D69FE970F34B47739CA0BD /* TimeEstimateService.swift in Sources */,
+				5F595B872BFAA1196FE69194 /* UpdateChecker.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -12,6 +12,7 @@ final class AppSettings {
         static let motionFrameRate = "motionFrameRate"
         static let pulseFlowIcons = "pulseFlowIcons"
         static let showPopoverArrow = "showPopoverArrow"
+        static let automaticallyCheckForUpdates = "automaticallyCheckForUpdates"
         static let language = "appLanguage"
         static let appleLanguages = "AppleLanguages"
         static let legacyEnergyMotion = "energyMotion"
@@ -50,6 +51,10 @@ final class AppSettings {
 
     var showPopoverArrow: Bool {
         didSet { store.set(showPopoverArrow, forKey: Keys.showPopoverArrow) }
+    }
+
+    var automaticallyCheckForUpdates: Bool {
+        didSet { store.set(automaticallyCheckForUpdates, forKey: Keys.automaticallyCheckForUpdates) }
     }
 
     var language: AppLanguage {
@@ -91,6 +96,12 @@ final class AppSettings {
             showPopoverArrow = true
         } else {
             showPopoverArrow = defaults.bool(forKey: Keys.showPopoverArrow)
+        }
+
+        if defaults.object(forKey: Keys.automaticallyCheckForUpdates) == nil {
+            automaticallyCheckForUpdates = true
+        } else {
+            automaticallyCheckForUpdates = defaults.bool(forKey: Keys.automaticallyCheckForUpdates)
         }
 
         let storedMotion = defaults.string(forKey: Keys.motionStyle)

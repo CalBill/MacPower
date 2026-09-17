@@ -63,6 +63,12 @@ struct SettingsView: View {
                     Text("settings.language") + Text("（文/A）")
                 }
                 Toggle("settings.launchAtLogin", isOn: launchAtLoginBinding)
+                Toggle("settings.updates.automatic", isOn: $appState.settings.automaticallyCheckForUpdates)
+                    .onChange(of: appState.settings.automaticallyCheckForUpdates) { _, enabled in
+                        if enabled {
+                            appState.checkForUpdates(force: true)
+                        }
+                    }
             }
 
             Section {
@@ -72,6 +78,21 @@ struct SettingsView: View {
                 .buttonStyle(.plain)
                 .foregroundStyle(.red)
                 .frame(maxWidth: .infinity)
+            } footer: {
+                HStack(spacing: 6) {
+                    Text(versionLabel)
+                    Link(destination: UpdateChecker.githubRepoURL) {
+                        Image("GitHubMark")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 12, height: 12)
+                    }
+                    .accessibilityLabel("GitHub")
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity)
+                .padding(.top, 2)
             }
         }
         .formStyle(.grouped)
@@ -79,6 +100,14 @@ struct SettingsView: View {
         .frame(width: 420)
         .fixedSize(horizontal: true, vertical: true)
         .navigationTitle("settings.title")
+    }
+
+    private var versionLabel: String {
+        Localization.string(
+            "settings.about.version %@",
+            language: appState.settings.language,
+            AppState.marketingVersion
+        )
     }
 
     private func title(for language: AppLanguage) -> String {
