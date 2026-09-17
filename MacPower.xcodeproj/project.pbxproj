@@ -1,0 +1,531 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		02568E8BE7F9038DBCF40765 /* TimeEstimateRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = D014F62CBF5CA300F430CDA1 /* TimeEstimateRow.swift */; };
+		0F789E41829F0C0E6B8AA796 /* ThemePalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20A295272AA067DB3D994259 /* ThemePalette.swift */; };
+		13E0F3C8CE126FBD27A68889 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB22BA21030C6770FD5A2BE1 /* AppState.swift */; };
+		1F38AC8223B7A29811F3B13E /* EnergyFlowModeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9B0E2FB7D8D2AA02DDF0C93 /* EnergyFlowModeTests.swift */; };
+		2A95F446F5027526CFD94321 /* MacPowerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 531C675B6E0118D153F44918 /* MacPowerApp.swift */; };
+		32BB523DC26D6D16D0B912B1 /* MenuBarBatteryIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA21DF4EFAFE0D26294AD728 /* MenuBarBatteryIcon.swift */; };
+		683634EED54AA3FB20C4DBC6 /* EnergyFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A5D8AFD1B7F1B45F51B583B /* EnergyFlowView.swift */; };
+		6A4700B5CC53C0C3E8118460 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 88590B5A04281A553757B0B3 /* AppIcon.icon */; };
+		6F9C22DA2FCF1138F03E58BD /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4989CA67625E8BAE3ED36794 /* AppTheme.swift */; };
+		80B7D3366C4DE0B34F8F070F /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 9E3AC898FC0E9E06A6F67EF0 /* Localizable.xcstrings */; };
+		85D69FE970F34B47739CA0BD /* TimeEstimateService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2AFE15BB6E2593BA442FDA8 /* TimeEstimateService.swift */; };
+		92376D10D7128EA67F7F408D /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3968B1F4514587C19DC9E189 /* AppSettings.swift */; };
+		ABA7EF228F0C5E68544CD5E2 /* FlowGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC8ABD41752590181D0D4236 /* FlowGeometry.swift */; };
+		ACDD4EE1BC69433B15D4113D /* PowerTelemetryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A37FA8D0166A96191F3B552B /* PowerTelemetryService.swift */; };
+		C7391D52C1D2626D5AA2EB28 /* BatteryBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9A436783BBE11AF61CA0DE5 /* BatteryBarView.swift */; };
+		CE35A94AAA802FA535FAFB65 /* StatusItemController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFC5BF114A1B6DF65790D248 /* StatusItemController.swift */; };
+		CE824792B085DE3B56568E98 /* MenuBarIconStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = C238426EC73D173324F283A9 /* MenuBarIconStyle.swift */; };
+		D00A2FB9CA62CEB4F9D8AE67 /* PopoverRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567E626D5987780BEB24265E /* PopoverRootView.swift */; };
+		DC0EB15541D10D69D1D8FB28 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F32418AF410C0C43E82CEC2 /* SettingsView.swift */; };
+		F49AC23404C038E06308DDDA /* PowerSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 424B895D8EAD698D2709E1C4 /* PowerSnapshot.swift */; };
+		F676AEA3B2252403F2114D1F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 04FD5D63D480A11EE0E91E88 /* Assets.xcassets */; };
+		FB4B3DAE9DADFC5B54C7AA51 /* EnergyFlowMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBEE380CB6A3631813F77B9B /* EnergyFlowMode.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		88839831000B29CDAAB6E4FA /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 558F7165C92BEC38D37FF34E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D1DE0C971DA03DF4DA5C58C0;
+			remoteInfo = MacPower;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		04FD5D63D480A11EE0E91E88 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		20A295272AA067DB3D994259 /* ThemePalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemePalette.swift; sourceTree = "<group>"; };
+		3968B1F4514587C19DC9E189 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
+		424B895D8EAD698D2709E1C4 /* PowerSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PowerSnapshot.swift; sourceTree = "<group>"; };
+		4989CA67625E8BAE3ED36794 /* AppTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTheme.swift; sourceTree = "<group>"; };
+		4A31F42348F05B261534B6B8 /* MacPowerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MacPowerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		531C675B6E0118D153F44918 /* MacPowerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacPowerApp.swift; sourceTree = "<group>"; };
+		567E626D5987780BEB24265E /* PopoverRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopoverRootView.swift; sourceTree = "<group>"; };
+		7A5D8AFD1B7F1B45F51B583B /* EnergyFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnergyFlowView.swift; sourceTree = "<group>"; };
+		7CE2A6B6480F8B121ADADF81 /* MacPower.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MacPower.entitlements; sourceTree = "<group>"; };
+		7F32418AF410C0C43E82CEC2 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		88590B5A04281A553757B0B3 /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = wrapper.icon; path = AppIcon.icon; sourceTree = "<group>"; };
+		9C2FEFC39A66B680FA815B74 /* MacPower.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MacPower.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		9E3AC898FC0E9E06A6F67EF0 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
+		A37FA8D0166A96191F3B552B /* PowerTelemetryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PowerTelemetryService.swift; sourceTree = "<group>"; };
+		AA21DF4EFAFE0D26294AD728 /* MenuBarBatteryIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarBatteryIcon.swift; sourceTree = "<group>"; };
+		B9A436783BBE11AF61CA0DE5 /* BatteryBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatteryBarView.swift; sourceTree = "<group>"; };
+		BB22BA21030C6770FD5A2BE1 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
+		C238426EC73D173324F283A9 /* MenuBarIconStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarIconStyle.swift; sourceTree = "<group>"; };
+		C2AFE15BB6E2593BA442FDA8 /* TimeEstimateService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeEstimateService.swift; sourceTree = "<group>"; };
+		CF97ADE4B8CDD69AECEE68E7 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		CFC5BF114A1B6DF65790D248 /* StatusItemController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusItemController.swift; sourceTree = "<group>"; };
+		D014F62CBF5CA300F430CDA1 /* TimeEstimateRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeEstimateRow.swift; sourceTree = "<group>"; };
+		EBEE380CB6A3631813F77B9B /* EnergyFlowMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnergyFlowMode.swift; sourceTree = "<group>"; };
+		F9B0E2FB7D8D2AA02DDF0C93 /* EnergyFlowModeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnergyFlowModeTests.swift; sourceTree = "<group>"; };
+		FC8ABD41752590181D0D4236 /* FlowGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowGeometry.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		17DB95B5C5EF8A5B100F214C /* MacPower */ = {
+			isa = PBXGroup;
+			children = (
+				BB22BA21030C6770FD5A2BE1 /* AppState.swift */,
+				04FD5D63D480A11EE0E91E88 /* Assets.xcassets */,
+				CF97ADE4B8CDD69AECEE68E7 /* Info.plist */,
+				9E3AC898FC0E9E06A6F67EF0 /* Localizable.xcstrings */,
+				7CE2A6B6480F8B121ADADF81 /* MacPower.entitlements */,
+				531C675B6E0118D153F44918 /* MacPowerApp.swift */,
+				F043AE595C5E3381B0C88C06 /* Models */,
+				3ACA345DB788751EB91B3978 /* Services */,
+				D75F74BFA34C6A09D8E2CECF /* Theme */,
+				59C05625954DB656852510E6 /* Views */,
+			);
+			path = MacPower;
+			sourceTree = "<group>";
+		};
+		3ACA345DB788751EB91B3978 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				A37FA8D0166A96191F3B552B /* PowerTelemetryService.swift */,
+				CFC5BF114A1B6DF65790D248 /* StatusItemController.swift */,
+				C2AFE15BB6E2593BA442FDA8 /* TimeEstimateService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		59C05625954DB656852510E6 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				B9A436783BBE11AF61CA0DE5 /* BatteryBarView.swift */,
+				7A5D8AFD1B7F1B45F51B583B /* EnergyFlowView.swift */,
+				FC8ABD41752590181D0D4236 /* FlowGeometry.swift */,
+				AA21DF4EFAFE0D26294AD728 /* MenuBarBatteryIcon.swift */,
+				567E626D5987780BEB24265E /* PopoverRootView.swift */,
+				7F32418AF410C0C43E82CEC2 /* SettingsView.swift */,
+				D014F62CBF5CA300F430CDA1 /* TimeEstimateRow.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		712F9E643F95930AC2FD0D36 /* MacPowerTests */ = {
+			isa = PBXGroup;
+			children = (
+				F9B0E2FB7D8D2AA02DDF0C93 /* EnergyFlowModeTests.swift */,
+			);
+			path = MacPowerTests;
+			sourceTree = "<group>";
+		};
+		84ECC867E6B59FA05F83AF51 = {
+			isa = PBXGroup;
+			children = (
+				88590B5A04281A553757B0B3 /* AppIcon.icon */,
+				17DB95B5C5EF8A5B100F214C /* MacPower */,
+				712F9E643F95930AC2FD0D36 /* MacPowerTests */,
+				EF3E75CAA123F30F775F194C /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		D75F74BFA34C6A09D8E2CECF /* Theme */ = {
+			isa = PBXGroup;
+			children = (
+				4989CA67625E8BAE3ED36794 /* AppTheme.swift */,
+			);
+			path = Theme;
+			sourceTree = "<group>";
+		};
+		EF3E75CAA123F30F775F194C /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				9C2FEFC39A66B680FA815B74 /* MacPower.app */,
+				4A31F42348F05B261534B6B8 /* MacPowerTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F043AE595C5E3381B0C88C06 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				3968B1F4514587C19DC9E189 /* AppSettings.swift */,
+				EBEE380CB6A3631813F77B9B /* EnergyFlowMode.swift */,
+				C238426EC73D173324F283A9 /* MenuBarIconStyle.swift */,
+				424B895D8EAD698D2709E1C4 /* PowerSnapshot.swift */,
+				20A295272AA067DB3D994259 /* ThemePalette.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		34AE05627D3779F6C8040D65 /* MacPowerTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C71984FD82ADAF4621D744B2 /* Build configuration list for PBXNativeTarget "MacPowerTests" */;
+			buildPhases = (
+				1931BC05A86C5A5BE88A0D72 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				2FB28606B2C6DEDA0C31B6B8 /* PBXTargetDependency */,
+			);
+			name = MacPowerTests;
+			packageProductDependencies = (
+			);
+			productName = MacPowerTests;
+			productReference = 4A31F42348F05B261534B6B8 /* MacPowerTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		D1DE0C971DA03DF4DA5C58C0 /* MacPower */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BC92A0C3FBBCE1472D98403F /* Build configuration list for PBXNativeTarget "MacPower" */;
+			buildPhases = (
+				2DAD56416A4794B500703654 /* Sources */,
+				4FE00EA24C6A0676B7655E74 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MacPower;
+			packageProductDependencies = (
+			);
+			productName = MacPower;
+			productReference = 9C2FEFC39A66B680FA815B74 /* MacPower.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		558F7165C92BEC38D37FF34E /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 2600;
+				TargetAttributes = {
+					34AE05627D3779F6C8040D65 = {
+						DevelopmentTeam = H6AYG25QVN;
+						ProvisioningStyle = Automatic;
+					};
+					D1DE0C971DA03DF4DA5C58C0 = {
+						DevelopmentTeam = H6AYG25QVN;
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = DB0259AEA5F913C5EE572896 /* Build configuration list for PBXProject "MacPower" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+				"zh-Hans",
+			);
+			mainGroup = 84ECC867E6B59FA05F83AF51;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = EF3E75CAA123F30F775F194C /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				D1DE0C971DA03DF4DA5C58C0 /* MacPower */,
+				34AE05627D3779F6C8040D65 /* MacPowerTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		4FE00EA24C6A0676B7655E74 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6A4700B5CC53C0C3E8118460 /* AppIcon.icon in Resources */,
+				F676AEA3B2252403F2114D1F /* Assets.xcassets in Resources */,
+				80B7D3366C4DE0B34F8F070F /* Localizable.xcstrings in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		1931BC05A86C5A5BE88A0D72 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1F38AC8223B7A29811F3B13E /* EnergyFlowModeTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		2DAD56416A4794B500703654 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				92376D10D7128EA67F7F408D /* AppSettings.swift in Sources */,
+				13E0F3C8CE126FBD27A68889 /* AppState.swift in Sources */,
+				6F9C22DA2FCF1138F03E58BD /* AppTheme.swift in Sources */,
+				C7391D52C1D2626D5AA2EB28 /* BatteryBarView.swift in Sources */,
+				FB4B3DAE9DADFC5B54C7AA51 /* EnergyFlowMode.swift in Sources */,
+				683634EED54AA3FB20C4DBC6 /* EnergyFlowView.swift in Sources */,
+				ABA7EF228F0C5E68544CD5E2 /* FlowGeometry.swift in Sources */,
+				2A95F446F5027526CFD94321 /* MacPowerApp.swift in Sources */,
+				32BB523DC26D6D16D0B912B1 /* MenuBarBatteryIcon.swift in Sources */,
+				CE824792B085DE3B56568E98 /* MenuBarIconStyle.swift in Sources */,
+				D00A2FB9CA62CEB4F9D8AE67 /* PopoverRootView.swift in Sources */,
+				F49AC23404C038E06308DDDA /* PowerSnapshot.swift in Sources */,
+				ACDD4EE1BC69433B15D4113D /* PowerTelemetryService.swift in Sources */,
+				DC0EB15541D10D69D1D8FB28 /* SettingsView.swift in Sources */,
+				CE35A94AAA802FA535FAFB65 /* StatusItemController.swift in Sources */,
+				0F789E41829F0C0E6B8AA796 /* ThemePalette.swift in Sources */,
+				02568E8BE7F9038DBCF40765 /* TimeEstimateRow.swift in Sources */,
+				85D69FE970F34B47739CA0BD /* TimeEstimateService.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		2FB28606B2C6DEDA0C31B6B8 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D1DE0C971DA03DF4DA5C58C0 /* MacPower */;
+			targetProxy = 88839831000B29CDAAB6E4FA /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		22CBC54A5B36062AEDD71839 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = MacPower/MacPower.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = MacPower/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = app.macpower.MacPower;
+				PRODUCT_NAME = MacPower;
+				SDKROOT = macosx;
+				SKIP_INSTALL = NO;
+			};
+			name = Debug;
+		};
+		676838958D18022D01320537 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.macpower.MacPowerTests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MacPower.app/Contents/MacOS/MacPower";
+			};
+			name = Release;
+		};
+		AD51B34A7D134970126E71F1 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = H6AYG25QVN;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		E7BDC52E2B692528985CBFE2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = H6AYG25QVN;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		F599D9362B580AC98B21F5EB /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.macpower.MacPowerTests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MacPower.app/Contents/MacOS/MacPower";
+			};
+			name = Debug;
+		};
+		FF3B881F3C5C54F354EC547D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = MacPower/MacPower.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = MacPower/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = app.macpower.MacPower;
+				PRODUCT_NAME = MacPower;
+				SDKROOT = macosx;
+				SKIP_INSTALL = NO;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		BC92A0C3FBBCE1472D98403F /* Build configuration list for PBXNativeTarget "MacPower" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				22CBC54A5B36062AEDD71839 /* Debug */,
+				FF3B881F3C5C54F354EC547D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		C71984FD82ADAF4621D744B2 /* Build configuration list for PBXNativeTarget "MacPowerTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F599D9362B580AC98B21F5EB /* Debug */,
+				676838958D18022D01320537 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		DB0259AEA5F913C5EE572896 /* Build configuration list for PBXProject "MacPower" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AD51B34A7D134970126E71F1 /* Debug */,
+				E7BDC52E2B692528985CBFE2 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 558F7165C92BEC38D37FF34E /* Project object */;
+}

@@ -1,0 +1,49 @@
+{
+  "fill" : {
+    "automatic-gradient" : "srgb:0.11765,0.60784,0.34118,1.00000"
+  },
+  "groups" : [
+    {
+      "blur-material" : 0.18,
+      "layers" : [
+        {
+          "glass" : true,
+          "hidden" : false,
+          "image-name" : "03-Capsule.svg",
+          "name" : "Capsule",
+          "opacity" : 0.9
+        },
+        {
+          "glass" : true,
+          "hidden" : false,
+          "image-name" : "01-BatteryBody.svg",
+          "name" : "Battery Body",
+          "opacity" : 0.9
+        },
+        {
+          "glass" : true,
+          "hidden" : false,
+          "image-name" : "02-BatteryCap.svg",
+          "name" : "Battery Cap",
+          "opacity" : 0.9
+        }
+      ],
+      "lighting" : "individual",
+      "name" : "Glyph",
+      "shadow" : {
+        "kind" : "layer-color",
+        "opacity" : 0.5
+      },
+      "specular" : true,
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.35
+      }
+    }
+  ],
+  "supported-platforms" : {
+    "squares" : [
+      "macOS"
+    ]
+  }
+}

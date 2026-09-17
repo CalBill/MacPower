@@ -1,0 +1,230 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "battery.percent %lld" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%lld percent" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "%lld%" } }
+      }
+    },
+    "duration.hours %lld" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%lld hr" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "%lld 小时" } }
+      }
+    },
+    "duration.hoursMinutes %lld %lld" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%lld hr %lld min" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "%lld 小时 %lld 分钟" } }
+      }
+    },
+    "duration.minutes %lld" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%lld min" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "%lld 分钟" } }
+      }
+    },
+    "energy.chargerRating" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Charger rating" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "充电器额定" } }
+      }
+    },
+    "energy.supplyPower" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Power in use" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "供电功率" } }
+      }
+    },
+    "error.needsBattery" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "A notebook battery is required." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "需要笔记本电池。" } }
+      }
+    },
+    "estimate.about %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "About %@" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "约 %@" } }
+      }
+    },
+    "estimate.calculating" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Calculating…" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "计算中" } }
+      }
+    },
+    "estimate.full" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Until full" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "预计充满" } }
+      }
+    },
+    "estimate.ifUnplugged %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "If unplugged, about %@" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "若拔电约 %@" } }
+      }
+    },
+    "estimate.runtime" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Runtime" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "预计续航" } }
+      }
+    },
+    "lpm.needsApproval" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Allow MacPower Helper in Login Items" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "请在「登录项」中允许 MacPower Helper" } }
+      }
+    },
+    "lpm.off" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Off" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "已关闭" } }
+      }
+    },
+    "lpm.on" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "On" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "已开启" } }
+      }
+    },
+    "lpm.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Low Power Mode" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "低电量模式" } }
+      }
+    },
+    "settings.icon.classic" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Icon with percentage beside" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "经典：图标旁显示百分比" } }
+      }
+    },
+    "settings.icon.percentInside" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Percentage inside battery" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "系统风：百分比在电池内" } }
+      }
+    },
+    "settings.icon.style" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Menu bar icon" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "菜单栏图标" } }
+      }
+    },
+    "settings.icon.chargeGlyphs" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Show charging and plugged-in symbols" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "显示充电闪电和插电插头" } }
+      }
+    },
+    "settings.icon.systemFill" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "System-style fill" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "系统风：仅填充" } }
+      }
+    },
+    "settings.launchAtLogin" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Open at login" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "登录时启动" } }
+      }
+    },
+    "settings.lowBatteryTint" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Change color at low battery" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "低电量变色" } }
+      }
+    },
+    "settings.palette" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Color palette" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "配色方案" } }
+      }
+    },
+    "settings.palette.glassMono" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Glass mono" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "单色玻璃" } }
+      }
+    },
+    "settings.palette.highContrast" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "High contrast" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "高对比" } }
+      }
+    },
+    "settings.palette.semantic" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Semantic" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "语义" } }
+      }
+    },
+    "settings.palette.system" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "System" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "系统" } }
+      }
+    },
+    "settings.section.appearance" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Appearance" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "外观" } }
+      }
+    },
+    "settings.section.general" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "General" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "通用" } }
+      }
+    },
+    "settings.section.icon" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Menu Bar" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "菜单栏" } }
+      }
+    },
+    "settings.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Settings" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "设置" } }
+      }
+    }
+  },
+  "version" : "1.0"
+}
