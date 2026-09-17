@@ -109,7 +109,7 @@ enum MenuBarBatteryRenderer {
         let capWidth: CGFloat = 1.6
         let capHeight: CGFloat = 5.4
         let capGap: CGFloat = 1.22
-        let showsText = style == .systemPercentInside
+        let showsText = style.showsPercentInside
         let text = showsText ? "\(percent)" : ""
         let digits = text.count
         let font = percentFont(size: digits >= 3 ? 8.6 : 9.4)
@@ -168,27 +168,37 @@ enum MenuBarBatteryRenderer {
     ) {
         let body = metrics.body
         let radius: CGFloat = 3.8
-        drawChargeLevel(
-            body: body,
-            cap: metrics.cap,
-            percent: percent,
-            fillColor: fillColor,
-            radius: radius
-        )
+        if style.isOutlined {
+            drawOutlinedChargeLevel(
+                body: body,
+                cap: metrics.cap,
+                percent: percent,
+                fillColor: fillColor,
+                radius: radius
+            )
+        } else {
+            drawChargeLevel(
+                body: body,
+                cap: metrics.cap,
+                percent: percent,
+                fillColor: fillColor,
+                radius: radius
+            )
+        }
 
-        guard style != .classicBeside || glyph != nil else { return }
+        guard !style.showsPercentBeside || glyph != nil else { return }
 
         NSGraphicsContext.saveGraphicsState()
         NSGraphicsContext.current?.compositingOperation = .destinationOut
         NSColor.black.setFill()
         NSColor.black.setStroke()
 
-        if style == .systemPercentInside, !metrics.text.isEmpty {
+        if style.showsPercentInside, !metrics.text.isEmpty {
             punchCenteredText(metrics.text, font: metrics.font, in: metrics.digitBox)
         }
 
         if let glyph {
-            let target = style == .systemPercentInside ? metrics.glyphBox : body
+            let target = style.showsPercentInside ? metrics.glyphBox : body
             switch glyph {
             case .bolt: punchChargeMark(in: target)
             }
@@ -225,6 +235,55 @@ enum MenuBarBatteryRenderer {
         }
 
         // Template rendering blends anti-aliased edges; cut the gap so the terminal stays detached.
+        let gap = NSRect(
+            x: body.maxX,
+            y: 0,
+            width: max(0, cap.minX - body.maxX),
+            height: max(body.maxY, cap.maxY) + 2
+        )
+        if gap.width > 0 {
+            NSGraphicsContext.saveGraphicsState()
+            NSGraphicsContext.current?.compositingOperation = .destinationOut
+            NSColor.black.setFill()
+            gap.fill()
+            NSGraphicsContext.restoreGraphicsState()
+        }
+    }
+
+    /// Apple-style outlined battery: hollow body with a stroke, charge fill inset inside.
+    private static func drawOutlinedChargeLevel(
+        body: NSRect,
+        cap: NSRect,
+        percent: CGFloat,
+        fillColor: NSColor,
+        radius: CGFloat
+    ) {
+        let clamped = min(1, max(0, percent))
+        let line: CGFloat = 1.15
+        let inset = line / 2 + 0.35
+        let bodyPath = NSBezierPath(roundedRect: body, xRadius: radius, yRadius: radius)
+        let inner = body.insetBy(dx: inset, dy: inset)
+        let innerRadius = max(0.6, radius - inset)
+        let innerPath = NSBezierPath(roundedRect: inner, xRadius: innerRadius, yRadius: innerRadius)
+        let capRadius = min(cap.width, cap.height) / 2
+        let capPath = NSBezierPath(roundedRect: cap, xRadius: capRadius, yRadius: capRadius)
+
+        if clamped > 0.004 {
+            NSGraphicsContext.saveGraphicsState()
+            innerPath.addClip()
+            fillColor.setFill()
+            NSRect(x: inner.minX, y: inner.minY, width: inner.width * clamped, height: inner.height).fill()
+            NSGraphicsContext.restoreGraphicsState()
+        }
+
+        fillColor.setStroke()
+        bodyPath.lineWidth = line
+        bodyPath.lineJoinStyle = .round
+        bodyPath.stroke()
+
+        fillColor.setFill()
+        capPath.fill()
+
         let gap = NSRect(
             x: body.maxX,
             y: 0,

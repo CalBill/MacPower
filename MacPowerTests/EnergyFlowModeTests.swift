@@ -407,6 +407,23 @@ final class SystemSnapshotTests: XCTestCase {
     }
 }
 
+final class MenuBarIconStyleTests: XCTestCase {
+    func testOutlineVariantsMatchFilledBehaviors() {
+        XCTAssertEqual(MenuBarIconStyle.allCases, [
+            .systemFill, .systemPercentInside, .classicBeside,
+            .outlineFill, .outlinePercentInside, .outlineClassicBeside
+        ])
+        XCTAssertTrue(MenuBarIconStyle.systemPercentInside.showsPercentInside)
+        XCTAssertTrue(MenuBarIconStyle.outlinePercentInside.showsPercentInside)
+        XCTAssertTrue(MenuBarIconStyle.classicBeside.showsPercentBeside)
+        XCTAssertTrue(MenuBarIconStyle.outlineClassicBeside.showsPercentBeside)
+        XCTAssertTrue(MenuBarIconStyle.outlineFill.isOutlined)
+        XCTAssertFalse(MenuBarIconStyle.systemFill.isOutlined)
+        XCTAssertFalse(MenuBarIconStyle.systemFill.showsPercentInside)
+        XCTAssertFalse(MenuBarIconStyle.outlineFill.showsPercentBeside)
+    }
+}
+
 final class RingColorTests: XCTestCase {
     func testLoadFillBands() {
         let theme = AppTheme.resolved(palette: .semantic, colorScheme: .dark)

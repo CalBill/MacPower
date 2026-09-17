@@ -9,8 +9,8 @@ MacBook 菜单栏电池监视器。不进程序坞，在菜单栏显示电量和
 ## 功能
 
 - 只在菜单栏（`LSUIElement`），没有 Dock 图标
-- 三种图标：系统风填充、电池内百分比、旁边经典百分比
-- 可开关充电标志（闪电），三种样式都生效
+- 六种图标：填充 / 电池内百分比 / 旁注百分比，以及对应的边框版
+- 可开关充电标志（闪电），各样式都生效
 - 弹层显示充电器、电池、电脑的实时功率；充电时为 Y 形分流
 - 电量 / CPU / GPU / 内存圆环，以及续航或充满时间
 - 能量流动画：白色高光，渐变/彩色/白色细线与粒子，可关
@@ -23,7 +23,7 @@ MacBook 菜单栏电池监视器。不进程序坞，在菜单栏显示电量和
 
 ## 安装（GitHub Release）
 
-1. 从 [Releases](https://github.com/RyanStarFox/MacPower/releases) 下载 `MacPower-1.2.0.dmg`。
+1. 从 [Releases](https://github.com/RyanStarFox/MacPower/releases) 下载 `MacPower-1.2.1.dmg`。
 2. 打开镜像，把 **MacPower** 拖进 **应用程序**。
 3. 从应用程序里打开，菜单栏会出现电池图标。
 

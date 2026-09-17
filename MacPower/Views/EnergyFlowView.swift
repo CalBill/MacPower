@@ -75,19 +75,20 @@ struct EnergyFlowView: View {
     @ViewBuilder
     private func ribbonGlass(layout: Layout, size: CGSize) -> some View {
         let tint = layout.fill.opacity(FlowRibbon.glassTintOpacity)
-        let glass = Color.clear.frame(width: size.width, height: size.height)
+        let stadium = RoundedRectangle(
+            cornerRadius: FlowRibbon.capRadius(for: FlowRibbon.trunkWidth(totalWatts: 1)),
+            style: .continuous
+        )
+        let sampled = Color.clear
+            .frame(width: size.width, height: size.height)
+            .glassEffect(.regular.tint(tint), in: stadium)
         if splitOrMerge {
-            glass.glassEffect(.regular.tint(tint), in: FlowRibbonShape(path: layout.body))
+            // Light a system stadium SDF, then mask to the Y. Sampling glass
+            // in the custom fork path plants a vertex specular on each round
+            // finger cap (the blob next to the laptop).
+            sampled.mask { FlowRibbonShape(path: layout.body) }
         } else {
-            // System rounded-rect SDF, not a custom Path: avoids two vertex-lit
-            // speculars on the left cap that `.regular` plants on stroke+cap seams.
-            glass.glassEffect(
-                .regular.tint(tint),
-                in: RoundedRectangle(
-                    cornerRadius: FlowRibbon.capRadius(for: FlowRibbon.trunkWidth(totalWatts: 1)),
-                    style: .continuous
-                )
-            )
+            sampled
         }
     }
 

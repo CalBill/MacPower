@@ -52,7 +52,7 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
         button.image = image
         let usesColor = fill != NSColor.black && appState.settings.lowBatteryTintEnabled
         image.isTemplate = !usesColor
-        if appState.settings.iconStyle == .classicBeside {
+        if appState.settings.iconStyle.showsPercentBeside {
             button.title = " \(Int(appState.snapshot.percent.rounded()))%"
         } else {
             button.title = ""
