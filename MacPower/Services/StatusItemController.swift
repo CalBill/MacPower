@@ -6,16 +6,17 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
     private let appState: AppState
     private let statusItem: NSStatusItem
     private let popover = NSPopover()
+    private var hosting: NSHostingController<PopoverRootView>
 
     init(appState: AppState) {
         self.appState = appState
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        hosting = NSHostingController(rootView: PopoverRootView(appState: appState))
         super.init()
 
         popover.behavior = .transient
         popover.animates = true
         popover.delegate = self
-        let hosting = NSHostingController(rootView: PopoverRootView(appState: appState))
         hosting.sizingOptions = [.intrinsicContentSize]
         popover.contentViewController = hosting
 
@@ -26,6 +27,14 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
             button.sendAction(on: [.leftMouseUp, .rightMouseUp])
         }
 
+        refreshIcon()
+    }
+
+    func applyLocalization() {
+        let replacement = NSHostingController(rootView: PopoverRootView(appState: appState))
+        replacement.sizingOptions = [.intrinsicContentSize]
+        popover.contentViewController = replacement
+        hosting = replacement
         refreshIcon()
     }
 
@@ -53,7 +62,7 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
 
     private var tooltip: String {
         let percent = Int(appState.snapshot.percent.rounded())
-        return "\(percent)%"
+        return Localization.string("battery.percent %lld", language: appState.settings.language, Int64(percent))
     }
 
     @objc

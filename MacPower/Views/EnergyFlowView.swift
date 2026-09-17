@@ -3,7 +3,10 @@ import SwiftUI
 struct EnergyFlowView: View {
     var snapshot: PowerSnapshot
     var theme: AppTheme
-    var phase: Double
+    var isAnimating: Bool
+    var motion: EnergyMotionStyle
+    var pulseFlowIcons: Bool
+    var language: AppLanguage
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -16,23 +19,37 @@ struct EnergyFlowView: View {
         GeometryReader { geo in
             let layout = layout(in: geo.size)
             ZStack {
-                Color.clear
-                    .frame(width: geo.size.width, height: geo.size.height)
-                    .glassEffect(
-                        .regular.tint(layout.fill.opacity(FlowRibbon.glassTintOpacity)).interactive(),
-                        in: FlowRibbonShape(path: layout.body)
-                    )
-                Canvas { context, size in
-                    context.drawLayer { powder in
-                        powder.clip(to: layout.body, style: FillStyle(eoFill: false, antialiased: true))
-                        for lane in layout.lanes {
-                            drawPowder(context: &powder, lane: lane)
+                ribbonGlass(layout: layout, size: geo.size)
+
+                if isAnimating, motion.usesCanvasTimeline {
+                    TimelineView(.periodic(from: .now, by: 1.0 / motion.framesPerSecond)) { timeline in
+                        let phase = timeline.date.timeIntervalSinceReferenceDate / 4.6
+                        Canvas { context, _ in
+                            context.clip(to: layout.body, style: FillStyle(eoFill: false, antialiased: true))
+                            switch motion {
+                            case .sheen:
+                                drawSheen(context: &context, layout: layout, phase: phase)
+                            case .filaments:
+                                for lane in layout.lanes {
+                                    drawFilaments(context: &context, lane: lane, phase: phase)
+                                }
+                            case .particles:
+                                for lane in layout.lanes {
+                                    drawPowder(context: &context, lane: lane, phase: phase)
+                                }
+                            case .off:
+                                break
+                            }
                         }
                     }
+                }
+
+                Canvas { context, _ in
                     for lane in layout.lanes {
                         drawWattLabel(context: &context, lane: lane)
                     }
                 }
+
                 ForEach(layout.bubbles) { bubble in
                     flowNode(bubble.symbol, pulse: bubble.pulse)
                         .position(bubble.point)
@@ -40,6 +57,25 @@ struct EnergyFlowView: View {
             }
         }
         .frame(height: diagramHeight)
+    }
+
+    @ViewBuilder
+    private func ribbonGlass(layout: Layout, size: CGSize) -> some View {
+        let tint = layout.fill.opacity(FlowRibbon.glassTintOpacity)
+        let glass = Color.clear.frame(width: size.width, height: size.height)
+        if splitOrMerge {
+            glass.glassEffect(.regular.tint(tint), in: FlowRibbonShape(path: layout.body))
+        } else {
+            // System rounded-rect SDF, not a custom Path: avoids two vertex-lit
+            // speculars on the left cap that `.regular` plants on stroke+cap seams.
+            glass.glassEffect(
+                .regular.tint(tint),
+                in: RoundedRectangle(
+                    cornerRadius: FlowRibbon.capRadius(for: FlowRibbon.trunkWidth(totalWatts: 1)),
+                    style: .continuous
+                )
+            )
+        }
     }
 
     private var diagramHeight: CGFloat {
@@ -52,12 +88,11 @@ struct EnergyFlowView: View {
     }
 
     private func flowNode(_ symbol: String, pulse: Bool) -> some View {
-        let wave = sin(phase * .pi * 2)
-        return Image(systemName: symbol)
+        Image(systemName: symbol)
             .font(.system(size: 16, weight: .semibold))
             .foregroundStyle(.primary)
             .frame(width: FlowRibbon.nodeDiameter, height: FlowRibbon.nodeDiameter)
-            .scaleEffect(pulse && wave > 0.2 ? 1.04 : 1.0)
+            .symbolEffect(.pulse, options: .repeating, isActive: isAnimating && pulseFlowIcons && pulse)
     }
 
     private struct Bubble: Identifiable {
@@ -210,18 +245,138 @@ struct EnergyFlowView: View {
         )
     }
 
-    private func drawPowder(context: inout GraphicsContext, lane: Lane) {
-        let seed = fnv(lane.id)
-        let count = max(96, Int(lane.width * 7.2))
+    /// Full-height wash across the capsule; a soft peak travels left → right.
+    private func drawSheen(context: inout GraphicsContext, layout: Layout, phase: Double) {
+        let watts = layout.lanes.map(\.watts).max() ?? 1
+        let speed = FlowRibbon.sheenSpeed(watts: watts)
+        var t = (phase * speed).truncatingRemainder(dividingBy: 1)
+        if t < 0 { t += 1 }
 
-        context.drawLayer { blurred in
-            blurred.addFilter(.blur(radius: 0.45))
-            for index in 0..<count {
-                drawGrain(context: &blurred, index: index, seed: seed, lane: lane, sharp: false)
+        let bounds = layout.body.boundingRect
+        guard bounds.width > 1, bounds.height > 1 else { return }
+
+        let color = layout.fill
+        let halo = Color.white.mix(with: color, by: 0.42)
+        let core = Color.white.mix(with: color, by: 0.08)
+        // Peak covers about a third of the capsule so it reads as a band, not a speck.
+        let stops = sheenStops(peak: t, half: 0.18, halo: halo, core: core)
+
+        context.fill(
+            Path(bounds),
+            with: .linearGradient(
+                Gradient(stops: stops),
+                startPoint: CGPoint(x: bounds.minX, y: bounds.midY),
+                endPoint: CGPoint(x: bounds.maxX, y: bounds.midY)
+            )
+        )
+    }
+
+    private func sheenStops(peak: Double, half: Double, halo: Color, core: Color) -> [Gradient.Stop] {
+        var raw: [(CGFloat, Color)] = [(0, .clear), (1, .clear)]
+        func add(_ location: Double, _ color: Color) {
+            raw.append((CGFloat(min(1, max(0, location))), color))
+        }
+        add(peak - half, .clear)
+        add(peak - half * 0.55, halo.opacity(0.28))
+        add(peak - half * 0.18, core.opacity(0.52))
+        add(peak, core.opacity(0.70))
+        add(peak + half * 0.18, core.opacity(0.52))
+        add(peak + half * 0.55, halo.opacity(0.28))
+        add(peak + half, .clear)
+
+        let merged = Dictionary(raw, uniquingKeysWith: { _, last in last })
+            .sorted { $0.key < $1.key }
+        var stops: [Gradient.Stop] = []
+        for (location, color) in merged {
+            if let last = stops.last, last.location == location { continue }
+            stops.append(.init(color: color, location: location))
+        }
+        return stops
+    }
+
+    private func drawFilaments(context: inout GraphicsContext, lane: Lane, phase: Double) {
+        let seed = fnv(lane.id)
+        let count = FlowRibbon.filamentCount(laneWidth: lane.width)
+        for index in 0..<count {
+            var rng = SplitMix64(seed: seed &+ UInt64(index) &* 0x9E3779B97F4A7C15)
+            let offset = rng.unit()
+            let speed = FlowRibbon.filamentSpeed(watts: lane.watts) * (0.72 + rng.unit() * 0.40)
+            let length = 0.18 + rng.unit() * 0.22
+            let thickness = rng.cg(0.8, 1.4)
+            let maxOff = max(0.6, lane.width * 0.42)
+            let lateral = rng.cg(-maxOff, maxOff)
+            var t = (phase * speed + offset).truncatingRemainder(dividingBy: 1)
+            if t < 0 { t += 1 }
+            for (from, to) in wrappedRanges(center: t + length / 2, span: length) where to - from > 0.02 {
+                strokeFilament(
+                    context: &context,
+                    lane: lane,
+                    from: from,
+                    to: to,
+                    lateral: lateral,
+                    thickness: thickness
+                )
             }
         }
-        for index in 0..<count where index % 2 == 0 {
-            drawGrain(context: &context, index: index, seed: seed, lane: lane, sharp: true)
+    }
+
+    private func strokeFilament(
+        context: inout GraphicsContext,
+        lane: Lane,
+        from: Double,
+        to: Double,
+        lateral: CGFloat,
+        thickness: CGFloat
+    ) {
+        var path = Path()
+        let steps = max(4, Int(((to - from) * 24).rounded(.up)))
+        for index in 0...steps {
+            let u = from + (to - from) * Double(index) / Double(steps)
+            let point = lane.cubic.offsetPoint(CGFloat(u), distance: lateral)
+            if index == 0 {
+                path.move(to: point)
+            } else {
+                path.addLine(to: point)
+            }
+        }
+        let start = lane.cubic.offsetPoint(CGFloat(from), distance: lateral)
+        let end = lane.cubic.offsetPoint(CGFloat(to), distance: lateral)
+        let mid = Color.white.mix(with: lane.color, by: 0.18)
+        let edge = Color.white.mix(with: lane.color, by: 0.42).opacity(0.7)
+        context.stroke(
+            path,
+            with: .linearGradient(
+                Gradient(stops: [
+                    .init(color: .clear, location: 0),
+                    .init(color: edge, location: 0.22),
+                    .init(color: mid.opacity(0.92), location: 0.5),
+                    .init(color: edge, location: 0.78),
+                    .init(color: .clear, location: 1)
+                ]),
+                startPoint: start,
+                endPoint: end
+            ),
+            style: StrokeStyle(lineWidth: thickness, lineCap: .round, lineJoin: .round)
+        )
+    }
+
+    private func wrappedRanges(center: Double, span: Double) -> [(Double, Double)] {
+        var start = center - span / 2
+        start = start.truncatingRemainder(dividingBy: 1)
+        if start < 0 { start += 1 }
+        let end = start + span
+        if end <= 1 {
+            return [(start, end)]
+        }
+        return [(start, 1), (0, end - 1)]
+    }
+
+    /// Original CPU powder: tiny grains, white → lane color → darker tail. No GPU sprites.
+    private func drawPowder(context: inout GraphicsContext, lane: Lane, phase: Double) {
+        let seed = fnv(lane.id)
+        let count = FlowRibbon.particleCount(laneWidth: lane.width)
+        for index in 0..<count {
+            drawGrain(context: &context, index: index, seed: seed, lane: lane, phase: phase)
         }
     }
 
@@ -230,17 +385,15 @@ struct EnergyFlowView: View {
         index: Int,
         seed: UInt64,
         lane: Lane,
-        sharp: Bool
+        phase: Double
     ) {
         var rng = SplitMix64(seed: seed &+ UInt64(index) &* 0xD1B54A32D192ED03)
         let offset = rng.unit()
-        let speed = FlowRibbon.particleSpeed(watts: lane.watts) * (0.82 + rng.unit() * 0.36)
-        let radius = sharp ? rng.cg(0.55, 1.15) : rng.cg(0.7, 1.85)
+        let speed = FlowRibbon.filamentSpeed(watts: lane.watts) * 0.42 * (0.82 + rng.unit() * 0.36)
+        let radius = rng.cg(0.7, 1.55)
         let maxOff = max(0.4, lane.width * 0.5 - radius - 0.6)
         let lateral = min(max(CGFloat(gaussian(rng.unit(), rng.unit())) * (maxOff * 0.82), -maxOff), maxOff)
-        let wobbleAmp = rng.cg(0.2, min(1.1, maxOff * 0.22))
-        let wobbleFreq = 5.0 + rng.unit() * 9.0
-        let brightness = 0.55 + rng.unit() * 0.45
+        let brightness = 0.62 + rng.unit() * 0.38
 
         var t = (phase * speed + offset).truncatingRemainder(dividingBy: 1)
         if t < 0 { t += 1 }
@@ -249,31 +402,29 @@ struct EnergyFlowView: View {
 
         let pointOnCurve = lane.cubic.point(CGFloat(t))
         let normal = lane.cubic.normal(CGFloat(t))
-        let wobble = sin((phase + offset) * wobbleFreq) * wobbleAmp
-        let spread = min(max(lateral + wobble, -maxOff), maxOff)
-        let x = pointOnCurve.x + normal.x * spread
-        let y = pointOnCurve.y + normal.y * spread
+        let x = pointOnCurve.x + normal.x * lateral
+        let y = pointOnCurve.y + normal.y * lateral
         let rect = CGRect(x: x - radius, y: y - radius, width: radius * 2, height: radius * 2)
         let traveling = travelingColor(base: lane.color, t: t)
-        let alpha = fade * brightness * (sharp ? 1.0 : 0.78)
-        if sharp {
-            context.fill(Path(ellipseIn: rect), with: .color(Color.white.mix(with: traveling, by: 0.35).opacity(alpha)))
-        } else {
-            context.fill(Path(ellipseIn: rect), with: .color(traveling.opacity(alpha)))
-            context.fill(
-                Path(ellipseIn: rect.insetBy(dx: radius * 0.35, dy: radius * 0.35)),
-                with: .color(Color.white.opacity(alpha * 0.45))
-            )
-        }
+        let alpha = fade * brightness
+        context.fill(Path(ellipseIn: rect), with: .color(traveling.opacity(alpha)))
+        let spark = t < 0.28 ? 0.92 : 0.55
+        context.fill(
+            Path(ellipseIn: rect.insetBy(dx: radius * 0.32, dy: radius * 0.32)),
+            with: .color(Color.white.opacity(alpha * spark))
+        )
     }
 
     private func travelingColor(base: Color, t: Double) -> Color {
-        let head = Color.white.mix(with: base, by: 0.32)
-        let tail = base.mix(with: .black, by: 0.22)
-        if t < 0.45 {
-            return head.mix(with: base, by: t / 0.45)
+        let head = Color.white.mix(with: base, by: 0.06)
+        let tail = base.mix(with: .black, by: 0.18)
+        if t < 0.22 {
+            return Color.white.mix(with: head, by: t / 0.22)
         }
-        return base.mix(with: tail, by: (t - 0.45) / 0.55)
+        if t < 0.48 {
+            return head.mix(with: base, by: (t - 0.22) / 0.26)
+        }
+        return base.mix(with: tail, by: (t - 0.48) / 0.52)
     }
 
     private func drawWattLabel(context: inout GraphicsContext, lane: Lane) {
@@ -287,9 +438,9 @@ struct EnergyFlowView: View {
 
     private var footer: some View {
         VStack(alignment: .leading, spacing: 3) {
-            labeled(String(localized: "energy.supplyPower"), value: supplyText)
+            labeled(Localization.string("energy.supplyPower", language: language), value: supplyText)
             if snapshot.adapterCeilingWatts > 0, snapshot.externalConnected {
-                labeled(String(localized: "energy.chargerRating"), value: String(format: "%.0f W", snapshot.adapterCeilingWatts))
+                labeled(Localization.string("energy.chargerRating", language: language), value: String(format: "%.0f W", snapshot.adapterCeilingWatts))
             }
         }
         .font(.caption)

@@ -5,54 +5,100 @@ struct PopoverRootView: View {
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        TimelineView(.periodic(from: .now, by: 1.0 / 24.0)) { timeline in
-            let theme = AppTheme.resolved(palette: appState.settings.palette, colorScheme: colorScheme)
-            let phase = timeline.date.timeIntervalSinceReferenceDate / 4.6
-            content(theme: theme, phase: phase)
-        }
-        .padding(14)
-        .frame(width: 348)
-        .fixedSize(horizontal: false, vertical: true)
+        let theme = AppTheme.resolved(palette: appState.settings.palette, colorScheme: colorScheme)
+        content(theme: theme)
+            .padding(14)
+            .frame(width: 420)
+            .fixedSize(horizontal: false, vertical: true)
+            .environment(\.locale, appState.settings.resolvedLocale)
+            .id(appState.settings.language)
     }
 
     @ViewBuilder
-    private func content(theme: AppTheme, phase: Double) -> some View {
+    private func content(theme: AppTheme) -> some View {
         if !appState.snapshot.hasBattery {
-            Text("error.needsBattery")
+            Text(Localization.string("error.needsBattery", language: appState.settings.language))
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, minHeight: 80)
         } else {
             VStack(alignment: .leading, spacing: 14) {
-                header(theme: theme, phase: phase)
-                TimeEstimateRow(snapshot: appState.snapshot)
-                EnergyFlowView(snapshot: appState.snapshot, theme: theme, phase: phase)
+                header(theme: theme)
+                TimeEstimateRow(snapshot: appState.snapshot, language: appState.settings.language)
+                EnergyFlowView(
+                    snapshot: appState.snapshot,
+                    theme: theme,
+                    isAnimating: appState.isPopoverOpen,
+                    motion: appState.settings.motionStyle,
+                    pulseFlowIcons: appState.settings.pulseFlowIcons,
+                    language: appState.settings.language
+                )
             }
         }
     }
 
-    private func header(theme: AppTheme, phase: Double) -> some View {
-        HStack(alignment: .center, spacing: 8) {
-            BatteryBarView(
+    private func header(theme: AppTheme) -> some View {
+        let language = appState.settings.language
+        let battery = Int(appState.snapshot.percent.rounded())
+        let cpu = Int(appState.metrics.cpuPercent.rounded())
+        let gpu = Int(appState.metrics.gpuPercent.rounded())
+        let memory = Int(appState.metrics.memoryPercent.rounded())
+        return HStack(alignment: .top, spacing: 8) {
+            StatusRingView(
                 percent: appState.snapshot.percent,
-                fill: theme.batteryFill(
-                    percent: appState.snapshot.percent,
-                    mode: appState.snapshot.flowMode,
-                    lowBatteryTintEnabled: appState.settings.lowBatteryTintEnabled
-                ),
-                sheenPhase: phase
+                color: theme.batteryLevelFill(percent: appState.snapshot.percent),
+                caption: Localization.string("ring.caption.battery %lld", language: language, Int64(battery)),
+                showsBolt: appState.snapshot.isCharging || appState.snapshot.flowMode == .charging,
+                accessibilityName: Localization.string("ring.battery", language: language),
+                systemImage: "laptopcomputer"
             )
-            Button {
-                appState.openSettings()
-            } label: {
-                Image(systemName: "gearshape.fill")
-                    .font(.body)
-                    .frame(width: FlowRibbon.nodeDiameter, height: FlowRibbon.nodeDiameter)
-            }
-            .buttonStyle(.plain)
-            .glassEffect(.regular.interactive(), in: .circle)
-            .help(String(localized: "settings.title"))
+            StatusRingView(
+                percent: appState.metrics.cpuPercent,
+                color: theme.loadFill(percent: appState.metrics.cpuPercent),
+                caption: Localization.string("ring.caption.cpu %lld", language: language, Int64(cpu)),
+                showsBolt: false,
+                accessibilityName: Localization.string("ring.cpu", language: language),
+                systemImage: "cpu.fill"
+            )
+            StatusRingView(
+                percent: appState.metrics.gpuPercent,
+                color: theme.loadFill(percent: appState.metrics.gpuPercent),
+                caption: Localization.string("ring.caption.gpu %lld", language: language, Int64(gpu)),
+                showsBolt: false,
+                accessibilityName: Localization.string("ring.gpu", language: language),
+                assetImage: "GPUMark"
+            )
+            StatusRingView(
+                percent: appState.metrics.memoryPercent,
+                color: theme.loadFill(percent: appState.metrics.memoryPercent),
+                caption: Localization.string("ring.caption.memory %lld", language: language, Int64(memory)),
+                showsBolt: false,
+                accessibilityName: Localization.string("ring.memory", language: language),
+                systemImage: "memorychip.fill"
+            )
+            settingsButton
         }
-        .frame(height: FlowRibbon.nodeDiameter)
+    }
+
+    private var settingsButton: some View {
+        let language = appState.settings.language
+        return Button {
+            appState.openSettings()
+        } label: {
+            VStack(spacing: 6) {
+                Image(systemName: "gearshape.fill")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(.primary)
+                    .frame(width: 58, height: 58)
+                    .glassEffect(.regular.interactive(), in: .circle)
+                Text(Localization.string("settings.title", language: language))
+                    .font(.system(size: 11, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.primary)
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.plain)
+        .help(Localization.string("settings.title", language: language))
+        .accessibilityLabel(Localization.string("settings.title", language: language))
     }
 }

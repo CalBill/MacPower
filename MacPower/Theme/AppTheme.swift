@@ -72,4 +72,24 @@ struct AppTheme: Equatable, Sendable {
         }
         return color(for: mode)
     }
+
+    /// Battery ring: 100–40 green, 40–25 yellow, 25–10 orange, 10–0 red.
+    func batteryLevelFill(percent: Double) -> Color {
+        switch percent {
+        case 40...: charging
+        case 25...: lowBatteryYellow
+        case 10...: discharging
+        default: lowBatteryRed
+        }
+    }
+
+    /// CPU / GPU / memory: 0–60 green, 60–75 yellow, 75–90 orange, 90–100 red.
+    func loadFill(percent: Double) -> Color {
+        switch percent {
+        case 90...: lowBatteryRed
+        case 75...: discharging
+        case 60...: lowBatteryYellow
+        default: charging
+        }
+    }
 }

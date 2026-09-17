@@ -23,25 +23,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let state = AppState()
         appState = state
         statusItemController = StatusItemController(appState: state)
+        state.onLanguageChange = { [weak statusItemController] in
+            statusItemController?.applyLocalization()
+        }
         snapshotWatch = Task { [weak self, weak state] in
             guard let state else { return }
-            var last = state.snapshot
-            var lastStyle = state.settings.iconStyle
-            var lastTint = state.settings.lowBatteryTintEnabled
-            var lastGlyphs = state.settings.showChargeGlyphs
+            var last = MenuBarIconKey(state)
             while !Task.isCancelled {
-                try? await Task.sleep(for: .milliseconds(250))
-                let snapshot = state.snapshot
-                let style = state.settings.iconStyle
-                let tint = state.settings.lowBatteryTintEnabled
-                let glyphs = state.settings.showChargeGlyphs
-                if snapshot != last || style != lastStyle || tint != lastTint || glyphs != lastGlyphs {
-                    last = snapshot
-                    lastStyle = style
-                    lastTint = tint
-                    lastGlyphs = glyphs
-                    self?.statusItemController?.refreshIcon()
-                }
+                try? await Task.sleep(for: .seconds(1))
+                let key = MenuBarIconKey(state)
+                guard key != last else { continue }
+                last = key
+                self?.statusItemController?.refreshIcon()
             }
         }
         statusItemController?.refreshIcon()
@@ -50,5 +43,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationWillTerminate(_ notification: Notification) {
         snapshotWatch?.cancel()
         appState?.telemetry.stop()
+        appState?.metricsService.stop()
     }
 }
+
+/// Only fields that actually change the menu-bar glyph. Watts jitter must not redraw it.
+private struct MenuBarIconKey: Equatable {
+    var percent: Int
+    var flowMode: EnergyFlowMode
+    var style: MenuBarIconStyle
+    var lowBatteryTint: Bool
+    var showChargeGlyphs: Bool
+    var language: AppLanguage
+
+    @MainActor
+    init(_ state: AppState) {
+        percent = Int(state.snapshot.percent.rounded(.towardZero))
+        flowMode = state.snapshot.flowMode
+        style = state.settings.iconStyle
+        lowBatteryTint = state.settings.lowBatteryTintEnabled
+        showChargeGlyphs = state.settings.showChargeGlyphs
+        language = state.settings.language
+    }
+}
+

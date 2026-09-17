@@ -5,6 +5,20 @@ options:
     macOS: "26.0"
   xcodeVersion: "26.0"
   createIntermediateGroups: true
+  developmentLanguage: en
+  knownRegions:
+    - Base
+    - en
+    - zh-Hans
+    - zh-Hant
+    - ja
+    - ko
+    - fr
+    - de
+    - es
+    - pt-BR
+    - it
+    - ru
 settings:
   base:
     SWIFT_VERSION: "6.0"

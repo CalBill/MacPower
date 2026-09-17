@@ -24,10 +24,27 @@ enum FlowRibbon {
     /// Split/merge along the spine: keep a short trunk, then long fingers.
     static let forkT: CGFloat = 0.22
 
-    /// Particle travel speed in phase-cycles. Higher watts move faster.
-    static func particleSpeed(watts: Double) -> Double {
+    /// Full-capsule sheen. Linear in watts, independent of filament speed.
+    /// Floor is high enough that ~10 W still crosses in a few seconds.
+    static func sheenSpeed(watts: Double) -> Double {
         let w = max(watts, 1)
-        return 0.32 + min(pow(w / 14.0, 0.5), 2.6)
+        return 0.48 + min(w / 80.0, 0.36)
+    }
+
+    /// Horizontal filaments. Faster than the old shared sqrt curve.
+    static func filamentSpeed(watts: Double) -> Double {
+        let w = max(watts, 1)
+        return 0.55 + min(pow(w / 10.0, 0.5), 3.1)
+    }
+
+    /// Grains per lane. Capped so the 15 fps canvas stays cheap.
+    static func particleCount(laneWidth: CGFloat) -> Int {
+        min(72, max(28, Int(laneWidth * 0.7)))
+    }
+
+    /// Horizontal filaments per lane. Kept small so the canvas stays cheap.
+    static func filamentCount(laneWidth: CGFloat) -> Int {
+        min(14, max(6, Int(laneWidth / 10)))
     }
 
     /// Visual thickness of the energy-flow trunk/capsule.
@@ -157,7 +174,7 @@ enum ForkOutline {
             startCap: .butt,
             endCap: .round
         ))
-        return path
+        return path.normalizedSilhouette()
     }
 
     static func mergePath(
@@ -194,7 +211,7 @@ enum ForkOutline {
             startCap: .butt,
             endCap: .round
         ))
-        return path
+        return path.normalizedSilhouette()
     }
 
     static func capsule(from start: CGPoint, to end: CGPoint, width: CGFloat) -> Path {
@@ -208,6 +225,9 @@ enum ForkOutline {
         startCap: Cap,
         endCap: Cap
     ) -> Path {
+        if startCap == .round, endCap == .round, abs(end.y - start.y) < 0.5 {
+            return continuousStadium(from: start, to: end, width: width)
+        }
         var spine = Path()
         spine.move(to: start)
         let dx = end.x - start.x
@@ -222,7 +242,21 @@ enum ForkOutline {
         if endCap == .round {
             addRoundedEndCap(&path, at: end, outward: CGPoint(x: end.x - c2.x, y: end.y - c2.y), width: width)
         }
-        return path
+        return path.normalizedSilhouette()
+    }
+
+    /// One closed rounded-rect. Avoids stroke+cap subpaths whose corner vertices
+    /// become two static Liquid Glass speculars on the left end.
+    private static func continuousStadium(from start: CGPoint, to end: CGPoint, width: CGFloat) -> Path {
+        let radius = FlowRibbon.capRadius(for: width)
+        let half = width / 2
+        let rect = CGRect(
+            x: min(start.x, end.x) - radius,
+            y: min(start.y, end.y) - half,
+            width: abs(end.x - start.x) + radius * 2,
+            height: width
+        )
+        return RoundedRectangle(cornerRadius: radius, style: .continuous).path(in: rect)
     }
 
     /// Rounded-rect cap on a butt end. Degenerates to a semicircle when the
@@ -278,5 +312,13 @@ enum ForkOutline {
             endAngle: endAngle,
             clockwise: midDelta > delta
         )
+    }
+}
+
+private extension Path {
+    /// Merge overlapping stroke/cap subpaths so glass lighting sees one outline,
+    /// not extra vertices at the rounded-end joins.
+    func normalizedSilhouette() -> Path {
+        Path(cgPath.normalized(using: .winding))
     }
 }

@@ -7,12 +7,16 @@ import SwiftUI
 @Observable
 final class AppState {
     var snapshot: PowerSnapshot = .empty
+    var metrics: SystemSnapshot = .empty
     var settings = AppSettings()
     var launchAtLoginEnabled = SMAppService.mainApp.status == .enabled
     var isPopoverOpen = false
     var launchAtLoginError: String?
+    @ObservationIgnored
+    var onLanguageChange: (() -> Void)?
 
     let telemetry = PowerTelemetryService()
+    let metricsService = SystemMetricsService()
 
     private var settingsWindow: NSWindow?
 
@@ -20,13 +24,18 @@ final class AppState {
         telemetry.onChange = { [weak self] snapshot in
             self?.snapshot = snapshot
         }
+        metricsService.onChange = { [weak self] metrics in
+            self?.metrics = metrics
+        }
         telemetry.start()
+        metricsService.start()
         launchAtLoginEnabled = SMAppService.mainApp.status == .enabled
     }
 
     func setPopoverOpen(_ open: Bool) {
         isPopoverOpen = open
         telemetry.setPopoverOpen(open)
+        metricsService.setPopoverOpen(open)
     }
 
     func setLaunchAtLogin(_ enabled: Bool) {
@@ -50,17 +59,22 @@ final class AppState {
             return
         }
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 420, height: 360),
+            contentRect: NSRect(x: 0, y: 0, width: 420, height: 600),
             styleMask: [.titled, .closable, .fullSizeContentView],
             backing: .buffered,
             defer: false
         )
-        window.title = String(localized: "settings.title")
+        window.title = Localization.string("settings.title", language: settings.language)
         window.isReleasedWhenClosed = false
         window.contentView = NSHostingView(rootView: SettingsView(appState: self))
         window.center()
         window.makeKeyAndOrderFront(nil)
         settingsWindow = window
+    }
+
+    func refreshLocalizedChrome() {
+        settingsWindow?.title = Localization.string("settings.title", language: settings.language)
+        onLanguageChange?()
     }
 
     func menuBarFillColor(appearance: NSAppearance) -> NSColor {

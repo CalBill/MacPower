@@ -4,32 +4,68 @@ struct SettingsView: View {
     @Bindable var appState: AppState
 
     var body: some View {
+        form
+            .environment(\.locale, appState.settings.resolvedLocale)
+            .id(appState.settings.language)
+            .onChange(of: appState.settings.language) { _, _ in
+                appState.refreshLocalizedChrome()
+            }
+    }
+
+    private var form: some View {
         Form {
-            Section(String(localized: "settings.section.icon")) {
-                Picker(String(localized: "settings.icon.style"), selection: $appState.settings.iconStyle) {
+            Section("settings.section.icon") {
+                Picker("settings.icon.style", selection: $appState.settings.iconStyle) {
                     ForEach(MenuBarIconStyle.allCases) { style in
                         Text(LocalizedStringKey(style.localizationKey)).tag(style)
                     }
                 }
-                Toggle(String(localized: "settings.icon.chargeGlyphs"), isOn: $appState.settings.showChargeGlyphs)
+                Toggle("settings.icon.chargeGlyphs", isOn: $appState.settings.showChargeGlyphs)
+                Text("settings.icon.chargeGlyphs.note")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
 
-            Section(String(localized: "settings.section.appearance")) {
-                Picker(String(localized: "settings.palette"), selection: $appState.settings.palette) {
+            Section("settings.section.appearance") {
+                Picker("settings.palette", selection: $appState.settings.palette) {
                     ForEach(ThemePalette.allCases) { palette in
                         Text(LocalizedStringKey(palette.localizationKey)).tag(palette)
                     }
                 }
-                Toggle(String(localized: "settings.lowBatteryTint"), isOn: $appState.settings.lowBatteryTintEnabled)
+                Toggle("settings.lowBatteryTint", isOn: $appState.settings.lowBatteryTintEnabled)
             }
 
-            Section(String(localized: "settings.section.general")) {
-                Toggle(String(localized: "settings.launchAtLogin"), isOn: launchAtLoginBinding)
+            Section {
+                Picker("settings.motion.style", selection: $appState.settings.motionStyle) {
+                    ForEach(EnergyMotionStyle.allCases) { style in
+                        Text(LocalizedStringKey(style.localizationKey)).tag(style)
+                    }
+                }
+                Toggle("settings.motion.pulseIcons", isOn: $appState.settings.pulseFlowIcons)
+            } header: {
+                Text("settings.section.motion")
+            }
+
+            Section("settings.section.general") {
+                Picker("settings.language", selection: $appState.settings.language) {
+                    ForEach(AppLanguage.allCases) { language in
+                        Text(title(for: language)).tag(language)
+                    }
+                }
+                Toggle("settings.launchAtLogin", isOn: launchAtLoginBinding)
             }
         }
         .formStyle(.grouped)
-        .frame(width: 420, height: 360)
-        .navigationTitle(String(localized: "settings.title"))
+        .frame(width: 420, height: 600)
+        .navigationTitle("settings.title")
+    }
+
+    private func title(for language: AppLanguage) -> String {
+        if language == .system {
+            return Localization.string("settings.language.system", language: appState.settings.language)
+        }
+        return language.nativeName
     }
 
     private var launchAtLoginBinding: Binding<Bool> {
