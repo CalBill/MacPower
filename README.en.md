@@ -21,7 +21,7 @@ Unofficial. Not affiliated with Apple. Not a charge limiter.
 
 ## Install (GitHub Release)
 
-1. Download `MacPower-1.0.0.dmg` from [Releases](https://github.com/RyanStarFox/MacPower/releases).
+1. Download `MacPower-1.0.1.dmg` from [Releases](https://github.com/RyanStarFox/MacPower/releases).
 2. Open the disk image and drag **MacPower** into **Applications**.
 3. Launch it from Applications. Look for the battery in the menu bar.
 

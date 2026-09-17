@@ -53,11 +53,18 @@ enum BatteryReader: Sendable {
         let telemetryBattery = milliwattsToWatts(telemetry?["BatteryPower"])
 
         let viWatts = (Double(instantAmperage) * voltageMilli) / 1_000_000
-        let batteryWatts = telemetryBattery ?? viWatts
-        let adapterIn = systemPowerIn ?? max(0, abs(viWatts) + max(0, systemLoad ?? 0))
+        // Telemetry can sit at 0 for a long time after unplug; 0 is a real NSNumber
+        // so `??` would never fall back to V×I. Treat near-zero as missing.
+        let batteryWatts = nonzeroWatts(telemetryBattery) ?? viWatts
+        let adapterIn: Double
+        if !external {
+            adapterIn = 0
+        } else {
+            adapterIn = nonzeroWatts(systemPowerIn) ?? max(0, abs(viWatts) + max(0, systemLoad ?? 0))
+        }
         let load: Double
-        if let systemLoad {
-            load = systemLoad
+        if let systemLoad = nonzeroWatts(systemLoad) {
+            load = abs(systemLoad)
         } else if isCharging {
             load = max(0, adapterIn - max(0, batteryWatts))
         } else {
@@ -177,6 +184,13 @@ enum BatteryReader: Sendable {
             return milli / 1000
         }
         return milli
+    }
+
+    /// IOKit often publishes `0` as a real number after a power-source change.
+    /// That must not win over InstantAmperage × Voltage.
+    private static func nonzeroWatts(_ watts: Double?) -> Double? {
+        guard let watts, abs(watts) >= 0.4 else { return nil }
+        return watts
     }
 
     private static func signedMilli(_ value: Any?) -> Double? {
