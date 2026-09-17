@@ -10,10 +10,10 @@ Unofficial. Not affiliated with Apple. Not a charge limiter.
 
 - Menu bar only (`LSUIElement`): no Dock icon
 - Three icon styles: system fill, percent inside the battery, classic percent beside it
-- Optional charging bolt / plugged-in plug on all three styles
+- Optional charging mark (lightning bolt) on all three styles
 - Popover with live watts: charger, battery, and Mac, including a Y-split while charging
 - Battery / CPU / GPU / memory rings, plus remaining runtime or time-to-full
-- Energy-flow motion: highlight sheen, filaments, or particles (or off)
+- Energy-flow motion: white sheen, plus gradient / color / white filaments and particles (or off)
 - **On battery:** estimated remaining runtime  
   **Plugged in:** estimated time to full
 - Colors follow energy state (green charging, orange discharging, blue holding / underpowered)
@@ -23,7 +23,7 @@ Unofficial. Not affiliated with Apple. Not a charge limiter.
 
 ## Install (GitHub Release)
 
-1. Download `MacPower-1.1.0.dmg` from [Releases](https://github.com/RyanStarFox/MacPower/releases).
+1. Download `MacPower-1.2.0.dmg` from [Releases](https://github.com/RyanStarFox/MacPower/releases).
 2. Open the disk image and drag **MacPower** into **Applications**.
 3. Launch it from Applications. Look for the battery in the menu bar.
 

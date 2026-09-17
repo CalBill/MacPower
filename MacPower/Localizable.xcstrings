@@ -1711,138 +1711,67 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Show charging and plugged-in symbols"
+            "value": "Show charging mark"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "显示充电闪电和插电插头"
+            "value": "显示充电标志"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "顯示電源標記"
+            "value": "顯示充電標誌"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "電源マークを表示"
+            "value": "充電マークを表示"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "전원 표시 보이기"
+            "value": "충전 표시 보이기"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Afficher le symbole d'alimentation"
+            "value": "Afficher le symbole de charge"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Netzkennzeichnung anzeigen"
+            "value": "Ladesymbol anzeigen"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Mostrar marca de alimentación"
+            "value": "Mostrar marca de carga"
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Mostrar indicador de energia"
+            "value": "Mostrar indicador de carga"
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Mostra l'indicatore di alimentazione"
+            "value": "Mostra il simbolo di carica"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Показывать знак питания"
-          }
-        }
-      }
-    },
-    "settings.icon.chargeGlyphs.note": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "A bolt while charging, a plug while on adapter."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "充电中显示闪电，接入电源时显示插头。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "充電中顯示閃電，接入電源時顯示插頭。"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "充電中は稲妻、電源接続時はプラグを表示します。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "충전 중에는 번개, 어댑터 연결 시에는 플러그가 표시됩니다."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Un éclair pendant la charge, une prise sur adaptateur."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Blitz beim Laden, Stecker bei Netzbetrieb."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Un rayo al cargar, un enchufe con el adaptador."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Um raio ao carregar, um plugue no adaptador."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Un fulmine in carica, una spina sull'adattatore."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Молния при зарядке, вилка при питании от адаптера."
+            "value": "Показывать знак зарядки"
           }
         }
       }
@@ -2421,67 +2350,67 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Lines"
+            "value": "Gradient lines"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "细线"
+            "value": "渐变细线"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "細線"
+            "value": "漸變細線"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "細線"
+            "value": "グラデ細線"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "가는 선"
+            "value": "그라데이션 선"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Lignes"
+            "value": "Lignes dégradées"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Linien"
+            "value": "Verlaufslinien"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Líneas"
+            "value": "Líneas degradadas"
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Linhas"
+            "value": "Linhas em degradê"
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Linee"
+            "value": "Linee sfumate"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Линии"
+            "value": "Градиентные линии"
           }
         }
       }
@@ -2847,67 +2776,67 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Particles"
+            "value": "Gradient particles"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "粒子"
+            "value": "渐变粒子"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "粒子"
+            "value": "漸變粒子"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "パーティクル"
+            "value": "グラデ粒子"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "파티클"
+            "value": "그라데이션 입자"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Particules"
+            "value": "Particules dégradées"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Partikel"
+            "value": "Verlaufspartikel"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Partículas"
+            "value": "Partículas degradadas"
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Partículas"
+            "value": "Partículas em degradê"
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Particelle"
+            "value": "Particelle sfumate"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Частицы"
+            "value": "Градиентные частицы"
           }
         }
       }
@@ -3060,67 +2989,67 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Sheen"
+            "value": "White sheen"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "高光扫过"
+            "value": "白色高光"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "高光掃過"
+            "value": "白色高光"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "ハイライト"
+            "value": "白いハイライト"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "하이라이트"
+            "value": "흰색 하이라이트"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Reflet"
+            "value": "Lueur blanche"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Schimmer"
+            "value": "Weißer Schimmer"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Brillo"
+            "value": "Brillo blanco"
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Brilho"
+            "value": "Brilho branco"
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Riflesso"
+            "value": "Bagliore bianco"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Блик"
+            "value": "Белый блик"
           }
         }
       }
@@ -3902,6 +3831,290 @@
           "stringUnit": {
             "state": "translated",
             "value": "Настройки"
+          }
+        }
+      }
+    },
+    "settings.motion.filamentsSolid": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Color lines"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "彩色细线"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "彩色細線"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "カラー細線"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "컬러 선"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lignes colorées"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Farbige Linien"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Líneas de color"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Linhas coloridas"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Linee colorate"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Цветные линии"
+          }
+        }
+      }
+    },
+    "settings.motion.filamentsWhite": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "White lines"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "白色细线"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "白色細線"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "白い細線"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "흰색 선"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lignes blanches"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weiße Linien"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Líneas blancas"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Linhas brancas"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Linee bianche"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Белые линии"
+          }
+        }
+      }
+    },
+    "settings.motion.particlesSolid": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Color particles"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "彩色粒子"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "彩色粒子"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "カラー粒子"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "컬러 입자"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Particules colorées"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Farbige Partikel"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Partículas de color"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Partículas coloridas"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Particelle colorate"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Цветные частицы"
+          }
+        }
+      }
+    },
+    "settings.motion.particlesWhite": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "White particles"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "白色粒子"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "白色粒子"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "白い粒子"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "흰색 입자"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Particules blanches"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weiße Partikel"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Partículas blancas"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Partículas brancas"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Particelle bianche"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Белые частицы"
           }
         }
       }

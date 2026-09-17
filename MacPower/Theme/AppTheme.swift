@@ -18,6 +18,11 @@ struct AppTheme: Equatable, Sendable {
         }
     }
 
+    /// Solid motion marks: deep green / blue / orange, no traveling wash.
+    func motionSolid(for mode: EnergyFlowMode) -> Color {
+        color(for: mode).mix(with: .black, by: 0.42)
+    }
+
     static func resolved(palette: ThemePalette, colorScheme: ColorScheme) -> AppTheme {
         let isDark = colorScheme == .dark
         switch palette {

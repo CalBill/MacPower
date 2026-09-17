@@ -1,9 +1,19 @@
 import Foundation
 
+enum FlowMotionPigment: Equatable, Sendable {
+    case gradient
+    case solid
+    case white
+}
+
 enum EnergyMotionStyle: String, CaseIterable, Identifiable, Sendable, Codable {
     case sheen
     case filaments
+    case filamentsSolid
+    case filamentsWhite
     case particles
+    case particlesSolid
+    case particlesWhite
     case off
 
     var id: String { rawValue }
@@ -12,24 +22,27 @@ enum EnergyMotionStyle: String, CaseIterable, Identifiable, Sendable, Codable {
         switch self {
         case .sheen: "settings.motion.sheen"
         case .filaments: "settings.motion.filaments"
+        case .filamentsSolid: "settings.motion.filamentsSolid"
+        case .filamentsWhite: "settings.motion.filamentsWhite"
         case .particles: "settings.motion.particles"
+        case .particlesSolid: "settings.motion.particlesSolid"
+        case .particlesWhite: "settings.motion.particlesWhite"
         case .off: "settings.motion.off"
         }
     }
 
     var needsAnimation: Bool { self != .off }
 
-    var usesCanvasTimeline: Bool {
-        switch self {
-        case .sheen, .filaments, .particles: true
-        case .off: false
-        }
-    }
+    var usesCanvasTimeline: Bool { self != .off }
 
-    var framesPerSecond: Double {
+    var framesPerSecond: Double { self == .off ? 1 : 60 }
+
+    var pigment: FlowMotionPigment? {
         switch self {
-        case .sheen, .filaments, .particles: 60
-        case .off: 1
+        case .filaments, .particles: .gradient
+        case .filamentsSolid, .particlesSolid: .solid
+        case .filamentsWhite, .particlesWhite: .white
+        case .sheen, .off: nil
         }
     }
 

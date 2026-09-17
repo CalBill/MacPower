@@ -21,10 +21,6 @@ struct SettingsView: View {
                     }
                 }
                 Toggle("settings.icon.chargeGlyphs", isOn: $appState.settings.showChargeGlyphs)
-                Text("settings.icon.chargeGlyphs.note")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
             }
 
             Section("settings.section.appearance") {

@@ -14,8 +14,7 @@ enum MenuBarBatteryRenderer {
         let plugged = snapshot.flowMode == .adapterHold || snapshot.flowMode == .underpowered
         let glyph: MenuBarGlyph? = {
             guard showChargeGlyphs else { return nil }
-            if charging { return .bolt }
-            if plugged { return .plug }
+            if charging || plugged { return .bolt }
             return nil
         }()
 
@@ -78,7 +77,6 @@ enum MenuBarBatteryRenderer {
 
     private enum MenuBarGlyph {
         case bolt
-        case plug
     }
 
     private struct Metrics {
@@ -120,15 +118,14 @@ enum MenuBarBatteryRenderer {
             : (text as NSString).size(withAttributes: [.font: font])
         let glyphAdvance: CGFloat
         switch glyph {
-        case .bolt: glyphAdvance = showsText ? 3.6 : 7.2
-        case .plug: glyphAdvance = showsText ? 4.0 : 7.6
+        case .bolt: glyphAdvance = showsText ? 5.8 : 8.8
         case nil: glyphAdvance = 0
         }
-        let gap: CGFloat = (showsText && glyph != nil) ? 0.2 : 0
+        let gap: CGFloat = (showsText && glyph != nil) ? 0.45 : 0
         let groupWidth = (showsText ? textSize.width : 0) + gap + glyphAdvance
         let bodyWidth: CGFloat = {
             if !showsText { return 21.5 }
-            return digits >= 3 ? 22.0 : 21.5
+            return digits >= 3 ? 24.0 : 22.5
         }()
         let body = NSRect(x: 0.35, y: bodyY, width: bodyWidth, height: bodyHeight)
         let cap = NSRect(
@@ -193,8 +190,7 @@ enum MenuBarBatteryRenderer {
         if let glyph {
             let target = style == .systemPercentInside ? metrics.glyphBox : body
             switch glyph {
-            case .bolt: punchBolt(in: target)
-            case .plug: punchPlug(in: target)
+            case .bolt: punchChargeMark(in: target)
             }
         }
 
@@ -262,33 +258,30 @@ enum MenuBarBatteryRenderer {
         cg.restoreGState()
     }
 
-    private static func punchBolt(in box: NSRect) {
-        let h: CGFloat = min(6.8, box.height - 3.0)
-        let w = h * 0.54
-        let midX = box.midX
-        let midY = box.midY
-        let path = NSBezierPath()
-        path.move(to: NSPoint(x: midX + w * 0.18, y: midY + h * 0.50))
-        path.line(to: NSPoint(x: midX - w * 0.50, y: midY + 0.08))
-        path.line(to: NSPoint(x: midX + w * 0.08, y: midY + 0.08))
-        path.line(to: NSPoint(x: midX - w * 0.18, y: midY - h * 0.50))
-        path.line(to: NSPoint(x: midX + w * 0.50, y: midY - 0.08))
-        path.line(to: NSPoint(x: midX - w * 0.08, y: midY - 0.08))
-        path.close()
-        path.fill()
-    }
-
-    private static func punchPlug(in box: NSRect) {
-        let cx = box.midX
-        let cy = box.midY - 0.12
-        let path = NSBezierPath()
-        path.appendRoundedRect(
-            NSRect(x: cx - 1.62, y: cy - 1.52, width: 3.24, height: 2.7),
-            xRadius: 0.72,
-            yRadius: 0.72
+    private static func punchChargeMark(in box: NSRect) {
+        guard let named = NSImage(named: "ChargeMark") else { return }
+        let maxH = min(9.6, box.height - 1.2)
+        let maxW = min(box.width - 0.4, 7.4)
+        let aspect = named.size.width / max(named.size.height, 1)
+        var height = maxH
+        var width = height * aspect
+        if width > maxW {
+            width = maxW
+            height = width / aspect
+        }
+        let rect = NSRect(
+            x: box.midX - width / 2,
+            y: box.midY - height / 2,
+            width: width,
+            height: height
         )
-        path.appendRect(NSRect(x: cx - 0.98, y: cy + 1.08, width: 0.82, height: 1.52))
-        path.appendRect(NSRect(x: cx + 0.16, y: cy + 1.08, width: 0.82, height: 1.52))
-        path.fill()
+        named.draw(
+            in: rect,
+            from: .zero,
+            operation: .destinationOut,
+            fraction: 1,
+            respectFlipped: true,
+            hints: [.interpolation: NSImageInterpolation.high]
+        )
     }
 }

@@ -150,18 +150,25 @@ private func XCTAssertEqual(_ rect: CGRect, _ expected: CGRect, accuracy: CGFloa
 
 final class EnergyMotionStyleTests: XCTestCase {
     func testMotionOptionsAndDefault() {
-        XCTAssertEqual(EnergyMotionStyle.allCases, [.sheen, .filaments, .particles, .off])
+        XCTAssertEqual(EnergyMotionStyle.allCases, [
+            .sheen,
+            .filaments, .filamentsSolid, .filamentsWhite,
+            .particles, .particlesSolid, .particlesWhite,
+            .off
+        ])
         XCTAssertTrue(EnergyMotionStyle.sheen.needsAnimation)
         XCTAssertTrue(EnergyMotionStyle.filaments.needsAnimation)
-        XCTAssertTrue(EnergyMotionStyle.particles.needsAnimation)
+        XCTAssertTrue(EnergyMotionStyle.particlesSolid.needsAnimation)
         XCTAssertFalse(EnergyMotionStyle.off.needsAnimation)
         XCTAssertTrue(EnergyMotionStyle.sheen.usesCanvasTimeline)
-        XCTAssertTrue(EnergyMotionStyle.filaments.usesCanvasTimeline)
-        XCTAssertTrue(EnergyMotionStyle.particles.usesCanvasTimeline)
+        XCTAssertTrue(EnergyMotionStyle.filamentsWhite.usesCanvasTimeline)
+        XCTAssertFalse(EnergyMotionStyle.off.usesCanvasTimeline)
         XCTAssertEqual(EnergyMotionStyle.sheen.framesPerSecond, 60)
-        XCTAssertEqual(EnergyMotionStyle.filaments.framesPerSecond, 60)
         XCTAssertEqual(EnergyMotionStyle.particles.framesPerSecond, 60)
         XCTAssertEqual(EnergyMotionStyle.off.framesPerSecond, 1)
+        XCTAssertEqual(EnergyMotionStyle.filaments.pigment, .gradient)
+        XCTAssertEqual(EnergyMotionStyle.particlesSolid.pigment, .solid)
+        XCTAssertEqual(EnergyMotionStyle.filamentsWhite.pigment, .white)
     }
 
     func testMotionStylePersists() {
@@ -169,9 +176,9 @@ final class EnergyMotionStyleTests: XCTestCase {
         defaults.removePersistentDomain(forName: "MacPower.MotionStyleTests")
         let first = AppSettings(defaults: defaults)
         XCTAssertEqual(first.motionStyle, .sheen)
-        first.motionStyle = .particles
+        first.motionStyle = .particlesSolid
         let second = AppSettings(defaults: defaults)
-        XCTAssertEqual(second.motionStyle, .particles)
+        XCTAssertEqual(second.motionStyle, .particlesSolid)
         defaults.removePersistentDomain(forName: "MacPower.MotionStyleTests")
     }
 
@@ -210,6 +217,7 @@ final class EnergyMotionStyleTests: XCTestCase {
         XCTAssertEqual(try decoder.decode(EnergyMotionStyle.self, from: Data("\"powder\"".utf8)), .particles)
         XCTAssertEqual(try decoder.decode(EnergyMotionStyle.self, from: Data("\"unknown\"".utf8)), .sheen)
         XCTAssertEqual(try decoder.decode(EnergyMotionStyle.self, from: Data("\"sheen\"".utf8)), .sheen)
+        XCTAssertEqual(try decoder.decode(EnergyMotionStyle.self, from: Data("\"filamentsSolid\"".utf8)), .filamentsSolid)
         let encoded = try JSONEncoder().encode(EnergyMotionStyle.filaments)
         XCTAssertEqual(try decoder.decode(EnergyMotionStyle.self, from: encoded), .filaments)
     }

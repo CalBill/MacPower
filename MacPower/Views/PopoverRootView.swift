@@ -48,7 +48,6 @@ struct PopoverRootView: View {
                 percent: appState.snapshot.percent,
                 color: theme.batteryLevelFill(percent: appState.snapshot.percent),
                 caption: Localization.string("ring.caption.battery %lld", language: language, Int64(battery)),
-                showsBolt: appState.snapshot.isCharging || appState.snapshot.flowMode == .charging,
                 accessibilityName: Localization.string("ring.battery", language: language),
                 systemImage: "laptopcomputer"
             )
@@ -56,7 +55,6 @@ struct PopoverRootView: View {
                 percent: appState.metrics.cpuPercent,
                 color: theme.loadFill(percent: appState.metrics.cpuPercent),
                 caption: Localization.string("ring.caption.cpu %lld", language: language, Int64(cpu)),
-                showsBolt: false,
                 accessibilityName: Localization.string("ring.cpu", language: language),
                 systemImage: "cpu.fill"
             )
@@ -64,7 +62,6 @@ struct PopoverRootView: View {
                 percent: appState.metrics.gpuPercent,
                 color: theme.loadFill(percent: appState.metrics.gpuPercent),
                 caption: Localization.string("ring.caption.gpu %lld", language: language, Int64(gpu)),
-                showsBolt: false,
                 accessibilityName: Localization.string("ring.gpu", language: language),
                 assetImage: "GPUMark"
             )
@@ -72,7 +69,6 @@ struct PopoverRootView: View {
                 percent: appState.metrics.memoryPercent,
                 color: theme.loadFill(percent: appState.metrics.memoryPercent),
                 caption: Localization.string("ring.caption.memory %lld", language: language, Int64(memory)),
-                showsBolt: false,
                 accessibilityName: Localization.string("ring.memory", language: language),
                 systemImage: "memorychip.fill"
             )

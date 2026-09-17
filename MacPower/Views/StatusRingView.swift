@@ -4,7 +4,6 @@ struct StatusRingView: View {
     var percent: Double
     var color: Color
     var caption: String
-    var showsBolt: Bool
     var accessibilityName: String
     var systemImage: String?
     var assetImage: String?
@@ -27,16 +26,11 @@ struct StatusRingView: View {
                     )
                     .rotationEffect(.degrees(-90))
                     .frame(width: diameter - lineWidth, height: diameter - lineWidth)
+                    .animation(.smooth(duration: 0.85), value: progress)
+                    .animation(.smooth(duration: 0.85), value: color)
 
                 glyph
                     .foregroundStyle(.primary)
-
-                if showsBolt {
-                    Image(systemName: "bolt.fill")
-                        .font(.system(size: 9, weight: .bold))
-                        .foregroundStyle(color)
-                        .offset(y: -(diameter / 2) + 1)
-                }
             }
             .frame(width: diameter, height: diameter)
 

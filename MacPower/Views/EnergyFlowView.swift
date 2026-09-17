@@ -29,13 +29,13 @@ struct EnergyFlowView: View {
                             switch motion {
                             case .sheen:
                                 drawSheen(context: &context, layout: layout, phase: phase)
-                            case .filaments:
+                            case .filaments, .filamentsSolid, .filamentsWhite:
                                 for lane in layout.lanes {
-                                    drawFilaments(context: &context, lane: lane, phase: phase)
+                                    drawFilaments(context: &context, lane: lane, phase: phase, pigment: motion.pigment ?? .gradient)
                                 }
-                            case .particles:
+                            case .particles, .particlesSolid, .particlesWhite:
                                 for lane in layout.lanes {
-                                    drawPowder(context: &context, lane: lane, phase: phase)
+                                    drawPowder(context: &context, lane: lane, phase: phase, pigment: motion.pigment ?? .gradient)
                                 }
                             case .off:
                                 break
@@ -50,9 +50,22 @@ struct EnergyFlowView: View {
                     }
                 }
 
-                ForEach(layout.bubbles) { bubble in
-                    flowNode(bubble.symbol, pulse: bubble.pulse)
-                        .position(bubble.point)
+                if isAnimating, pulseFlowIcons {
+                    TimelineView(.periodic(from: .now, by: 1.0 / 30.0)) { timeline in
+                        let breath = iconBreath(at: timeline.date)
+                        ZStack {
+                            ForEach(layout.bubbles) { bubble in
+                                flowNode(bubble, breath: breath)
+                                    .position(bubble.point)
+                            }
+                        }
+                    }
+                    .frame(width: geo.size.width, height: geo.size.height)
+                } else {
+                    ForEach(layout.bubbles) { bubble in
+                        flowNode(bubble, breath: 0)
+                            .position(bubble.point)
+                    }
                 }
             }
         }
@@ -87,19 +100,38 @@ struct EnergyFlowView: View {
         snapshot.flowMode == .charging || snapshot.flowMode == .underpowered
     }
 
-    private func flowNode(_ symbol: String, pulse: Bool) -> some View {
-        Image(systemName: symbol)
-            .font(.system(size: 16, weight: .semibold))
-            .foregroundStyle(.primary)
-            .frame(width: FlowRibbon.nodeDiameter, height: FlowRibbon.nodeDiameter)
-            .symbolEffect(.pulse, options: .repeating, isActive: isAnimating && pulseFlowIcons && pulse)
+    @ViewBuilder
+    private func flowNode(_ bubble: Bubble, breath: CGFloat) -> some View {
+        Group {
+            if let asset = bubble.asset {
+                Image(asset)
+                    .resizable()
+                    .renderingMode(.template)
+                    .interpolation(.high)
+                    .scaledToFit()
+                    .frame(width: 16, height: 24)
+            } else if let symbol = bubble.symbol {
+                Image(systemName: symbol)
+                    .font(.system(size: 16, weight: .semibold))
+            }
+        }
+        .foregroundStyle(.primary)
+        .scaleEffect(1 + 0.16 * breath)
+        .opacity(1 - 0.32 * breath)
+        .frame(width: FlowRibbon.nodeDiameter, height: FlowRibbon.nodeDiameter)
+    }
+
+    private func iconBreath(at date: Date) -> CGFloat {
+        let period = 2.1
+        let turns = date.timeIntervalSinceReferenceDate / period
+        return CGFloat(0.5 - 0.5 * cos(turns * 2 * .pi))
     }
 
     private struct Bubble: Identifiable {
         var id: String
-        var symbol: String
+        var symbol: String?
+        var asset: String?
         var point: CGPoint
-        var pulse: Bool
     }
 
     private struct Lane {
@@ -156,9 +188,9 @@ struct EnergyFlowView: View {
                     Lane(id: "to-system", cubic: botLane, width: widths.1, watts: snapshot.systemLoadWatts, color: theme.charging)
                 ],
                 bubbles: [
-                    Bubble(id: "supply", symbol: "bolt.fill", point: leftLogo, pulse: true),
-                    Bubble(id: "battery", symbol: "battery.100percent.bolt", point: CGPoint(x: size.width - logo, y: top.y), pulse: true),
-                    Bubble(id: "mac", symbol: "laptopcomputer", point: CGPoint(x: size.width - logo, y: bot.y), pulse: false)
+                    Bubble(id: "supply", asset: "ChargeMark", point: leftLogo),
+                    Bubble(id: "battery", symbol: "battery.100percent.bolt", point: CGPoint(x: size.width - logo, y: top.y)),
+                    Bubble(id: "mac", symbol: "laptopcomputer", point: CGPoint(x: size.width - logo, y: bot.y))
                 ]
             )
         case .adapterHold:
@@ -176,8 +208,8 @@ struct EnergyFlowView: View {
                     )
                 ],
                 bubbles: [
-                    Bubble(id: "supply", symbol: "powerplug.fill", point: leftLogo, pulse: false),
-                    Bubble(id: "mac", symbol: "laptopcomputer", point: rightLogo, pulse: false)
+                    Bubble(id: "supply", asset: "ChargeMark", point: leftLogo),
+                    Bubble(id: "mac", symbol: "laptopcomputer", point: rightLogo)
                 ]
             )
         case .discharging:
@@ -195,8 +227,8 @@ struct EnergyFlowView: View {
                     )
                 ],
                 bubbles: [
-                    Bubble(id: "battery", symbol: "battery.100percent", point: leftLogo, pulse: true),
-                    Bubble(id: "mac", symbol: "laptopcomputer", point: rightLogo, pulse: true)
+                    Bubble(id: "battery", symbol: "battery.100percent", point: leftLogo),
+                    Bubble(id: "mac", symbol: "laptopcomputer", point: rightLogo)
                 ]
             )
         case .underpowered:
@@ -227,9 +259,9 @@ struct EnergyFlowView: View {
                     Lane(id: "battery-system", cubic: botLane, width: widths.1, watts: snapshot.dischargeWatts, color: theme.discharging)
                 ],
                 bubbles: [
-                    Bubble(id: "supply", symbol: "powerplug.fill", point: CGPoint(x: logo, y: leftTop.y), pulse: false),
-                    Bubble(id: "battery", symbol: "battery.100percent", point: CGPoint(x: logo, y: leftBot.y), pulse: true),
-                    Bubble(id: "mac", symbol: "laptopcomputer", point: rightLogo, pulse: true)
+                    Bubble(id: "supply", asset: "ChargeMark", point: CGPoint(x: logo, y: leftTop.y)),
+                    Bubble(id: "battery", symbol: "battery.100percent", point: CGPoint(x: logo, y: leftBot.y)),
+                    Bubble(id: "mac", symbol: "laptopcomputer", point: rightLogo)
                 ]
             )
         }
@@ -294,7 +326,12 @@ struct EnergyFlowView: View {
         return stops
     }
 
-    private func drawFilaments(context: inout GraphicsContext, lane: Lane, phase: Double) {
+    private func drawFilaments(
+        context: inout GraphicsContext,
+        lane: Lane,
+        phase: Double,
+        pigment: FlowMotionPigment
+    ) {
         let seed = fnv(lane.id)
         let count = FlowRibbon.filamentCount(laneWidth: lane.width)
         for index in 0..<count {
@@ -308,56 +345,119 @@ struct EnergyFlowView: View {
             var t = (phase * speed + offset).truncatingRemainder(dividingBy: 1)
             if t < 0 { t += 1 }
             for (from, to) in wrappedRanges(center: t + length / 2, span: length) where to - from > 0.02 {
-                strokeFilament(
+                fillFilament(
                     context: &context,
                     lane: lane,
                     from: from,
                     to: to,
                     lateral: lateral,
-                    thickness: thickness
+                    thickness: thickness,
+                    pigment: pigment
                 )
             }
         }
     }
 
-    private func strokeFilament(
+    /// Spindle fill, not a constant-width stroke: sides converge to a needle at both tips
+    /// so the bright mid-span cannot read as two parallel edges.
+    private func fillFilament(
         context: inout GraphicsContext,
         lane: Lane,
         from: Double,
         to: Double,
         lateral: CGFloat,
-        thickness: CGFloat
+        thickness: CGFloat,
+        pigment: FlowMotionPigment
     ) {
-        var path = Path()
-        let steps = max(4, Int(((to - from) * 24).rounded(.up)))
-        for index in 0...steps {
-            let u = from + (to - from) * Double(index) / Double(steps)
-            let point = lane.cubic.offsetPoint(CGFloat(u), distance: lateral)
-            if index == 0 {
-                path.move(to: point)
-            } else {
-                path.addLine(to: point)
-            }
-        }
         let start = lane.cubic.offsetPoint(CGFloat(from), distance: lateral)
         let end = lane.cubic.offsetPoint(CGFloat(to), distance: lateral)
-        let mid = Color.white.mix(with: lane.color, by: 0.18)
-        let edge = Color.white.mix(with: lane.color, by: 0.42).opacity(0.7)
-        context.stroke(
-            path,
-            with: .linearGradient(
-                Gradient(stops: [
-                    .init(color: .clear, location: 0),
-                    .init(color: edge, location: 0.22),
-                    .init(color: mid.opacity(0.92), location: 0.5),
-                    .init(color: edge, location: 0.78),
-                    .init(color: .clear, location: 1)
-                ]),
-                startPoint: start,
-                endPoint: end
-            ),
-            style: StrokeStyle(lineWidth: thickness, lineCap: .round, lineJoin: .round)
-        )
+        let body = filamentSpindle(lane: lane, from: from, to: to, lateral: lateral, thickness: thickness)
+        switch pigment {
+        case .gradient:
+            let base = motionLaneColor
+            let head = travelingColor(base: base, t: from)
+            let mid = travelingColor(base: base, t: (from + to) / 2)
+            let tail = travelingColor(base: base, t: to)
+            context.fill(
+                body,
+                with: .linearGradient(
+                    Gradient(stops: [
+                        .init(color: head.opacity(0), location: 0),
+                        .init(color: head.opacity(0.88), location: 0.16),
+                        .init(color: mid.opacity(0.96), location: 0.5),
+                        .init(color: tail.opacity(0.88), location: 0.84),
+                        .init(color: tail.opacity(0), location: 1)
+                    ]),
+                    startPoint: start,
+                    endPoint: end
+                )
+            )
+            context.fill(
+                filamentSpindle(lane: lane, from: from, to: to, lateral: lateral, thickness: thickness * 0.36),
+                with: .linearGradient(
+                    Gradient(stops: [
+                        .init(color: .clear, location: 0),
+                        .init(color: Color.white.opacity(0.55), location: 0.28),
+                        .init(color: Color.white.opacity(0.88), location: 0.5),
+                        .init(color: Color.white.opacity(0.55), location: 0.72),
+                        .init(color: .clear, location: 1)
+                    ]),
+                    startPoint: start,
+                    endPoint: end
+                )
+            )
+        case .solid, .white:
+            let color: Color = pigment == .white ? .white : theme.motionSolid(for: snapshot.flowMode)
+            context.fill(
+                body,
+                with: .linearGradient(tipFade(color), startPoint: start, endPoint: end)
+            )
+        }
+    }
+
+    private func tipFade(_ color: Color) -> Gradient {
+        Gradient(stops: [
+            .init(color: color.opacity(0), location: 0),
+            .init(color: color.opacity(0.82), location: 0.16),
+            .init(color: color.opacity(0.96), location: 0.5),
+            .init(color: color.opacity(0.82), location: 0.84),
+            .init(color: color.opacity(0), location: 1)
+        ])
+    }
+
+    private func filamentSpindle(
+        lane: Lane,
+        from: Double,
+        to: Double,
+        lateral: CGFloat,
+        thickness: CGFloat
+    ) -> Path {
+        let steps = max(8, Int(((to - from) * 36).rounded(.up)))
+        var upper: [CGPoint] = []
+        var lower: [CGPoint] = []
+        upper.reserveCapacity(steps + 1)
+        lower.reserveCapacity(steps + 1)
+        for index in 0...steps {
+            let frac = Double(index) / Double(steps)
+            let u = from + (to - from) * frac
+            let half = thickness * 0.5 * filamentEnvelope(frac)
+            let point = lane.cubic.offsetPoint(CGFloat(u), distance: lateral)
+            let normal = lane.cubic.normal(CGFloat(u))
+            upper.append(CGPoint(x: point.x + normal.x * half, y: point.y + normal.y * half))
+            lower.append(CGPoint(x: point.x - normal.x * half, y: point.y - normal.y * half))
+        }
+        var path = Path()
+        path.move(to: upper[0])
+        for point in upper.dropFirst() { path.addLine(to: point) }
+        for point in lower.reversed() { path.addLine(to: point) }
+        path.closeSubpath()
+        return path
+    }
+
+    /// 0 at both tips, 1 at mid-span. No plateau, so sides never run parallel.
+    private func filamentEnvelope(_ fraction: Double) -> CGFloat {
+        let tip = min(max(min(fraction, 1 - fraction) * 2, 0), 1)
+        return CGFloat(pow(tip, 1.35))
     }
 
     private func wrappedRanges(center: Double, span: Double) -> [(Double, Double)] {
@@ -371,12 +471,16 @@ struct EnergyFlowView: View {
         return [(start, 1), (0, end - 1)]
     }
 
-    /// Original CPU powder: tiny grains, white → lane color → darker tail. No GPU sprites.
-    private func drawPowder(context: inout GraphicsContext, lane: Lane, phase: Double) {
+    private func drawPowder(
+        context: inout GraphicsContext,
+        lane: Lane,
+        phase: Double,
+        pigment: FlowMotionPigment
+    ) {
         let seed = fnv(lane.id)
         let count = FlowRibbon.particleCount(laneWidth: lane.width)
         for index in 0..<count {
-            drawGrain(context: &context, index: index, seed: seed, lane: lane, phase: phase)
+            drawGrain(context: &context, index: index, seed: seed, lane: lane, phase: phase, pigment: pigment)
         }
     }
 
@@ -385,7 +489,8 @@ struct EnergyFlowView: View {
         index: Int,
         seed: UInt64,
         lane: Lane,
-        phase: Double
+        phase: Double,
+        pigment: FlowMotionPigment
     ) {
         var rng = SplitMix64(seed: seed &+ UInt64(index) &* 0xD1B54A32D192ED03)
         let offset = rng.unit()
@@ -405,14 +510,26 @@ struct EnergyFlowView: View {
         let x = pointOnCurve.x + normal.x * lateral
         let y = pointOnCurve.y + normal.y * lateral
         let rect = CGRect(x: x - radius, y: y - radius, width: radius * 2, height: radius * 2)
-        let traveling = travelingColor(base: lane.color, t: t)
         let alpha = fade * brightness
-        context.fill(Path(ellipseIn: rect), with: .color(traveling.opacity(alpha)))
-        let spark = t < 0.28 ? 0.92 : 0.55
-        context.fill(
-            Path(ellipseIn: rect.insetBy(dx: radius * 0.32, dy: radius * 0.32)),
-            with: .color(Color.white.opacity(alpha * spark))
-        )
+        switch pigment {
+        case .gradient:
+            let traveling = travelingColor(base: motionLaneColor, t: t)
+            context.fill(Path(ellipseIn: rect), with: .color(traveling.opacity(alpha)))
+            let spark = t < 0.28 ? 0.92 : 0.55
+            context.fill(
+                Path(ellipseIn: rect.insetBy(dx: radius * 0.32, dy: radius * 0.32)),
+                with: .color(Color.white.opacity(alpha * spark))
+            )
+        case .solid:
+            let color = theme.motionSolid(for: snapshot.flowMode)
+            context.fill(Path(ellipseIn: rect), with: .color(color.opacity(alpha)))
+        case .white:
+            context.fill(Path(ellipseIn: rect), with: .color(Color.white.opacity(alpha)))
+        }
+    }
+
+    private var motionLaneColor: Color {
+        theme.color(for: snapshot.flowMode)
     }
 
     private func travelingColor(base: Color, t: Double) -> Color {
