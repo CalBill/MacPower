@@ -292,7 +292,7 @@ final class EnergyMotionStyleTests: XCTestCase {
         XCTAssertEqual(AppLanguage.resolved(stored: ""), .system)
         XCTAssertEqual(AppLanguage.resolved(stored: "nope"), .system)
         XCTAssertEqual(AppLanguage.allCases.map(\.rawValue), [
-            "system", "en", "zh-Hans", "zh-Hant", "ja", "ko", "fr", "de", "es", "pt-BR", "it", "ru"
+            "system", "zh-Hans", "zh-Hant", "en", "ja", "ko", "fr", "de", "es", "pt-BR", "it", "ru"
         ])
     }
 }

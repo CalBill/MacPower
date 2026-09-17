@@ -1,7 +1,7 @@
 Damage Restoration
 ==================
 
-安装：下载 MacPower-1.2.5.dmg，拖进应用程序。
+安装：下载 MacPower-1.2.6.dmg，拖进应用程序。
 
 若提示 App 已损坏，再按下面做：
 
@@ -16,7 +16,7 @@ sudo xattr -rd com.apple.quarantine /Applications/MacPower.app
 
 ---
 
-Install: download MacPower-1.2.5.dmg, drag to Applications.
+Install: download MacPower-1.2.6.dmg, drag to Applications.
 
 If macOS says the app is damaged:
 

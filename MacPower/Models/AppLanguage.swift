@@ -2,9 +2,9 @@ import Foundation
 
 enum AppLanguage: String, CaseIterable, Identifiable, Sendable {
     case system
-    case english = "en"
     case simplifiedChinese = "zh-Hans"
     case traditionalChinese = "zh-Hant"
+    case english = "en"
     case japanese = "ja"
     case korean = "ko"
     case french = "fr"
