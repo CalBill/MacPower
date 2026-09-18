@@ -46,11 +46,11 @@ struct EnergyFlowView: View {
         cleanupTask?.cancel()
         outgoingSnapshot = previous
         transitionProgress = 0
-        withAnimation(.easeInOut(duration: 1.05)) {
+        withAnimation(.easeInOut(duration: 1.20)) {
             transitionProgress = 1
         }
         cleanupTask = Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(1_120))
+            try? await Task.sleep(for: .milliseconds(1_280))
             guard !Task.isCancelled else { return }
             outgoingSnapshot = nil
         }
@@ -165,30 +165,14 @@ private struct EnergyFlowDiagram: View {
             TimelineView(.periodic(from: .now, by: 1.0 / 30.0)) { timeline in
                 let breath = iconBreath(at: timeline.date)
                 ZStack {
-                    if let outgoing = layout.outgoingBubbles,
-                       let progress = layout.morphProgress {
-                        bubbleStack(outgoing, breath: breath)
-                            .opacity(1 - progress)
-                        bubbleStack(layout.bubbles, breath: breath)
-                            .opacity(progress)
-                    } else {
-                        bubbleStack(layout.bubbles, breath: breath)
-                    }
+                    bubbleStack(layout.bubbles, breath: breath)
                 }
             }
             .frame(width: size.width, height: size.height)
             .allowsHitTesting(false)
         } else {
             ZStack {
-                if let outgoing = layout.outgoingBubbles,
-                   let progress = layout.morphProgress {
-                    bubbleStack(outgoing, breath: 0)
-                        .opacity(1 - progress)
-                    bubbleStack(layout.bubbles, breath: 0)
-                        .opacity(progress)
-                } else {
-                    bubbleStack(layout.bubbles, breath: 0)
-                }
+                bubbleStack(layout.bubbles, breath: 0)
             }
             .allowsHitTesting(false)
         }
@@ -314,8 +298,6 @@ private struct EnergyFlowDiagram: View {
         var fill: Color
         var lanes: [Lane]
         var bubbles: [Bubble]
-        var outgoingBubbles: [Bubble]? = nil
-        var morphProgress: Double? = nil
         var isMorphing = false
     }
 
@@ -331,14 +313,22 @@ private struct EnergyFlowDiagram: View {
             return progress <= 0.001 ? from : to
         }
 
-        let lanes = interpolateLanes(from.lanes, to.lanes, progress: progress)
+        let lanes: [Lane]
+        if from.lanes.count == 2, to.lanes.count == 2 {
+            let bridge = bridgeLanes(from: from.lanes, to: to.lanes, in: size)
+            if progress < 0.5 {
+                lanes = interpolateLanes(from.lanes, bridge, progress: progress * 2)
+            } else {
+                lanes = interpolateLanes(bridge, to.lanes, progress: (progress - 0.5) * 2)
+            }
+        } else {
+            lanes = interpolateLanes(from.lanes, to.lanes, progress: progress)
+        }
         return Layout(
             body: bodyPath(for: lanes),
             fill: from.fill.mix(with: to.fill, by: progress),
             lanes: lanes,
             bubbles: to.bubbles,
-            outgoingBubbles: from.bubbles,
-            morphProgress: progress,
             isMorphing: true
         )
     }
@@ -474,6 +464,27 @@ private struct EnergyFlowDiagram: View {
                 color: a.color.mix(with: b.color, by: progress)
             )
         }
+    }
+
+    /// The neutral trunk is the real midpoint when a right-hand fork needs to
+    /// become a left-hand fork (or vice versa). Both channels coincide here,
+    /// then peel apart from the opposite end.
+    private func bridgeLanes(from: [Lane], to: [Lane], in size: CGSize) -> [Lane] {
+        let trunk = FlowRibbon.trunkWidth(totalWatts: 1)
+        let left = CGPoint(x: FlowRibbon.nodeDiameter / 2, y: size.height / 2)
+        let right = CGPoint(x: size.width - FlowRibbon.nodeDiameter / 2, y: size.height / 2)
+        let watts = max(
+            max(from.reduce(0) { $0 + $1.watts }, to.reduce(0) { $0 + $1.watts }),
+            0.01
+        )
+        let lane = Lane(
+            id: "morph-trunk",
+            cubic: straightCubic(from: left, to: right),
+            width: trunk,
+            watts: watts,
+            color: theme.color(for: snapshot.flowMode)
+        )
+        return [lane, lane]
     }
 
     /// Every state is expressed as two channels while morphing. A single path
