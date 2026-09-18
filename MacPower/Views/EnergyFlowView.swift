@@ -256,14 +256,11 @@ private struct EnergyFlowDiagram: View {
             ZStack {
                 FlowRibbonShape(path: bodyPath)
                     .fill(tint)
-                if splitOrMerge {
-                    // Light a system stadium SDF, then mask to the Y. Sampling glass
-                    // in the custom fork path plants a vertex specular on each round
-                    // finger cap (the blob next to the laptop).
-                    sampled.mask { FlowRibbonShape(path: bodyPath) }
-                } else {
-                    sampled
-                }
+                // The hosting slot reserves 120pt of headroom, while a single
+                // ribbon is intentionally 96pt tall. Always mask the sampled
+                // glass to the real silhouette; otherwise the final frame after
+                // a morph expands to the reserved slot and visibly jumps width.
+                sampled.mask { FlowRibbonShape(path: bodyPath) }
             }
         }
     }
