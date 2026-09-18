@@ -140,11 +140,12 @@ private struct EnergyFlowDiagram: View {
                 let phase = timeline.date.timeIntervalSinceReferenceDate / 4.6
                 Canvas { context, _ in
                     context.clip(to: layout.body, style: FillStyle(eoFill: false, antialiased: true))
+                    context.opacity *= layout.motionOpacity
                     switch motion {
                     case .sheen:
                         drawSheen(context: &context, layout: layout, phase: phase)
                     case .filaments, .filamentsSolid, .filamentsWhite:
-                        for lane in layout.lanes {
+                        for lane in motionLanes(for: layout) {
                             drawFilaments(
                                 context: &context,
                                 lane: lane,
@@ -154,7 +155,7 @@ private struct EnergyFlowDiagram: View {
                             )
                         }
                     case .particles, .particlesSolid, .particlesWhite:
-                        for lane in layout.lanes {
+                        for lane in motionLanes(for: layout) {
                             drawPowder(
                                 context: &context,
                                 lane: lane,
@@ -175,6 +176,8 @@ private struct EnergyFlowDiagram: View {
 
     private func wattLabels(layout: Layout) -> some View {
         Canvas { context, _ in
+            guard layout.labelOpacity > 0.01 else { return }
+            context.opacity *= layout.labelOpacity
             for lane in layout.lanes {
                 drawWattLabel(context: &context, lane: lane)
             }
@@ -322,6 +325,8 @@ private struct EnergyFlowDiagram: View {
         var lanes: [Lane]
         var bubbles: [Bubble]
         var isMorphing = false
+        var labelOpacity = 1.0
+        var motionOpacity = 1.0
     }
 
     private func layout(in size: CGSize, morph: FlowMorph?) -> Layout {
@@ -347,13 +352,52 @@ private struct EnergyFlowDiagram: View {
         } else {
             lanes = interpolateLanes(from.lanes, to.lanes, progress: progress)
         }
+        // Labels are information attached to finished branches, not decorations
+        // for the temporary trunk. Fading them away before the channels meet
+        // prevents the two watt values from colliding in the middle.
+        let distanceFromTrunk = abs(progress * 2 - 1)
+        let labelOpacity = distanceFromTrunk * distanceFromTrunk * (3 - 2 * distanceFromTrunk)
         return Layout(
             body: bodyPath(for: lanes),
             fill: from.fill.mix(with: to.fill, by: progress),
             lanes: lanes,
             bubbles: to.bubbles,
-            isMorphing: true
+            isMorphing: true,
+            labelOpacity: labelOpacity,
+            // A central trunk should feel quiet and concentrated, not become a
+            // snow globe while two invisible construction lanes overlap.
+            motionOpacity: 0.26 + 0.74 * labelOpacity
         )
+    }
+
+    /// Morphing needs two mathematical centre-lines so a path can fork, but
+    /// when they nearly coincide they must not emit two identical particle
+    /// systems. Present one composed lane instead.
+    private func motionLanes(for layout: Layout) -> [Lane] {
+        guard layout.isMorphing, layout.lanes.count == 2 else { return layout.lanes }
+        let first = layout.lanes[0]
+        let second = layout.lanes[1]
+        guard laneDistance(first, second) < 24 else { return layout.lanes }
+        return [
+            Lane(
+                id: "morph-trunk-motion",
+                cubic: interpolate(first.cubic, second.cubic, progress: 0.5),
+                width: max(first.width, second.width),
+                watts: first.watts + second.watts,
+                color: first.color.mix(with: second.color, by: 0.5)
+            )
+        ]
+    }
+
+    private func laneDistance(_ first: Lane, _ second: Lane) -> CGFloat {
+        let pairs = zip(
+            [first.cubic.p0, first.cubic.c1, first.cubic.c2, first.cubic.p1],
+            [second.cubic.p0, second.cubic.c1, second.cubic.c2, second.cubic.p1]
+        )
+        let total = pairs.reduce(CGFloat.zero) { partial, pair in
+            partial + hypot(pair.0.x - pair.1.x, pair.0.y - pair.1.y)
+        }
+        return total / 4
     }
 
     private func layout(in size: CGSize, snapshot: PowerSnapshot) -> Layout {
