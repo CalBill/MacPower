@@ -361,24 +361,9 @@ private struct EnergyFlowDiagram: View {
         let distanceFromTrunk = abs(progress * 2 - 1)
         let labelOpacity = distanceFromTrunk * distanceFromTrunk * (3 - 2 * distanceFromTrunk)
         let bubblePresentation = bubbles(for: progress, from: from.bubbles, to: to.bubbles)
-        let portProgress = smoothstep(progress)
-        let leftPortFraction = interpolate(
-            hasSingleLeftPort(morph.from.flowMode) ? 1.0 : 0.0,
-            hasSingleLeftPort(snapshot.flowMode) ? 1.0 : 0.0,
-            progress: portProgress
-        )
-        let rightPortFraction = interpolate(
-            hasSingleRightPort(morph.from.flowMode) ? 1.0 : 0.0,
-            hasSingleRightPort(snapshot.flowMode) ? 1.0 : 0.0,
-            progress: portProgress
-        )
         return Layout(
-            body: bodyPath(
-                for: lanes,
-                in: size,
-                leftPortFraction: leftPortFraction,
-                rightPortFraction: rightPortFraction
-            ),
+            body: movingTopologyBody(in: size, from: morph.from, to: snapshot, progress: progress)
+                ?? bodyPath(for: lanes),
             fill: from.fill.mix(with: to.fill, by: progress),
             lanes: lanes,
             bubbles: bubblePresentation.bubbles,
@@ -389,14 +374,6 @@ private struct EnergyFlowDiagram: View {
             motionOpacity: 0.26 + 0.74 * labelOpacity,
             bubbleOpacity: bubblePresentation.opacity
         )
-    }
-
-    private func hasSingleLeftPort(_ mode: EnergyFlowMode) -> Bool {
-        mode != .underpowered
-    }
-
-    private func hasSingleRightPort(_ mode: EnergyFlowMode) -> Bool {
-        mode != .charging
     }
 
     /// Node positions never interpolate. The outgoing set dissolves before the
@@ -664,83 +641,106 @@ private struct EnergyFlowDiagram: View {
         return t * t * (3 - 2 * t)
     }
 
-    private func bodyPath(
-        for lanes: [Lane],
+    /// Drives a single split/merge frontier across the ribbon. Unlike generic
+    /// coordinate interpolation, this never leaves a long, half-open seam: one
+    /// side is wholly joined while the frontier travels to its next position.
+    private func movingTopologyBody(
         in size: CGSize,
-        leftPortFraction: Double,
-        rightPortFraction: Double
-    ) -> Path {
-        var paths = lanes.map { ForkOutline.cubicCapsule($0.cubic, width: $0.width) }
+        from source: PowerSnapshot,
+        to destination: PowerSnapshot,
+        progress: Double
+    ) -> Path? {
+        let staticSplit = FlowRibbon.forkT
+        let staticMerge = 1 - FlowRibbon.forkT
+        let phase = smoothstep(progress)
+
+        switch (source.flowMode, destination.flowMode) {
+        case (.underpowered, .charging):
+            if phase < 0.5 {
+                return underpoweredBody(in: size, snapshot: source, mergeT: staticMerge * (1 - CGFloat(smoothstep(phase * 2))))
+            }
+            return chargingBody(in: size, snapshot: destination, splitT: 1 - (1 - staticSplit) * CGFloat(smoothstep((phase - 0.5) * 2)))
+
+        case (.charging, .underpowered):
+            if phase < 0.5 {
+                return chargingBody(in: size, snapshot: source, splitT: staticSplit + (1 - staticSplit) * CGFloat(smoothstep(phase * 2)))
+            }
+            return underpoweredBody(in: size, snapshot: destination, mergeT: staticMerge * CGFloat(smoothstep((phase - 0.5) * 2)))
+
+        case (.charging, .adapterHold), (.charging, .discharging):
+            return chargingBody(in: size, snapshot: source, splitT: staticSplit + (1 - staticSplit) * CGFloat(phase))
+
+        case (.adapterHold, .charging), (.discharging, .charging):
+            return chargingBody(in: size, snapshot: destination, splitT: 1 - (1 - staticSplit) * CGFloat(phase))
+
+        case (.underpowered, .adapterHold), (.underpowered, .discharging):
+            return underpoweredBody(in: size, snapshot: source, mergeT: staticMerge * (1 - CGFloat(phase)))
+
+        case (.adapterHold, .underpowered), (.discharging, .underpowered):
+            return underpoweredBody(in: size, snapshot: destination, mergeT: staticMerge * CGFloat(phase))
+
+        case (.adapterHold, .discharging), (.discharging, .adapterHold):
+            return singleBody(in: size)
+
+        default:
+            return nil
+        }
+    }
+
+    private func chargingBody(in size: CGSize, snapshot: PowerSnapshot, splitT: CGFloat) -> Path {
+        if splitT >= 0.995 { return singleBody(in: size) }
         let trunk = FlowRibbon.trunkWidth(totalWatts: 1)
         let inset = FlowRibbon.capRadius(for: trunk)
-        let maximumPortDepth = max(
-            FlowRibbon.nodeDiameter,
-            (size.width - inset * 2) * FlowRibbon.forkT + 1
+        let left = CGPoint(x: inset, y: size.height / 2)
+        let charge = max(snapshot.chargeWatts, 0.01)
+        let load = max(snapshot.systemLoadWatts, 0.01)
+        let widths = FlowRibbon.splitWidths(first: charge, second: load, trunk: trunk)
+        let top = CGPoint(x: size.width - inset, y: widths.0 / 2)
+        let bottom = CGPoint(x: size.width - inset, y: size.height - widths.1 / 2)
+        return ForkOutline.splitPath(
+            left: left,
+            top: top,
+            bot: bottom,
+            topW: widths.0,
+            botW: widths.1,
+            splitT: splitT
         )
-        let middle = size.height / 2
-
-        paths.append(contentsOf: taperedLeftPort(
-            inset: inset,
-            middle: middle,
-            trunk: trunk,
-            depth: maximumPortDepth * CGFloat(leftPortFraction)
-        ))
-        paths.append(contentsOf: taperedRightPort(
-            right: size.width - inset,
-            middle: middle,
-            trunk: trunk,
-            depth: maximumPortDepth * CGFloat(rightPortFraction)
-        ))
-        return ForkOutline.combinedSilhouette(paths)
     }
 
-    /// A port ends in a moving wedge, rather than a butt join. The point is the
-    /// visible split/merge frontier and travels continuously as the port grows
-    /// or recedes with the topology transition.
-    private func taperedLeftPort(inset: CGFloat, middle: CGFloat, trunk: CGFloat, depth: CGFloat) -> [Path] {
-        guard depth > 0.5 else { return [] }
-        let taper = min(trunk * 0.52, depth)
-        let shoulder = inset + depth - taper
-        var paths: [Path] = []
-        if shoulder > inset + 0.5 {
-            paths.append(ForkOutline.capsule(
-                from: CGPoint(x: inset, y: middle),
-                to: CGPoint(x: shoulder, y: middle),
-                width: trunk,
-                startCap: .round,
-                endCap: .butt
-            ))
-        }
-        var tip = Path()
-        tip.move(to: CGPoint(x: shoulder, y: middle - trunk / 2))
-        tip.addLine(to: CGPoint(x: inset + depth, y: middle))
-        tip.addLine(to: CGPoint(x: shoulder, y: middle + trunk / 2))
-        tip.closeSubpath()
-        paths.append(tip)
-        return paths
+    private func underpoweredBody(in size: CGSize, snapshot: PowerSnapshot, mergeT: CGFloat) -> Path {
+        if mergeT <= 0.005 { return singleBody(in: size) }
+        let trunk = FlowRibbon.trunkWidth(totalWatts: 1)
+        let inset = FlowRibbon.capRadius(for: trunk)
+        let adapter = max(snapshot.adapterInWatts, 0.01)
+        let battery = max(snapshot.dischargeWatts, 0.01)
+        let widths = FlowRibbon.splitWidths(first: adapter, second: battery, trunk: trunk)
+        let top = CGPoint(x: inset, y: widths.0 / 2)
+        let bottom = CGPoint(x: inset, y: size.height - widths.1 / 2)
+        let right = CGPoint(x: size.width - inset, y: size.height / 2)
+        return ForkOutline.mergePath(
+            top: top,
+            bot: bottom,
+            right: right,
+            topW: widths.0,
+            botW: widths.1,
+            mergeT: mergeT
+        )
     }
 
-    private func taperedRightPort(right: CGFloat, middle: CGFloat, trunk: CGFloat, depth: CGFloat) -> [Path] {
-        guard depth > 0.5 else { return [] }
-        let taper = min(trunk * 0.52, depth)
-        let shoulder = right - depth + taper
-        var paths: [Path] = []
-        var tip = Path()
-        tip.move(to: CGPoint(x: right - depth, y: middle))
-        tip.addLine(to: CGPoint(x: shoulder, y: middle - trunk / 2))
-        tip.addLine(to: CGPoint(x: shoulder, y: middle + trunk / 2))
-        tip.closeSubpath()
-        paths.append(tip)
-        if shoulder < right - 0.5 {
-            paths.append(ForkOutline.capsule(
-                from: CGPoint(x: shoulder, y: middle),
-                to: CGPoint(x: right, y: middle),
-                width: trunk,
-                startCap: .butt,
-                endCap: .round
-            ))
-        }
-        return paths
+    private func singleBody(in size: CGSize) -> Path {
+        let trunk = FlowRibbon.trunkWidth(totalWatts: 1)
+        let inset = FlowRibbon.capRadius(for: trunk)
+        return ForkOutline.capsule(
+            from: CGPoint(x: inset, y: size.height / 2),
+            to: CGPoint(x: size.width - inset, y: size.height / 2),
+            width: trunk
+        )
+    }
+
+    private func bodyPath(for lanes: [Lane]) -> Path {
+        ForkOutline.combinedSilhouette(
+            lanes.map { ForkOutline.cubicCapsule($0.cubic, width: $0.width) }
+        )
     }
 
     private func straightCubic(from start: CGPoint, to end: CGPoint) -> FlowCubic {
