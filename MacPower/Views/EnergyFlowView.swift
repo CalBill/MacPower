@@ -820,11 +820,21 @@ private struct EnergyFlowDiagram: View {
     private var footer: some View {
         VStack(alignment: .leading, spacing: 3) {
             labeled(Localization.string("energy.supplyPower", language: language), value: supplyText)
-            if snapshot.adapterCeilingWatts > 0, snapshot.externalConnected {
-                labeled(Localization.string("energy.chargerRating", language: language), value: String(format: "%.0f W", snapshot.adapterCeilingWatts))
-            }
+            // Always reserve this row: plugging in a charger should reveal its
+            // rating, not make the whole popover grow by one text line.
+            labeled(
+                Localization.string("energy.chargerRating", language: language),
+                value: String(format: "%.0f W", snapshot.adapterCeilingWatts)
+            )
+            .opacity(showsChargerRating ? 1 : 0)
+            .accessibilityHidden(!showsChargerRating)
+            .animation(.easeInOut(duration: 0.24), value: showsChargerRating)
         }
         .font(.caption)
+    }
+
+    private var showsChargerRating: Bool {
+        snapshot.adapterCeilingWatts > 0 && snapshot.externalConnected
     }
 
     private var supplyText: String {
