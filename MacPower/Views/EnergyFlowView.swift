@@ -258,7 +258,9 @@ private struct EnergyFlowDiagram: View {
 
     private var diagramHeight: CGFloat {
         let trunk = FlowRibbon.trunkWidth(totalWatts: 1)
-        return splitOrMerge || morph != nil ? trunk + 24 : trunk
+        // Reserve fork headroom in every power state so connecting, charging,
+        // and unplugging never resize the surrounding popover.
+        return trunk + 24
     }
 
     private var splitOrMerge: Bool {
