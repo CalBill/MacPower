@@ -277,6 +277,17 @@ enum ForkOutline {
         return path.normalizedSilhouette()
     }
 
+    /// Fuses touching lanes into one silhouette before the glass material is
+    /// sampled. This keeps a two-lane trunk visually identical to its eventual
+    /// single-lane form at the end of a merge.
+    static func combinedSilhouette(_ paths: [Path]) -> Path {
+        var silhouette = Path()
+        for path in paths {
+            silhouette.addPath(path)
+        }
+        return silhouette.normalizedSilhouette()
+    }
+
     /// One closed rounded-rect. Avoids stroke+cap subpaths whose corner vertices
     /// become two static Liquid Glass speculars on the left end.
     private static func continuousStadium(from start: CGPoint, to end: CGPoint, width: CGFloat) -> Path {

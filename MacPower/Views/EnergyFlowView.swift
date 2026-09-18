@@ -193,6 +193,7 @@ private struct EnergyFlowDiagram: View {
                 ZStack {
                     bubbleStack(layout.bubbles, breath: breath)
                 }
+                .opacity(layout.bubbleOpacity)
             }
             .frame(width: size.width, height: size.height)
             .allowsHitTesting(false)
@@ -200,6 +201,7 @@ private struct EnergyFlowDiagram: View {
             ZStack {
                 bubbleStack(layout.bubbles, breath: 0)
             }
+            .opacity(layout.bubbleOpacity)
             .allowsHitTesting(false)
         }
     }
@@ -327,6 +329,7 @@ private struct EnergyFlowDiagram: View {
         var isMorphing = false
         var labelOpacity = 1.0
         var motionOpacity = 1.0
+        var bubbleOpacity = 1.0
     }
 
     private func layout(in size: CGSize, morph: FlowMorph?) -> Layout {
@@ -357,17 +360,33 @@ private struct EnergyFlowDiagram: View {
         // prevents the two watt values from colliding in the middle.
         let distanceFromTrunk = abs(progress * 2 - 1)
         let labelOpacity = distanceFromTrunk * distanceFromTrunk * (3 - 2 * distanceFromTrunk)
+        let bubblePresentation = bubbles(for: progress, from: from.bubbles, to: to.bubbles)
         return Layout(
             body: bodyPath(for: lanes),
             fill: from.fill.mix(with: to.fill, by: progress),
             lanes: lanes,
-            bubbles: to.bubbles,
+            bubbles: bubblePresentation.bubbles,
             isMorphing: true,
             labelOpacity: labelOpacity,
             // A central trunk should feel quiet and concentrated, not become a
             // snow globe while two invisible construction lanes overlap.
-            motionOpacity: 0.26 + 0.74 * labelOpacity
+            motionOpacity: 0.26 + 0.74 * labelOpacity,
+            bubbleOpacity: bubblePresentation.opacity
         )
+    }
+
+    /// Node positions never interpolate. The outgoing set dissolves before the
+    /// topology changes; the incoming set appears only after its new branch has
+    /// gained enough body to hold it. This avoids icons stranded half in glass
+    /// and half in empty popover space.
+    private func bubbles(for progress: Double, from: [Bubble], to: [Bubble]) -> (bubbles: [Bubble], opacity: Double) {
+        if progress < 0.26 {
+            return (from, 1 - smoothstep(progress / 0.26))
+        }
+        if progress > 0.62 {
+            return (to, smoothstep((progress - 0.62) / 0.38))
+        }
+        return ([], 0)
     }
 
     /// Morphing needs two mathematical centre-lines so a path can fork, but
@@ -522,8 +541,8 @@ private struct EnergyFlowDiagram: View {
     }
 
     private func interpolateLanes(_ from: [Lane], _ to: [Lane], progress: Double) -> [Lane] {
-        let start = expandedLanes(from)
-        let end = expandedLanes(to)
+        let start = expandedLanes(from, pairedWith: to)
+        let end = expandedLanes(to, pairedWith: from)
         return zip(start, end).enumerated().map { index, pair in
             let (a, b) = pair
             return Lane(
@@ -559,11 +578,37 @@ private struct EnergyFlowDiagram: View {
     }
 
     /// Every state is expressed as two channels while morphing. A single path
-    /// temporarily becomes two coincident paths, which can then peel apart or
-    /// converge without ever snapping to a new diagram.
-    private func expandedLanes(_ lanes: [Lane]) -> [Lane] {
+    /// becomes two stacked sublanes whose combined thickness remains equal to
+    /// the trunk, so a merge cannot swell before its final frame.
+    private func expandedLanes(_ lanes: [Lane], pairedWith other: [Lane]) -> [Lane] {
         guard let first = lanes.first else { return [] }
-        return lanes.count == 1 ? [first, first] : Array(lanes.prefix(2))
+        guard lanes.count == 1, other.count >= 2 else {
+            return Array(lanes.prefix(2))
+        }
+        let pair = Array(other.prefix(2))
+        let total = max(pair.reduce(0) { $0 + $1.width }, 0.01)
+        var offset = -first.width / 2
+        return pair.enumerated().map { index, lane in
+            let width = first.width * lane.width / total
+            let centerOffset = offset + width / 2
+            offset += width
+            return Lane(
+                id: "trunk-sublane-\(index)",
+                cubic: verticallyOffset(first.cubic, by: centerOffset),
+                width: width,
+                watts: first.watts * Double(width / first.width),
+                color: first.color
+            )
+        }
+    }
+
+    private func verticallyOffset(_ cubic: FlowCubic, by offset: CGFloat) -> FlowCubic {
+        FlowCubic(
+            p0: CGPoint(x: cubic.p0.x, y: cubic.p0.y + offset),
+            c1: CGPoint(x: cubic.c1.x, y: cubic.c1.y + offset),
+            c2: CGPoint(x: cubic.c2.x, y: cubic.c2.y + offset),
+            p1: CGPoint(x: cubic.p1.x, y: cubic.p1.y + offset)
+        )
     }
 
     private func interpolate(_ from: FlowCubic, _ to: FlowCubic, progress: Double) -> FlowCubic {
@@ -590,12 +635,15 @@ private struct EnergyFlowDiagram: View {
         from + (to - from) * progress
     }
 
+    private func smoothstep(_ value: Double) -> Double {
+        let t = min(max(value, 0), 1)
+        return t * t * (3 - 2 * t)
+    }
+
     private func bodyPath(for lanes: [Lane]) -> Path {
-        var silhouette = Path()
-        for lane in lanes {
-            silhouette.addPath(ForkOutline.cubicCapsule(lane.cubic, width: lane.width))
-        }
-        return silhouette
+        ForkOutline.combinedSilhouette(
+            lanes.map { ForkOutline.cubicCapsule($0.cubic, width: $0.width) }
+        )
     }
 
     private func straightCubic(from start: CGPoint, to end: CGPoint) -> FlowCubic {
