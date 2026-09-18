@@ -19,12 +19,12 @@ struct EnergyFlowView: View {
             if let outgoingSnapshot {
                 diagram(for: outgoingSnapshot)
                     .opacity(1 - transitionProgress)
-                    .scaleEffect(1 - 0.015 * transitionProgress)
+                    .scaleEffect(1 - 0.025 * transitionProgress)
             }
 
-            diagram(for: snapshot)
+            diagram(for: snapshot, transitionProgress: outgoingSnapshot == nil ? nil : transitionProgress)
                 .opacity(outgoingSnapshot == nil ? 1 : transitionProgress)
-                .scaleEffect(outgoingSnapshot == nil ? 1 : 0.985 + 0.015 * transitionProgress)
+                .scaleEffect(outgoingSnapshot == nil ? 1 : 0.975 + 0.025 * transitionProgress)
         }
         .onChange(of: snapshot) { previous, current in
             guard previous.flowMode != current.flowMode else { return }
@@ -35,7 +35,7 @@ struct EnergyFlowView: View {
         }
     }
 
-    private func diagram(for snapshot: PowerSnapshot) -> some View {
+    private func diagram(for snapshot: PowerSnapshot, transitionProgress: Double? = nil) -> some View {
         EnergyFlowDiagram(
             snapshot: snapshot,
             theme: theme,
@@ -44,7 +44,8 @@ struct EnergyFlowView: View {
             motionFrameRate: motionFrameRate,
             pulseFlowIcons: pulseFlowIcons,
             language: language,
-            showsFooter: showsFooter
+            showsFooter: showsFooter,
+            transitionProgress: transitionProgress
         )
     }
 
@@ -52,11 +53,11 @@ struct EnergyFlowView: View {
         cleanupTask?.cancel()
         outgoingSnapshot = previous
         transitionProgress = 0
-        withAnimation(.easeInOut(duration: 0.42)) {
+        withAnimation(.easeInOut(duration: 1.05)) {
             transitionProgress = 1
         }
         cleanupTask = Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(460))
+            try? await Task.sleep(for: .milliseconds(1_120))
             guard !Task.isCancelled else { return }
             outgoingSnapshot = nil
         }
@@ -72,6 +73,9 @@ private struct EnergyFlowDiagram: View {
     var pulseFlowIcons: Bool
     var language: AppLanguage
     var showsFooter: Bool = true
+    /// While a flow mode changes, a color pulse sweeps through the incoming
+    /// path so the new source feels like it is gradually taking over.
+    var transitionProgress: Double?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -100,12 +104,46 @@ private struct EnergyFlowDiagram: View {
             .overlay {
                 ZStack {
                     motionOverlay(layout: layout)
+                    transitionWash(layout: layout)
                     wattLabels(layout: layout)
                     iconLayer(layout: layout, size: geo.size)
                 }
             }
         }
         .frame(height: diagramHeight)
+    }
+
+    @ViewBuilder
+    private func transitionWash(layout: Layout) -> some View {
+        if let transitionProgress {
+            Canvas { context, _ in
+                let bounds = layout.body.boundingRect
+                guard bounds.width > 1, bounds.height > 1 else { return }
+
+                let progress = min(max(transitionProgress, 0), 1)
+                let sweepWidth = bounds.width * 0.34
+                let center = bounds.minX - sweepWidth + (bounds.width + sweepWidth * 2) * progress
+                let peak = sin(progress * .pi)
+                let tint = theme.color(for: snapshot.flowMode)
+
+                context.clip(to: layout.body, style: FillStyle(eoFill: false, antialiased: true))
+                context.fill(
+                    Path(bounds),
+                    with: .linearGradient(
+                        Gradient(stops: [
+                            .init(color: .clear, location: 0),
+                            .init(color: tint.opacity(0.10 * peak), location: 0.22),
+                            .init(color: Color.white.opacity(0.46 * peak), location: 0.5),
+                            .init(color: tint.opacity(0.26 * peak), location: 0.72),
+                            .init(color: .clear, location: 1)
+                        ]),
+                        startPoint: CGPoint(x: center - sweepWidth, y: bounds.midY),
+                        endPoint: CGPoint(x: center + sweepWidth, y: bounds.midY)
+                    )
+                )
+            }
+            .allowsHitTesting(false)
+        }
     }
 
     @ViewBuilder
