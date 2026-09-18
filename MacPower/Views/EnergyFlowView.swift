@@ -11,14 +11,31 @@ struct EnergyFlowView: View {
     var showsFooter: Bool = true
 
     @State private var outgoingSnapshot: PowerSnapshot?
-    @State private var transitionProgress = 1.0
+    @State private var transitionStartedAt: Date?
     @State private var cleanupTask: Task<Void, Never>?
 
+    /// This is deliberately long enough for the fork to read as a physical
+    /// split/merge, rather than a replacement of one static diagram by another.
+    private let transitionDuration: TimeInterval = 1.65
+
     var body: some View {
-        diagram(
-            for: snapshot,
-            morph: outgoingSnapshot.map { FlowMorph(from: $0, progress: transitionProgress) }
-        )
+        Group {
+            if let outgoingSnapshot, let transitionStartedAt {
+                // A TimelineView owns the clock instead of asking SwiftUI to
+                // interpolate a @State value once. Menu-bar popovers can coalesce
+                // state-animation frames; this guarantees a fresh ribbon path for
+                // every display frame throughout the split or merge.
+                TimelineView(.animation(minimumInterval: 1.0 / 60.0, paused: false)) { timeline in
+                    let progress = easedProgress(at: timeline.date, since: transitionStartedAt)
+                    diagram(
+                        for: snapshot,
+                        morph: FlowMorph(from: outgoingSnapshot, progress: progress)
+                    )
+                }
+            } else {
+                diagram(for: snapshot)
+            }
+        }
         .onChange(of: snapshot) { previous, current in
             guard previous.flowMode != current.flowMode else { return }
             beginTransition(from: previous)
@@ -45,15 +62,21 @@ struct EnergyFlowView: View {
     private func beginTransition(from previous: PowerSnapshot) {
         cleanupTask?.cancel()
         outgoingSnapshot = previous
-        transitionProgress = 0
-        withAnimation(.easeInOut(duration: 1.20)) {
-            transitionProgress = 1
-        }
+        let startedAt = Date()
+        transitionStartedAt = startedAt
         cleanupTask = Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(1_280))
-            guard !Task.isCancelled else { return }
+            try? await Task.sleep(for: .milliseconds(Int((transitionDuration + 0.08) * 1_000)))
+            guard !Task.isCancelled, transitionStartedAt == startedAt else { return }
             outgoingSnapshot = nil
+            transitionStartedAt = nil
         }
+    }
+
+    private func easedProgress(at date: Date, since startedAt: Date) -> Double {
+        let raw = min(max(date.timeIntervalSince(startedAt) / transitionDuration, 0), 1)
+        // Smoothstep has a calm beginning/end, but maintains visible movement in
+        // the middle of the animation where the trunk joins or separates.
+        return raw * raw * (3 - 2 * raw)
     }
 }
 
