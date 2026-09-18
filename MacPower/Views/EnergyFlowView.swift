@@ -362,7 +362,12 @@ private struct EnergyFlowDiagram: View {
         let labelOpacity = distanceFromTrunk * distanceFromTrunk * (3 - 2 * distanceFromTrunk)
         let bubblePresentation = bubbles(for: progress, from: from.bubbles, to: to.bubbles)
         return Layout(
-            body: bodyPath(for: lanes),
+            body: bodyPath(
+                for: lanes,
+                in: size,
+                fixedLeftPort: hasSingleLeftPort(snapshot.flowMode),
+                fixedRightPort: hasSingleRightPort(snapshot.flowMode)
+            ),
             fill: from.fill.mix(with: to.fill, by: progress),
             lanes: lanes,
             bubbles: bubblePresentation.bubbles,
@@ -373,6 +378,14 @@ private struct EnergyFlowDiagram: View {
             motionOpacity: 0.26 + 0.74 * labelOpacity,
             bubbleOpacity: bubblePresentation.opacity
         )
+    }
+
+    private func hasSingleLeftPort(_ mode: EnergyFlowMode) -> Bool {
+        mode != .underpowered
+    }
+
+    private func hasSingleRightPort(_ mode: EnergyFlowMode) -> Bool {
+        mode != .charging
     }
 
     /// Node positions never interpolate. The outgoing set dissolves before the
@@ -640,10 +653,47 @@ private struct EnergyFlowDiagram: View {
         return t * t * (3 - 2 * t)
     }
 
-    private func bodyPath(for lanes: [Lane]) -> Path {
-        ForkOutline.combinedSilhouette(
-            lanes.map { ForkOutline.cubicCapsule($0.cubic, width: $0.width) }
+    private func bodyPath(
+        for lanes: [Lane],
+        in size: CGSize,
+        fixedLeftPort: Bool,
+        fixedRightPort: Bool
+    ) -> Path {
+        var paths = lanes.map { ForkOutline.cubicCapsule($0.cubic, width: $0.width) }
+        let trunk = FlowRibbon.trunkWidth(totalWatts: 1)
+        let inset = FlowRibbon.capRadius(for: trunk)
+        let portDepth = max(
+            FlowRibbon.nodeDiameter,
+            (size.width - inset * 2) * FlowRibbon.forkT + 1
         )
+        let middle = size.height / 2
+
+        // The external ends are ports, not two independent lane caps. Keeping
+        // this short static trunk makes the popover edge read as one continuous
+        // object while the split is born inside the channel.
+        if fixedLeftPort {
+            paths.append(
+                ForkOutline.capsule(
+                    from: CGPoint(x: inset, y: middle),
+                    to: CGPoint(x: inset + portDepth, y: middle),
+                    width: trunk,
+                    startCap: .round,
+                    endCap: .butt
+                )
+            )
+        }
+        if fixedRightPort {
+            paths.append(
+                ForkOutline.capsule(
+                    from: CGPoint(x: size.width - inset - portDepth, y: middle),
+                    to: CGPoint(x: size.width - inset, y: middle),
+                    width: trunk,
+                    startCap: .butt,
+                    endCap: .round
+                )
+            )
+        }
+        return ForkOutline.combinedSilhouette(paths)
     }
 
     private func straightCubic(from start: CGPoint, to end: CGPoint) -> FlowCubic {
