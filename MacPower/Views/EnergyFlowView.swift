@@ -15,17 +15,10 @@ struct EnergyFlowView: View {
     @State private var cleanupTask: Task<Void, Never>?
 
     var body: some View {
-        ZStack {
-            if let outgoingSnapshot {
-                diagram(for: outgoingSnapshot)
-                    .opacity(1 - transitionProgress)
-                    .scaleEffect(1 - 0.025 * transitionProgress)
-            }
-
-            diagram(for: snapshot, transitionProgress: outgoingSnapshot == nil ? nil : transitionProgress)
-                .opacity(outgoingSnapshot == nil ? 1 : transitionProgress)
-                .scaleEffect(outgoingSnapshot == nil ? 1 : 0.975 + 0.025 * transitionProgress)
-        }
+        diagram(
+            for: snapshot,
+            morph: outgoingSnapshot.map { FlowMorph(from: $0, progress: transitionProgress) }
+        )
         .onChange(of: snapshot) { previous, current in
             guard previous.flowMode != current.flowMode else { return }
             beginTransition(from: previous)
@@ -35,7 +28,7 @@ struct EnergyFlowView: View {
         }
     }
 
-    private func diagram(for snapshot: PowerSnapshot, transitionProgress: Double? = nil) -> some View {
+    private func diagram(for snapshot: PowerSnapshot, morph: FlowMorph? = nil) -> some View {
         EnergyFlowDiagram(
             snapshot: snapshot,
             theme: theme,
@@ -45,7 +38,7 @@ struct EnergyFlowView: View {
             pulseFlowIcons: pulseFlowIcons,
             language: language,
             showsFooter: showsFooter,
-            transitionProgress: transitionProgress
+            morph: morph
         )
     }
 
@@ -64,6 +57,11 @@ struct EnergyFlowView: View {
     }
 }
 
+private struct FlowMorph {
+    var from: PowerSnapshot
+    var progress: Double
+}
+
 private struct EnergyFlowDiagram: View {
     var snapshot: PowerSnapshot
     var theme: AppTheme
@@ -73,9 +71,9 @@ private struct EnergyFlowDiagram: View {
     var pulseFlowIcons: Bool
     var language: AppLanguage
     var showsFooter: Bool = true
-    /// While a flow mode changes, a color pulse sweeps through the incoming
-    /// path so the new source feels like it is gradually taking over.
-    var transitionProgress: Double?
+    /// During a mode change, the ribbon geometry and pigment interpolate from
+    /// the old telemetry reading to the new one.
+    var morph: FlowMorph?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -88,7 +86,7 @@ private struct EnergyFlowDiagram: View {
 
     private var diagram: some View {
         GeometryReader { geo in
-            let layout = layout(in: geo.size)
+            let layout = layout(in: geo.size, morph: morph)
             // Glass is Equatable and only depends on shape/tint. Motion lives in an
             // overlay rasterized with drawingGroup so 60 fps Canvas ticks do not
             // resample glassEffect.
@@ -96,7 +94,7 @@ private struct EnergyFlowDiagram: View {
                 size: geo.size,
                 mode: snapshot.flowMode,
                 fill: layout.fill,
-                splitOrMerge: splitOrMerge,
+                splitOrMerge: splitOrMerge || layout.isMorphing,
                 bodyPath: layout.body,
                 laneSignature: laneSignature(layout)
             )
@@ -104,46 +102,12 @@ private struct EnergyFlowDiagram: View {
             .overlay {
                 ZStack {
                     motionOverlay(layout: layout)
-                    transitionWash(layout: layout)
                     wattLabels(layout: layout)
                     iconLayer(layout: layout, size: geo.size)
                 }
             }
         }
         .frame(height: diagramHeight)
-    }
-
-    @ViewBuilder
-    private func transitionWash(layout: Layout) -> some View {
-        if let transitionProgress {
-            Canvas { context, _ in
-                let bounds = layout.body.boundingRect
-                guard bounds.width > 1, bounds.height > 1 else { return }
-
-                let progress = min(max(transitionProgress, 0), 1)
-                let sweepWidth = bounds.width * 0.34
-                let center = bounds.minX - sweepWidth + (bounds.width + sweepWidth * 2) * progress
-                let peak = sin(progress * .pi)
-                let tint = theme.color(for: snapshot.flowMode)
-
-                context.clip(to: layout.body, style: FillStyle(eoFill: false, antialiased: true))
-                context.fill(
-                    Path(bounds),
-                    with: .linearGradient(
-                        Gradient(stops: [
-                            .init(color: .clear, location: 0),
-                            .init(color: tint.opacity(0.10 * peak), location: 0.22),
-                            .init(color: Color.white.opacity(0.46 * peak), location: 0.5),
-                            .init(color: tint.opacity(0.26 * peak), location: 0.72),
-                            .init(color: .clear, location: 1)
-                        ]),
-                        startPoint: CGPoint(x: center - sweepWidth, y: bounds.midY),
-                        endPoint: CGPoint(x: center + sweepWidth, y: bounds.midY)
-                    )
-                )
-            }
-            .allowsHitTesting(false)
-        }
     }
 
     @ViewBuilder
@@ -158,11 +122,23 @@ private struct EnergyFlowDiagram: View {
                         drawSheen(context: &context, layout: layout, phase: phase)
                     case .filaments, .filamentsSolid, .filamentsWhite:
                         for lane in layout.lanes {
-                            drawFilaments(context: &context, lane: lane, phase: phase, pigment: motion.pigment ?? .gradient)
+                            drawFilaments(
+                                context: &context,
+                                lane: lane,
+                                phase: phase,
+                                pigment: motion.pigment ?? .gradient,
+                                baseColor: layout.fill
+                            )
                         }
                     case .particles, .particlesSolid, .particlesWhite:
                         for lane in layout.lanes {
-                            drawPowder(context: &context, lane: lane, phase: phase, pigment: motion.pigment ?? .gradient)
+                            drawPowder(
+                                context: &context,
+                                lane: lane,
+                                phase: phase,
+                                pigment: motion.pigment ?? .gradient,
+                                baseColor: layout.fill
+                            )
                         }
                     case .off:
                         break
@@ -189,20 +165,39 @@ private struct EnergyFlowDiagram: View {
             TimelineView(.periodic(from: .now, by: 1.0 / 30.0)) { timeline in
                 let breath = iconBreath(at: timeline.date)
                 ZStack {
-                    ForEach(layout.bubbles) { bubble in
-                        flowNode(bubble, breath: breath)
-                            .position(bubble.point)
+                    if let outgoing = layout.outgoingBubbles,
+                       let progress = layout.morphProgress {
+                        bubbleStack(outgoing, breath: breath)
+                            .opacity(1 - progress)
+                        bubbleStack(layout.bubbles, breath: breath)
+                            .opacity(progress)
+                    } else {
+                        bubbleStack(layout.bubbles, breath: breath)
                     }
                 }
             }
             .frame(width: size.width, height: size.height)
             .allowsHitTesting(false)
         } else {
-            ForEach(layout.bubbles) { bubble in
-                flowNode(bubble, breath: 0)
-                    .position(bubble.point)
+            ZStack {
+                if let outgoing = layout.outgoingBubbles,
+                   let progress = layout.morphProgress {
+                    bubbleStack(outgoing, breath: 0)
+                        .opacity(1 - progress)
+                    bubbleStack(layout.bubbles, breath: 0)
+                        .opacity(progress)
+                } else {
+                    bubbleStack(layout.bubbles, breath: 0)
+                }
             }
             .allowsHitTesting(false)
+        }
+    }
+
+    private func bubbleStack(_ bubbles: [Bubble], breath: CGFloat) -> some View {
+        ForEach(bubbles) { bubble in
+            flowNode(bubble, breath: breath)
+                .position(bubble.point)
         }
     }
 
@@ -211,6 +206,10 @@ private struct EnergyFlowDiagram: View {
         for lane in layout.lanes {
             hasher.combine(Int((lane.width * 10).rounded()))
             hasher.combine(Int((lane.watts * 10).rounded()))
+            for point in [lane.cubic.p0, lane.cubic.c1, lane.cubic.c2, lane.cubic.p1] {
+                hasher.combine(Int((point.x * 10).rounded()))
+                hasher.combine(Int((point.y * 10).rounded()))
+            }
         }
         return hasher.finalize()
     }
@@ -259,7 +258,7 @@ private struct EnergyFlowDiagram: View {
 
     private var diagramHeight: CGFloat {
         let trunk = FlowRibbon.trunkWidth(totalWatts: 1)
-        return splitOrMerge ? trunk + 24 : trunk
+        return splitOrMerge || morph != nil ? trunk + 24 : trunk
     }
 
     private var splitOrMerge: Bool {
@@ -313,9 +312,36 @@ private struct EnergyFlowDiagram: View {
         var fill: Color
         var lanes: [Lane]
         var bubbles: [Bubble]
+        var outgoingBubbles: [Bubble]? = nil
+        var morphProgress: Double? = nil
+        var isMorphing = false
     }
 
-    private func layout(in size: CGSize) -> Layout {
+    private func layout(in size: CGSize, morph: FlowMorph?) -> Layout {
+        guard let morph else {
+            return layout(in: size, snapshot: snapshot)
+        }
+
+        let progress = min(max(morph.progress, 0), 1)
+        let from = layout(in: size, snapshot: morph.from)
+        let to = layout(in: size, snapshot: snapshot)
+        guard progress > 0.001, progress < 0.999 else {
+            return progress <= 0.001 ? from : to
+        }
+
+        let lanes = interpolateLanes(from.lanes, to.lanes, progress: progress)
+        return Layout(
+            body: bodyPath(for: lanes),
+            fill: from.fill.mix(with: to.fill, by: progress),
+            lanes: lanes,
+            bubbles: to.bubbles,
+            outgoingBubbles: from.bubbles,
+            morphProgress: progress,
+            isMorphing: true
+        )
+    }
+
+    private func layout(in size: CGSize, snapshot: PowerSnapshot) -> Layout {
         let trunk = FlowRibbon.trunkWidth(totalWatts: 1)
         let midY = size.height / 2
         let inset = FlowRibbon.nodeDiameter / 2
@@ -433,6 +459,68 @@ private struct EnergyFlowDiagram: View {
         }
     }
 
+    private func interpolateLanes(_ from: [Lane], _ to: [Lane], progress: Double) -> [Lane] {
+        let start = expandedLanes(from)
+        let end = expandedLanes(to)
+        return zip(start, end).enumerated().map { index, pair in
+            let (a, b) = pair
+            return Lane(
+                id: "morph-\(index)",
+                cubic: interpolate(a.cubic, b.cubic, progress: progress),
+                width: interpolate(a.width, b.width, progress: progress),
+                watts: interpolate(a.watts, b.watts, progress: progress),
+                color: a.color.mix(with: b.color, by: progress)
+            )
+        }
+    }
+
+    /// Every state is expressed as two channels while morphing. A single path
+    /// temporarily becomes two coincident paths, which can then peel apart or
+    /// converge without ever snapping to a new diagram.
+    private func expandedLanes(_ lanes: [Lane]) -> [Lane] {
+        guard let first = lanes.first else { return [] }
+        return lanes.count == 1 ? [first, first] : Array(lanes.prefix(2))
+    }
+
+    private func interpolate(_ from: FlowCubic, _ to: FlowCubic, progress: Double) -> FlowCubic {
+        FlowCubic(
+            p0: interpolate(from.p0, to.p0, progress: progress),
+            c1: interpolate(from.c1, to.c1, progress: progress),
+            c2: interpolate(from.c2, to.c2, progress: progress),
+            p1: interpolate(from.p1, to.p1, progress: progress)
+        )
+    }
+
+    private func interpolate(_ from: CGPoint, _ to: CGPoint, progress: Double) -> CGPoint {
+        CGPoint(
+            x: interpolate(from.x, to.x, progress: progress),
+            y: interpolate(from.y, to.y, progress: progress)
+        )
+    }
+
+    private func interpolate(_ from: CGFloat, _ to: CGFloat, progress: Double) -> CGFloat {
+        from + (to - from) * CGFloat(progress)
+    }
+
+    private func interpolate(_ from: Double, _ to: Double, progress: Double) -> Double {
+        from + (to - from) * progress
+    }
+
+    private func bodyPath(for lanes: [Lane]) -> Path {
+        var silhouette = Path()
+        for lane in lanes {
+            var centerline = Path()
+            centerline.move(to: lane.cubic.p0)
+            centerline.addCurve(to: lane.cubic.p1, control1: lane.cubic.c1, control2: lane.cubic.c2)
+            silhouette.addPath(
+                centerline.strokedPath(
+                    StrokeStyle(lineWidth: lane.width, lineCap: .round, lineJoin: .round)
+                )
+            )
+        }
+        return silhouette
+    }
+
     private func straightCubic(from start: CGPoint, to end: CGPoint) -> FlowCubic {
         let dx = end.x - start.x
         return FlowCubic(
@@ -496,7 +584,8 @@ private struct EnergyFlowDiagram: View {
         context: inout GraphicsContext,
         lane: Lane,
         phase: Double,
-        pigment: FlowMotionPigment
+        pigment: FlowMotionPigment,
+        baseColor: Color
     ) {
         let seed = fnv(lane.id)
         let count = FlowRibbon.filamentCount(laneWidth: lane.width)
@@ -518,7 +607,8 @@ private struct EnergyFlowDiagram: View {
                     to: to,
                     lateral: lateral,
                     thickness: thickness,
-                    pigment: pigment
+                    pigment: pigment,
+                    baseColor: baseColor
                 )
             }
         }
@@ -533,17 +623,17 @@ private struct EnergyFlowDiagram: View {
         to: Double,
         lateral: CGFloat,
         thickness: CGFloat,
-        pigment: FlowMotionPigment
+        pigment: FlowMotionPigment,
+        baseColor: Color
     ) {
         let start = lane.cubic.offsetPoint(CGFloat(from), distance: lateral)
         let end = lane.cubic.offsetPoint(CGFloat(to), distance: lateral)
         let body = filamentSpindle(lane: lane, from: from, to: to, lateral: lateral, thickness: thickness)
         switch pigment {
         case .gradient:
-            let base = motionLaneColor
-            let head = travelingColor(base: base, t: from)
-            let mid = travelingColor(base: base, t: (from + to) / 2)
-            let tail = travelingColor(base: base, t: to)
+            let head = travelingColor(base: baseColor, t: from)
+            let mid = travelingColor(base: baseColor, t: (from + to) / 2)
+            let tail = travelingColor(base: baseColor, t: to)
             context.fill(
                 body,
                 with: .linearGradient(
@@ -573,7 +663,7 @@ private struct EnergyFlowDiagram: View {
                 )
             )
         case .solid, .white:
-            let color: Color = pigment == .white ? .white : theme.motionSolid(for: snapshot.flowMode)
+            let color: Color = pigment == .white ? .white : baseColor.mix(with: .black, by: 0.42)
             context.fill(
                 body,
                 with: .linearGradient(tipFade(color), startPoint: start, endPoint: end)
@@ -641,12 +731,21 @@ private struct EnergyFlowDiagram: View {
         context: inout GraphicsContext,
         lane: Lane,
         phase: Double,
-        pigment: FlowMotionPigment
+        pigment: FlowMotionPigment,
+        baseColor: Color
     ) {
         let seed = fnv(lane.id)
         let count = FlowRibbon.particleCount(laneWidth: lane.width)
         for index in 0..<count {
-            drawGrain(context: &context, index: index, seed: seed, lane: lane, phase: phase, pigment: pigment)
+            drawGrain(
+                context: &context,
+                index: index,
+                seed: seed,
+                lane: lane,
+                phase: phase,
+                pigment: pigment,
+                baseColor: baseColor
+            )
         }
     }
 
@@ -656,7 +755,8 @@ private struct EnergyFlowDiagram: View {
         seed: UInt64,
         lane: Lane,
         phase: Double,
-        pigment: FlowMotionPigment
+        pigment: FlowMotionPigment,
+        baseColor: Color
     ) {
         var rng = SplitMix64(seed: seed &+ UInt64(index) &* 0xD1B54A32D192ED03)
         let offset = rng.unit()
@@ -679,7 +779,7 @@ private struct EnergyFlowDiagram: View {
         let alpha = fade * brightness
         switch pigment {
         case .gradient:
-            let traveling = travelingColor(base: motionLaneColor, t: t)
+            let traveling = travelingColor(base: baseColor, t: t)
             context.fill(Path(ellipseIn: rect), with: .color(traveling.opacity(alpha)))
             let spark = t < 0.28 ? 0.92 : 0.55
             context.fill(
@@ -687,15 +787,11 @@ private struct EnergyFlowDiagram: View {
                 with: .color(Color.white.opacity(alpha * spark))
             )
         case .solid:
-            let color = theme.motionSolid(for: snapshot.flowMode)
+            let color = baseColor.mix(with: .black, by: 0.42)
             context.fill(Path(ellipseIn: rect), with: .color(color.opacity(alpha)))
         case .white:
             context.fill(Path(ellipseIn: rect), with: .color(Color.white.opacity(alpha)))
         }
-    }
-
-    private var motionLaneColor: Color {
-        theme.color(for: snapshot.flowMode)
     }
 
     private func travelingColor(base: Color, t: Double) -> Color {
