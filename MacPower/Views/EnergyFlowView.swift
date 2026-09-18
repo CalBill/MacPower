@@ -688,9 +688,12 @@ private struct EnergyFlowDiagram: View {
     }
 
     private func chargingBody(in size: CGSize, snapshot: PowerSnapshot, splitT: CGFloat) -> Path {
-        if splitT >= 0.995 { return singleBody(in: size) }
         let trunk = FlowRibbon.trunkWidth(totalWatts: 1)
         let inset = FlowRibbon.capRadius(for: trunk)
+        let branchLength = (size.width - inset * 2) * (1 - splitT)
+        guard branchLength >= minimumForkLength(trunk: trunk) else {
+            return singleBody(in: size)
+        }
         let left = CGPoint(x: inset, y: size.height / 2)
         let charge = max(snapshot.chargeWatts, 0.01)
         let load = max(snapshot.systemLoadWatts, 0.01)
@@ -708,9 +711,12 @@ private struct EnergyFlowDiagram: View {
     }
 
     private func underpoweredBody(in size: CGSize, snapshot: PowerSnapshot, mergeT: CGFloat) -> Path {
-        if mergeT <= 0.005 { return singleBody(in: size) }
         let trunk = FlowRibbon.trunkWidth(totalWatts: 1)
         let inset = FlowRibbon.capRadius(for: trunk)
+        let branchLength = (size.width - inset * 2) * mergeT
+        guard branchLength >= minimumForkLength(trunk: trunk) else {
+            return singleBody(in: size)
+        }
         let adapter = max(snapshot.adapterInWatts, 0.01)
         let battery = max(snapshot.dischargeWatts, 0.01)
         let widths = FlowRibbon.splitWidths(first: adapter, second: battery, trunk: trunk)
@@ -735,6 +741,13 @@ private struct EnergyFlowDiagram: View {
             to: CGPoint(x: size.width - inset, y: size.height / 2),
             width: trunk
         )
+    }
+
+    /// A fork whose arms are shorter than their end-cap geometry folds back on
+    /// itself and produces the balloon-like bulge seen at the ribbon edge.
+    /// Keep a clean single trunk until the moving frontier has enough runway.
+    private func minimumForkLength(trunk: CGFloat) -> CGFloat {
+        max(FlowRibbon.nodeDiameter * 2, FlowRibbon.capRadius(for: trunk) * 3)
     }
 
     private func bodyPath(for lanes: [Lane]) -> Path {
