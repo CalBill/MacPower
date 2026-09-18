@@ -403,7 +403,10 @@ private struct EnergyFlowDiagram: View {
     private func layout(in size: CGSize, snapshot: PowerSnapshot) -> Layout {
         let trunk = FlowRibbon.trunkWidth(totalWatts: 1)
         let midY = size.height / 2
-        let inset = FlowRibbon.nodeDiameter / 2
+        // The ribbon stroke expands half its width around the centre line. Its
+        // endpoints therefore need a half-trunk inset (not merely half an icon)
+        // or a 96pt ribbon will protrude through both popover edges.
+        let inset = trunk / 2
         let logo = FlowRibbon.logoInset
         let left = CGPoint(x: inset, y: midY)
         let right = CGPoint(x: size.width - inset, y: midY)
@@ -538,8 +541,8 @@ private struct EnergyFlowDiagram: View {
     /// then peel apart from the opposite end.
     private func bridgeLanes(from: [Lane], to: [Lane], in size: CGSize) -> [Lane] {
         let trunk = FlowRibbon.trunkWidth(totalWatts: 1)
-        let left = CGPoint(x: FlowRibbon.nodeDiameter / 2, y: size.height / 2)
-        let right = CGPoint(x: size.width - FlowRibbon.nodeDiameter / 2, y: size.height / 2)
+        let left = CGPoint(x: trunk / 2, y: size.height / 2)
+        let right = CGPoint(x: size.width - trunk / 2, y: size.height / 2)
         let watts = max(
             max(from.reduce(0) { $0 + $1.watts }, to.reduce(0) { $0 + $1.watts }),
             0.01
