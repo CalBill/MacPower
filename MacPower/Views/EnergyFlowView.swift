@@ -10,6 +10,94 @@ struct EnergyFlowView: View {
     var language: AppLanguage
     var showsFooter: Bool = true
 
+    @State private var outgoingSnapshot: PowerSnapshot?
+    @State private var transitionStartedAt: Date?
+    @State private var cleanupTask: Task<Void, Never>?
+
+    /// This is deliberately long enough for the fork to read as a physical
+    /// split/merge, rather than a replacement of one static diagram by another.
+    private let transitionDuration: TimeInterval = 1.65
+
+    var body: some View {
+        Group {
+            if let outgoingSnapshot, let transitionStartedAt {
+                // A TimelineView owns the clock instead of asking SwiftUI to
+                // interpolate a @State value once. Menu-bar popovers can coalesce
+                // state-animation frames; this guarantees a fresh ribbon path for
+                // every display frame throughout the split or merge.
+                TimelineView(.animation(minimumInterval: 1.0 / 60.0, paused: false)) { timeline in
+                    let progress = easedProgress(at: timeline.date, since: transitionStartedAt)
+                    diagram(
+                        for: snapshot,
+                        morph: FlowMorph(from: outgoingSnapshot, progress: progress)
+                    )
+                }
+            } else {
+                diagram(for: snapshot)
+            }
+        }
+        .onChange(of: snapshot) { previous, current in
+            guard previous.flowMode != current.flowMode else { return }
+            beginTransition(from: previous)
+        }
+        .onDisappear {
+            cleanupTask?.cancel()
+        }
+    }
+
+    private func diagram(for snapshot: PowerSnapshot, morph: FlowMorph? = nil) -> some View {
+        EnergyFlowDiagram(
+            snapshot: snapshot,
+            theme: theme,
+            isAnimating: isAnimating,
+            motion: motion,
+            motionFrameRate: motionFrameRate,
+            pulseFlowIcons: pulseFlowIcons,
+            language: language,
+            showsFooter: showsFooter,
+            morph: morph
+        )
+    }
+
+    private func beginTransition(from previous: PowerSnapshot) {
+        cleanupTask?.cancel()
+        outgoingSnapshot = previous
+        let startedAt = Date()
+        transitionStartedAt = startedAt
+        cleanupTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(Int((transitionDuration + 0.08) * 1_000)))
+            guard !Task.isCancelled, transitionStartedAt == startedAt else { return }
+            outgoingSnapshot = nil
+            transitionStartedAt = nil
+        }
+    }
+
+    private func easedProgress(at date: Date, since startedAt: Date) -> Double {
+        let raw = min(max(date.timeIntervalSince(startedAt) / transitionDuration, 0), 1)
+        // Smoothstep has a calm beginning/end, but maintains visible movement in
+        // the middle of the animation where the trunk joins or separates.
+        return raw * raw * (3 - 2 * raw)
+    }
+}
+
+private struct FlowMorph {
+    var from: PowerSnapshot
+    var progress: Double
+}
+
+private struct EnergyFlowDiagram: View {
+    var snapshot: PowerSnapshot
+    var theme: AppTheme
+    var isAnimating: Bool
+    var motion: EnergyMotionStyle
+    var motionFrameRate: EnergyMotionFrameRate = .hz60
+    var pulseFlowIcons: Bool
+    var language: AppLanguage
+    var showsFooter: Bool = true
+    /// During a mode change, the ribbon geometry and pigment interpolate from
+    /// the old telemetry reading to the new one.
+    var morph: FlowMorph?
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             diagram
@@ -21,7 +109,7 @@ struct EnergyFlowView: View {
 
     private var diagram: some View {
         GeometryReader { geo in
-            let layout = layout(in: geo.size)
+            let layout = layout(in: geo.size, morph: morph)
             // Glass is Equatable and only depends on shape/tint. Motion lives in an
             // overlay rasterized with drawingGroup so 60 fps Canvas ticks do not
             // resample glassEffect.
@@ -29,7 +117,7 @@ struct EnergyFlowView: View {
                 size: geo.size,
                 mode: snapshot.flowMode,
                 fill: layout.fill,
-                splitOrMerge: splitOrMerge,
+                splitOrMerge: splitOrMerge || layout.isMorphing,
                 bodyPath: layout.body,
                 laneSignature: laneSignature(layout)
             )
@@ -52,16 +140,29 @@ struct EnergyFlowView: View {
                 let phase = timeline.date.timeIntervalSinceReferenceDate / 4.6
                 Canvas { context, _ in
                     context.clip(to: layout.body, style: FillStyle(eoFill: false, antialiased: true))
+                    context.opacity *= layout.motionOpacity
                     switch motion {
                     case .sheen:
                         drawSheen(context: &context, layout: layout, phase: phase)
                     case .filaments, .filamentsSolid, .filamentsWhite:
-                        for lane in layout.lanes {
-                            drawFilaments(context: &context, lane: lane, phase: phase, pigment: motion.pigment ?? .gradient)
+                        for lane in motionLanes(for: layout) {
+                            drawFilaments(
+                                context: &context,
+                                lane: lane,
+                                phase: phase,
+                                pigment: motion.pigment ?? .gradient,
+                                baseColor: layout.fill
+                            )
                         }
                     case .particles, .particlesSolid, .particlesWhite:
-                        for lane in layout.lanes {
-                            drawPowder(context: &context, lane: lane, phase: phase, pigment: motion.pigment ?? .gradient)
+                        for lane in motionLanes(for: layout) {
+                            drawPowder(
+                                context: &context,
+                                lane: lane,
+                                phase: phase,
+                                pigment: motion.pigment ?? .gradient,
+                                baseColor: layout.fill
+                            )
                         }
                     case .off:
                         break
@@ -75,6 +176,8 @@ struct EnergyFlowView: View {
 
     private func wattLabels(layout: Layout) -> some View {
         Canvas { context, _ in
+            guard layout.labelOpacity > 0.01 else { return }
+            context.opacity *= layout.labelOpacity
             for lane in layout.lanes {
                 drawWattLabel(context: &context, lane: lane)
             }
@@ -88,20 +191,25 @@ struct EnergyFlowView: View {
             TimelineView(.periodic(from: .now, by: 1.0 / 30.0)) { timeline in
                 let breath = iconBreath(at: timeline.date)
                 ZStack {
-                    ForEach(layout.bubbles) { bubble in
-                        flowNode(bubble, breath: breath)
-                            .position(bubble.point)
-                    }
+                    bubbleStack(layout.bubbles, breath: breath)
                 }
+                .opacity(layout.bubbleOpacity)
             }
             .frame(width: size.width, height: size.height)
             .allowsHitTesting(false)
         } else {
-            ForEach(layout.bubbles) { bubble in
-                flowNode(bubble, breath: 0)
-                    .position(bubble.point)
+            ZStack {
+                bubbleStack(layout.bubbles, breath: 0)
             }
+            .opacity(layout.bubbleOpacity)
             .allowsHitTesting(false)
+        }
+    }
+
+    private func bubbleStack(_ bubbles: [Bubble], breath: CGFloat) -> some View {
+        ForEach(bubbles) { bubble in
+            flowNode(bubble, breath: breath)
+                .position(bubble.point)
         }
     }
 
@@ -110,6 +218,10 @@ struct EnergyFlowView: View {
         for lane in layout.lanes {
             hasher.combine(Int((lane.width * 10).rounded()))
             hasher.combine(Int((lane.watts * 10).rounded()))
+            for point in [lane.cubic.p0, lane.cubic.c1, lane.cubic.c2, lane.cubic.p1] {
+                hasher.combine(Int((point.x * 10).rounded()))
+                hasher.combine(Int((point.y * 10).rounded()))
+            }
         }
         return hasher.finalize()
     }
@@ -144,21 +256,20 @@ struct EnergyFlowView: View {
             ZStack {
                 FlowRibbonShape(path: bodyPath)
                     .fill(tint)
-                if splitOrMerge {
-                    // Light a system stadium SDF, then mask to the Y. Sampling glass
-                    // in the custom fork path plants a vertex specular on each round
-                    // finger cap (the blob next to the laptop).
-                    sampled.mask { FlowRibbonShape(path: bodyPath) }
-                } else {
-                    sampled
-                }
+                // The hosting slot reserves 120pt of headroom, while a single
+                // ribbon is intentionally 96pt tall. Always mask the sampled
+                // glass to the real silhouette; otherwise the final frame after
+                // a morph expands to the reserved slot and visibly jumps width.
+                sampled.mask { FlowRibbonShape(path: bodyPath) }
             }
         }
     }
 
     private var diagramHeight: CGFloat {
         let trunk = FlowRibbon.trunkWidth(totalWatts: 1)
-        return splitOrMerge ? trunk + 24 : trunk
+        // Reserve fork headroom in every power state so connecting, charging,
+        // and unplugging never resize the surrounding popover.
+        return trunk + 24
     }
 
     private var splitOrMerge: Bool {
@@ -212,12 +323,107 @@ struct EnergyFlowView: View {
         var fill: Color
         var lanes: [Lane]
         var bubbles: [Bubble]
+        var isMorphing = false
+        var labelOpacity = 1.0
+        var motionOpacity = 1.0
+        var bubbleOpacity = 1.0
     }
 
-    private func layout(in size: CGSize) -> Layout {
+    private func layout(in size: CGSize, morph: FlowMorph?) -> Layout {
+        guard let morph else {
+            return layout(in: size, snapshot: snapshot)
+        }
+
+        let progress = min(max(morph.progress, 0), 1)
+        let from = layout(in: size, snapshot: morph.from)
+        let to = layout(in: size, snapshot: snapshot)
+        guard progress > 0.001, progress < 0.999 else {
+            return progress <= 0.001 ? from : to
+        }
+
+        let lanes: [Lane]
+        if from.lanes.count == 2, to.lanes.count == 2 {
+            let bridge = bridgeLanes(from: from.lanes, to: to.lanes, in: size)
+            if progress < 0.5 {
+                lanes = interpolateLanes(from.lanes, bridge, progress: progress * 2)
+            } else {
+                lanes = interpolateLanes(bridge, to.lanes, progress: (progress - 0.5) * 2)
+            }
+        } else {
+            lanes = interpolateLanes(from.lanes, to.lanes, progress: progress)
+        }
+        // Labels are information attached to finished branches, not decorations
+        // for the temporary trunk. Fading them away before the channels meet
+        // prevents the two watt values from colliding in the middle.
+        let distanceFromTrunk = abs(progress * 2 - 1)
+        let labelOpacity = distanceFromTrunk * distanceFromTrunk * (3 - 2 * distanceFromTrunk)
+        let bubblePresentation = bubbles(for: progress, from: from.bubbles, to: to.bubbles)
+        return Layout(
+            body: movingTopologyBody(in: size, from: morph.from, to: snapshot, progress: progress)
+                ?? bodyPath(for: lanes),
+            fill: from.fill.mix(with: to.fill, by: progress),
+            lanes: lanes,
+            bubbles: bubblePresentation.bubbles,
+            isMorphing: true,
+            labelOpacity: labelOpacity,
+            // A central trunk should feel quiet and concentrated, not become a
+            // snow globe while two invisible construction lanes overlap.
+            motionOpacity: 0.26 + 0.74 * labelOpacity,
+            bubbleOpacity: bubblePresentation.opacity
+        )
+    }
+
+    /// Node positions never interpolate. The outgoing set dissolves before the
+    /// topology changes; the incoming set appears only after its new branch has
+    /// gained enough body to hold it. This avoids icons stranded half in glass
+    /// and half in empty popover space.
+    private func bubbles(for progress: Double, from: [Bubble], to: [Bubble]) -> (bubbles: [Bubble], opacity: Double) {
+        if progress < 0.26 {
+            return (from, 1 - smoothstep(progress / 0.26))
+        }
+        if progress > 0.62 {
+            return (to, smoothstep((progress - 0.62) / 0.38))
+        }
+        return ([], 0)
+    }
+
+    /// Morphing needs two mathematical centre-lines so a path can fork, but
+    /// when they nearly coincide they must not emit two identical particle
+    /// systems. Present one composed lane instead.
+    private func motionLanes(for layout: Layout) -> [Lane] {
+        guard layout.isMorphing, layout.lanes.count == 2 else { return layout.lanes }
+        let first = layout.lanes[0]
+        let second = layout.lanes[1]
+        guard laneDistance(first, second) < 24 else { return layout.lanes }
+        return [
+            Lane(
+                id: "morph-trunk-motion",
+                cubic: interpolate(first.cubic, second.cubic, progress: 0.5),
+                width: max(first.width, second.width),
+                watts: first.watts + second.watts,
+                color: first.color.mix(with: second.color, by: 0.5)
+            )
+        ]
+    }
+
+    private func laneDistance(_ first: Lane, _ second: Lane) -> CGFloat {
+        let pairs = zip(
+            [first.cubic.p0, first.cubic.c1, first.cubic.c2, first.cubic.p1],
+            [second.cubic.p0, second.cubic.c1, second.cubic.c2, second.cubic.p1]
+        )
+        let total = pairs.reduce(CGFloat.zero) { partial, pair in
+            partial + hypot(pair.0.x - pair.1.x, pair.0.y - pair.1.y)
+        }
+        return total / 4
+    }
+
+    private func layout(in size: CGSize, snapshot: PowerSnapshot) -> Layout {
         let trunk = FlowRibbon.trunkWidth(totalWatts: 1)
         let midY = size.height / 2
-        let inset = FlowRibbon.nodeDiameter / 2
+        // The static and animated ribbons share the same rounded-rectangle end
+        // caps. Keeping their centre line one cap radius from the edge fixes the
+        // external frame for every state, while the fork changes only inside it.
+        let inset = FlowRibbon.capRadius(for: trunk)
         let logo = FlowRibbon.logoInset
         let left = CGPoint(x: inset, y: midY)
         let right = CGPoint(x: size.width - inset, y: midY)
@@ -332,6 +538,221 @@ struct EnergyFlowView: View {
         }
     }
 
+    private func interpolateLanes(_ from: [Lane], _ to: [Lane], progress: Double) -> [Lane] {
+        let start = expandedLanes(from, pairedWith: to)
+        let end = expandedLanes(to, pairedWith: from)
+        return zip(start, end).enumerated().map { index, pair in
+            let (a, b) = pair
+            return Lane(
+                id: "morph-\(index)",
+                cubic: interpolate(a.cubic, b.cubic, progress: progress),
+                width: interpolate(a.width, b.width, progress: progress),
+                watts: interpolate(a.watts, b.watts, progress: progress),
+                color: a.color.mix(with: b.color, by: progress)
+            )
+        }
+    }
+
+    /// The neutral trunk is the real midpoint when a right-hand fork needs to
+    /// become a left-hand fork (or vice versa). Both channels coincide here,
+    /// then peel apart from the opposite end.
+    private func bridgeLanes(from: [Lane], to: [Lane], in size: CGSize) -> [Lane] {
+        let trunk = FlowRibbon.trunkWidth(totalWatts: 1)
+        let endInset = FlowRibbon.capRadius(for: trunk)
+        let left = CGPoint(x: endInset, y: size.height / 2)
+        let right = CGPoint(x: size.width - endInset, y: size.height / 2)
+        let watts = max(
+            max(from.reduce(0) { $0 + $1.watts }, to.reduce(0) { $0 + $1.watts }),
+            0.01
+        )
+        let lane = Lane(
+            id: "morph-trunk",
+            cubic: straightCubic(from: left, to: right),
+            width: trunk,
+            watts: watts,
+            color: theme.color(for: snapshot.flowMode)
+        )
+        return [lane, lane]
+    }
+
+    /// Every state is expressed as two channels while morphing. A single path
+    /// becomes two stacked sublanes whose combined thickness remains equal to
+    /// the trunk, so a merge cannot swell before its final frame.
+    private func expandedLanes(_ lanes: [Lane], pairedWith other: [Lane]) -> [Lane] {
+        guard let first = lanes.first else { return [] }
+        guard lanes.count == 1, other.count >= 2 else {
+            return Array(lanes.prefix(2))
+        }
+        let pair = Array(other.prefix(2))
+        let total = max(pair.reduce(0) { $0 + $1.width }, 0.01)
+        var offset = -first.width / 2
+        return pair.enumerated().map { index, lane in
+            let width = first.width * lane.width / total
+            let centerOffset = offset + width / 2
+            offset += width
+            return Lane(
+                id: "trunk-sublane-\(index)",
+                cubic: verticallyOffset(first.cubic, by: centerOffset),
+                width: width,
+                watts: first.watts * Double(width / first.width),
+                color: first.color
+            )
+        }
+    }
+
+    private func verticallyOffset(_ cubic: FlowCubic, by offset: CGFloat) -> FlowCubic {
+        FlowCubic(
+            p0: CGPoint(x: cubic.p0.x, y: cubic.p0.y + offset),
+            c1: CGPoint(x: cubic.c1.x, y: cubic.c1.y + offset),
+            c2: CGPoint(x: cubic.c2.x, y: cubic.c2.y + offset),
+            p1: CGPoint(x: cubic.p1.x, y: cubic.p1.y + offset)
+        )
+    }
+
+    private func interpolate(_ from: FlowCubic, _ to: FlowCubic, progress: Double) -> FlowCubic {
+        FlowCubic(
+            p0: interpolate(from.p0, to.p0, progress: progress),
+            c1: interpolate(from.c1, to.c1, progress: progress),
+            c2: interpolate(from.c2, to.c2, progress: progress),
+            p1: interpolate(from.p1, to.p1, progress: progress)
+        )
+    }
+
+    private func interpolate(_ from: CGPoint, _ to: CGPoint, progress: Double) -> CGPoint {
+        CGPoint(
+            x: interpolate(from.x, to.x, progress: progress),
+            y: interpolate(from.y, to.y, progress: progress)
+        )
+    }
+
+    private func interpolate(_ from: CGFloat, _ to: CGFloat, progress: Double) -> CGFloat {
+        from + (to - from) * CGFloat(progress)
+    }
+
+    private func interpolate(_ from: Double, _ to: Double, progress: Double) -> Double {
+        from + (to - from) * progress
+    }
+
+    private func smoothstep(_ value: Double) -> Double {
+        let t = min(max(value, 0), 1)
+        return t * t * (3 - 2 * t)
+    }
+
+    /// Drives a single split/merge frontier across the ribbon. Unlike generic
+    /// coordinate interpolation, this never leaves a long, half-open seam: one
+    /// side is wholly joined while the frontier travels to its next position.
+    private func movingTopologyBody(
+        in size: CGSize,
+        from source: PowerSnapshot,
+        to destination: PowerSnapshot,
+        progress: Double
+    ) -> Path? {
+        let staticSplit = FlowRibbon.forkT
+        let staticMerge = 1 - FlowRibbon.forkT
+        let phase = smoothstep(progress)
+
+        switch (source.flowMode, destination.flowMode) {
+        case (.underpowered, .charging):
+            if phase < 0.5 {
+                return underpoweredBody(in: size, snapshot: source, mergeT: staticMerge * (1 - CGFloat(smoothstep(phase * 2))))
+            }
+            return chargingBody(in: size, snapshot: destination, splitT: 1 - (1 - staticSplit) * CGFloat(smoothstep((phase - 0.5) * 2)))
+
+        case (.charging, .underpowered):
+            if phase < 0.5 {
+                return chargingBody(in: size, snapshot: source, splitT: staticSplit + (1 - staticSplit) * CGFloat(smoothstep(phase * 2)))
+            }
+            return underpoweredBody(in: size, snapshot: destination, mergeT: staticMerge * CGFloat(smoothstep((phase - 0.5) * 2)))
+
+        case (.charging, .adapterHold), (.charging, .discharging):
+            return chargingBody(in: size, snapshot: source, splitT: staticSplit + (1 - staticSplit) * CGFloat(phase))
+
+        case (.adapterHold, .charging), (.discharging, .charging):
+            return chargingBody(in: size, snapshot: destination, splitT: 1 - (1 - staticSplit) * CGFloat(phase))
+
+        case (.underpowered, .adapterHold), (.underpowered, .discharging):
+            return underpoweredBody(in: size, snapshot: source, mergeT: staticMerge * (1 - CGFloat(phase)))
+
+        case (.adapterHold, .underpowered), (.discharging, .underpowered):
+            return underpoweredBody(in: size, snapshot: destination, mergeT: staticMerge * CGFloat(phase))
+
+        case (.adapterHold, .discharging), (.discharging, .adapterHold):
+            return singleBody(in: size)
+
+        default:
+            return nil
+        }
+    }
+
+    private func chargingBody(in size: CGSize, snapshot: PowerSnapshot, splitT: CGFloat) -> Path {
+        let trunk = FlowRibbon.trunkWidth(totalWatts: 1)
+        let inset = FlowRibbon.capRadius(for: trunk)
+        let branchLength = (size.width - inset * 2) * (1 - splitT)
+        guard branchLength >= minimumForkLength(trunk: trunk) else {
+            return singleBody(in: size)
+        }
+        let left = CGPoint(x: inset, y: size.height / 2)
+        let charge = max(snapshot.chargeWatts, 0.01)
+        let load = max(snapshot.systemLoadWatts, 0.01)
+        let widths = FlowRibbon.splitWidths(first: charge, second: load, trunk: trunk)
+        let top = CGPoint(x: size.width - inset, y: widths.0 / 2)
+        let bottom = CGPoint(x: size.width - inset, y: size.height - widths.1 / 2)
+        return ForkOutline.splitPath(
+            left: left,
+            top: top,
+            bot: bottom,
+            topW: widths.0,
+            botW: widths.1,
+            splitT: splitT
+        )
+    }
+
+    private func underpoweredBody(in size: CGSize, snapshot: PowerSnapshot, mergeT: CGFloat) -> Path {
+        let trunk = FlowRibbon.trunkWidth(totalWatts: 1)
+        let inset = FlowRibbon.capRadius(for: trunk)
+        let branchLength = (size.width - inset * 2) * mergeT
+        guard branchLength >= minimumForkLength(trunk: trunk) else {
+            return singleBody(in: size)
+        }
+        let adapter = max(snapshot.adapterInWatts, 0.01)
+        let battery = max(snapshot.dischargeWatts, 0.01)
+        let widths = FlowRibbon.splitWidths(first: adapter, second: battery, trunk: trunk)
+        let top = CGPoint(x: inset, y: widths.0 / 2)
+        let bottom = CGPoint(x: inset, y: size.height - widths.1 / 2)
+        let right = CGPoint(x: size.width - inset, y: size.height / 2)
+        return ForkOutline.mergePath(
+            top: top,
+            bot: bottom,
+            right: right,
+            topW: widths.0,
+            botW: widths.1,
+            mergeT: mergeT
+        )
+    }
+
+    private func singleBody(in size: CGSize) -> Path {
+        let trunk = FlowRibbon.trunkWidth(totalWatts: 1)
+        let inset = FlowRibbon.capRadius(for: trunk)
+        return ForkOutline.capsule(
+            from: CGPoint(x: inset, y: size.height / 2),
+            to: CGPoint(x: size.width - inset, y: size.height / 2),
+            width: trunk
+        )
+    }
+
+    /// A fork whose arms are shorter than their end-cap geometry folds back on
+    /// itself and produces the balloon-like bulge seen at the ribbon edge.
+    /// Keep a clean single trunk until the moving frontier has enough runway.
+    private func minimumForkLength(trunk: CGFloat) -> CGFloat {
+        max(FlowRibbon.nodeDiameter * 2, FlowRibbon.capRadius(for: trunk) * 3)
+    }
+
+    private func bodyPath(for lanes: [Lane]) -> Path {
+        ForkOutline.combinedSilhouette(
+            lanes.map { ForkOutline.cubicCapsule($0.cubic, width: $0.width) }
+        )
+    }
+
     private func straightCubic(from start: CGPoint, to end: CGPoint) -> FlowCubic {
         let dx = end.x - start.x
         return FlowCubic(
@@ -395,7 +816,8 @@ struct EnergyFlowView: View {
         context: inout GraphicsContext,
         lane: Lane,
         phase: Double,
-        pigment: FlowMotionPigment
+        pigment: FlowMotionPigment,
+        baseColor: Color
     ) {
         let seed = fnv(lane.id)
         let count = FlowRibbon.filamentCount(laneWidth: lane.width)
@@ -417,7 +839,8 @@ struct EnergyFlowView: View {
                     to: to,
                     lateral: lateral,
                     thickness: thickness,
-                    pigment: pigment
+                    pigment: pigment,
+                    baseColor: baseColor
                 )
             }
         }
@@ -432,17 +855,17 @@ struct EnergyFlowView: View {
         to: Double,
         lateral: CGFloat,
         thickness: CGFloat,
-        pigment: FlowMotionPigment
+        pigment: FlowMotionPigment,
+        baseColor: Color
     ) {
         let start = lane.cubic.offsetPoint(CGFloat(from), distance: lateral)
         let end = lane.cubic.offsetPoint(CGFloat(to), distance: lateral)
         let body = filamentSpindle(lane: lane, from: from, to: to, lateral: lateral, thickness: thickness)
         switch pigment {
         case .gradient:
-            let base = motionLaneColor
-            let head = travelingColor(base: base, t: from)
-            let mid = travelingColor(base: base, t: (from + to) / 2)
-            let tail = travelingColor(base: base, t: to)
+            let head = travelingColor(base: baseColor, t: from)
+            let mid = travelingColor(base: baseColor, t: (from + to) / 2)
+            let tail = travelingColor(base: baseColor, t: to)
             context.fill(
                 body,
                 with: .linearGradient(
@@ -472,7 +895,7 @@ struct EnergyFlowView: View {
                 )
             )
         case .solid, .white:
-            let color: Color = pigment == .white ? .white : theme.motionSolid(for: snapshot.flowMode)
+            let color: Color = pigment == .white ? .white : baseColor.mix(with: .black, by: 0.42)
             context.fill(
                 body,
                 with: .linearGradient(tipFade(color), startPoint: start, endPoint: end)
@@ -540,12 +963,21 @@ struct EnergyFlowView: View {
         context: inout GraphicsContext,
         lane: Lane,
         phase: Double,
-        pigment: FlowMotionPigment
+        pigment: FlowMotionPigment,
+        baseColor: Color
     ) {
         let seed = fnv(lane.id)
         let count = FlowRibbon.particleCount(laneWidth: lane.width)
         for index in 0..<count {
-            drawGrain(context: &context, index: index, seed: seed, lane: lane, phase: phase, pigment: pigment)
+            drawGrain(
+                context: &context,
+                index: index,
+                seed: seed,
+                lane: lane,
+                phase: phase,
+                pigment: pigment,
+                baseColor: baseColor
+            )
         }
     }
 
@@ -555,7 +987,8 @@ struct EnergyFlowView: View {
         seed: UInt64,
         lane: Lane,
         phase: Double,
-        pigment: FlowMotionPigment
+        pigment: FlowMotionPigment,
+        baseColor: Color
     ) {
         var rng = SplitMix64(seed: seed &+ UInt64(index) &* 0xD1B54A32D192ED03)
         let offset = rng.unit()
@@ -578,7 +1011,7 @@ struct EnergyFlowView: View {
         let alpha = fade * brightness
         switch pigment {
         case .gradient:
-            let traveling = travelingColor(base: motionLaneColor, t: t)
+            let traveling = travelingColor(base: baseColor, t: t)
             context.fill(Path(ellipseIn: rect), with: .color(traveling.opacity(alpha)))
             let spark = t < 0.28 ? 0.92 : 0.55
             context.fill(
@@ -586,15 +1019,11 @@ struct EnergyFlowView: View {
                 with: .color(Color.white.opacity(alpha * spark))
             )
         case .solid:
-            let color = theme.motionSolid(for: snapshot.flowMode)
+            let color = baseColor.mix(with: .black, by: 0.42)
             context.fill(Path(ellipseIn: rect), with: .color(color.opacity(alpha)))
         case .white:
             context.fill(Path(ellipseIn: rect), with: .color(Color.white.opacity(alpha)))
         }
-    }
-
-    private var motionLaneColor: Color {
-        theme.color(for: snapshot.flowMode)
     }
 
     private func travelingColor(base: Color, t: Double) -> Color {
@@ -621,11 +1050,21 @@ struct EnergyFlowView: View {
     private var footer: some View {
         VStack(alignment: .leading, spacing: 3) {
             labeled(Localization.string("energy.supplyPower", language: language), value: supplyText)
-            if snapshot.adapterCeilingWatts > 0, snapshot.externalConnected {
-                labeled(Localization.string("energy.chargerRating", language: language), value: String(format: "%.0f W", snapshot.adapterCeilingWatts))
-            }
+            // Always reserve this row: plugging in a charger should reveal its
+            // rating, not make the whole popover grow by one text line.
+            labeled(
+                Localization.string("energy.chargerRating", language: language),
+                value: String(format: "%.0f W", snapshot.adapterCeilingWatts)
+            )
+            .opacity(showsChargerRating ? 1 : 0)
+            .accessibilityHidden(!showsChargerRating)
+            .animation(.easeInOut(duration: 0.24), value: showsChargerRating)
         }
         .font(.caption)
+    }
+
+    private var showsChargerRating: Bool {
+        snapshot.adapterCeilingWatts > 0 && snapshot.externalConnected
     }
 
     private var supplyText: String {

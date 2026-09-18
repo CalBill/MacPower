@@ -27,6 +27,7 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
             button.target = self
             button.action = #selector(togglePopover)
             button.sendAction(on: [.leftMouseUp, .rightMouseUp])
+            configureHighlightAppearance(for: button)
         }
 
         refreshIcon()
@@ -86,10 +87,12 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
     private func togglePopover(_ sender: Any?) {
         guard let button = statusItem.button else { return }
         if popover.isShown {
+            setStatusItemHighlighted(false)
             popover.performClose(sender)
             return
         }
         appState.setPopoverOpen(true)
+        setStatusItemHighlighted(true)
         applyArrowVisibility()
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
         hugMenuBarIfArrowHidden()
@@ -100,11 +103,57 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
         if !appState.isPopoverOpen {
             appState.setPopoverOpen(true)
         }
+        setStatusItemHighlighted(true)
         hugMenuBarIfArrowHidden()
     }
 
     func popoverDidClose(_ notification: Notification) {
+        setStatusItemHighlighted(false)
         appState.setPopoverOpen(false)
+    }
+
+    /// macOS 27 draws the selected menu-bar item with its native Liquid Glass
+    /// treatment. Earlier systems retain the same interaction through a subtle,
+    /// appearance-aware capsule rather than relying on private AppKit chrome.
+    private func setStatusItemHighlighted(_ highlighted: Bool) {
+        guard let button = statusItem.button else { return }
+
+        if #available(macOS 27, *) {
+            button.isHighlighted = highlighted
+            return
+        }
+
+        // Keep AppKit's press highlight from competing with the persistent
+        // fallback shown while the popover is open.
+        button.isHighlighted = false
+        configureHighlightAppearance(for: button)
+        guard let layer = button.layer else { return }
+
+        let previousColor = layer.backgroundColor
+        let nextColor = highlighted ? legacyHighlightColor(for: button).cgColor : nil
+        layer.backgroundColor = nextColor
+
+        let animation = CABasicAnimation(keyPath: "backgroundColor")
+        animation.fromValue = previousColor
+        animation.toValue = nextColor
+        animation.duration = highlighted ? 0.16 : 0.12
+        animation.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+        layer.add(animation, forKey: "macPowerStatusItemHighlight")
+    }
+
+    private func configureHighlightAppearance(for button: NSStatusBarButton) {
+        guard #unavailable(macOS 27) else { return }
+        button.wantsLayer = true
+        button.layer?.cornerRadius = button.bounds.height / 2
+        button.layer?.masksToBounds = true
+    }
+
+    private func legacyHighlightColor(for button: NSStatusBarButton) -> NSColor {
+        var color = NSColor.selectedContentBackgroundColor
+        button.effectiveAppearance.performAsCurrentDrawingAppearance {
+            color = NSColor.selectedContentBackgroundColor
+        }
+        return color.withAlphaComponent(0.18)
     }
 
     private func applyArrowHeight(hidden: Bool) {
