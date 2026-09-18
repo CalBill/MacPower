@@ -21,6 +21,8 @@ final class AppState {
     let metricsService = SystemMetricsService()
     @ObservationIgnored
     private let updateChecker = UpdateChecker()
+    @ObservationIgnored
+    private var updateCheckLoop: Task<Void, Never>?
 
     private var settingsWindow: NSWindow?
 
@@ -34,7 +36,7 @@ final class AppState {
         telemetry.start()
         metricsService.start()
         launchAtLoginEnabled = SMAppService.mainApp.status == .enabled
-        checkForUpdates()
+        startAutomaticUpdateChecks()
     }
 
     func setPopoverOpen(_ open: Bool) {
@@ -57,7 +59,7 @@ final class AppState {
         }
     }
 
-    func checkForUpdates(force: Bool = false) {
+    func checkForUpdates(reason: UpdateCheckReason) {
         guard !Self.isRunningTests else { return }
         let enabled = settings.automaticallyCheckForUpdates
         let version = Self.marketingVersion
@@ -66,11 +68,28 @@ final class AppState {
             guard let self else { return }
             guard let release = await updateChecker.checkIfNeeded(
                 enabled: enabled,
-                force: force,
+                reason: reason,
                 currentVersion: version
             ) else { return }
             presentUpdateAlert(release: release, currentVersion: version, language: language)
         }
+    }
+
+    func startAutomaticUpdateChecks() {
+        checkForUpdates(reason: .launch)
+        updateCheckLoop?.cancel()
+        updateCheckLoop = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(UpdateCheckPolicy.interval))
+                guard !Task.isCancelled else { return }
+                self?.checkForUpdates(reason: .periodic)
+            }
+        }
+    }
+
+    func stopAutomaticUpdateChecks() {
+        updateCheckLoop?.cancel()
+        updateCheckLoop = nil
     }
 
     static var marketingVersion: String {

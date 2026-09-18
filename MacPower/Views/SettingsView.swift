@@ -66,7 +66,7 @@ struct SettingsView: View {
                 Toggle("settings.updates.automatic", isOn: $appState.settings.automaticallyCheckForUpdates)
                     .onChange(of: appState.settings.automaticallyCheckForUpdates) { _, enabled in
                         if enabled {
-                            appState.checkForUpdates(force: true)
+                            appState.checkForUpdates(reason: .userEnabled)
                         }
                     }
             }

@@ -44,26 +44,30 @@ final class GitHubLatestReleaseTests: XCTestCase {
 final class UpdateCheckPolicyTests: XCTestCase {
     func testDisabledNeverChecks() {
         let now = Date(timeIntervalSince1970: 1_000_000)
-        XCTAssertFalse(UpdateCheckPolicy.shouldCheck(enabled: false, force: false, lastCheck: nil, now: now))
-        XCTAssertFalse(UpdateCheckPolicy.shouldCheck(enabled: false, force: true, lastCheck: nil, now: now))
+        XCTAssertFalse(UpdateCheckPolicy.shouldCheck(enabled: false, reason: .launch, lastCheck: nil, now: now))
+        XCTAssertFalse(UpdateCheckPolicy.shouldCheck(enabled: false, reason: .periodic, lastCheck: nil, now: now))
+        XCTAssertFalse(UpdateCheckPolicy.shouldCheck(enabled: false, reason: .userEnabled, lastCheck: nil, now: now))
     }
 
-    func testEnabledChecksWhenNeverChecked() {
-        let now = Date(timeIntervalSince1970: 1_000_000)
-        XCTAssertTrue(UpdateCheckPolicy.shouldCheck(enabled: true, force: false, lastCheck: nil, now: now))
-    }
-
-    func testSkipsInsideTwentyFourHoursUnlessForced() {
+    func testLaunchAndToggleAlwaysCheckWhenEnabled() {
         let now = Date(timeIntervalSince1970: 1_000_000)
         let recent = now.addingTimeInterval(-3_600)
-        XCTAssertFalse(UpdateCheckPolicy.shouldCheck(enabled: true, force: false, lastCheck: recent, now: now))
-        XCTAssertTrue(UpdateCheckPolicy.shouldCheck(enabled: true, force: true, lastCheck: recent, now: now))
+        XCTAssertTrue(UpdateCheckPolicy.shouldCheck(enabled: true, reason: .launch, lastCheck: recent, now: now))
+        XCTAssertTrue(UpdateCheckPolicy.shouldCheck(enabled: true, reason: .userEnabled, lastCheck: recent, now: now))
     }
 
-    func testChecksAfterTwentyFourHours() {
+    func testPeriodicSkipsInsideTwentyFourHours() {
         let now = Date(timeIntervalSince1970: 1_000_000)
-        let stale = now.addingTimeInterval(-86_400)
-        XCTAssertTrue(UpdateCheckPolicy.shouldCheck(enabled: true, force: false, lastCheck: stale, now: now))
+        let recent = now.addingTimeInterval(-3_600)
+        XCTAssertFalse(UpdateCheckPolicy.shouldCheck(enabled: true, reason: .periodic, lastCheck: recent, now: now))
+        XCTAssertTrue(UpdateCheckPolicy.shouldCheck(enabled: true, reason: .periodic, lastCheck: nil, now: now))
+    }
+
+    func testPeriodicChecksAfterTwentyFourHours() {
+        let now = Date(timeIntervalSince1970: 1_000_000)
+        let stale = now.addingTimeInterval(-UpdateCheckPolicy.interval)
+        XCTAssertTrue(UpdateCheckPolicy.shouldCheck(enabled: true, reason: .periodic, lastCheck: stale, now: now))
+        XCTAssertEqual(UpdateCheckPolicy.interval, 86_400)
     }
 }
 

@@ -23,14 +23,32 @@ struct GitHubLatestRelease: Equatable, Sendable {
     }
 }
 
+enum UpdateCheckReason: Sendable {
+    /// App launch: always query GitHub if the setting is on.
+    case launch
+    /// Background: at most once per `interval` while the app stays open.
+    case periodic
+    /// User turned the setting on: check immediately.
+    case userEnabled
+}
+
 enum UpdateCheckPolicy {
     static let interval: TimeInterval = 86_400
 
-    static func shouldCheck(enabled: Bool, force: Bool, lastCheck: Date?, now: Date) -> Bool {
+    static func shouldCheck(
+        enabled: Bool,
+        reason: UpdateCheckReason,
+        lastCheck: Date?,
+        now: Date
+    ) -> Bool {
         guard enabled else { return false }
-        if force { return true }
-        guard let lastCheck else { return true }
-        return now.timeIntervalSince(lastCheck) >= interval
+        switch reason {
+        case .launch, .userEnabled:
+            return true
+        case .periodic:
+            guard let lastCheck else { return true }
+            return now.timeIntervalSince(lastCheck) >= interval
+        }
     }
 }
 
@@ -59,12 +77,12 @@ final class UpdateChecker {
 
     func checkIfNeeded(
         enabled: Bool,
-        force: Bool,
+        reason: UpdateCheckReason,
         currentVersion: String
     ) async -> GitHubLatestRelease? {
         guard UpdateCheckPolicy.shouldCheck(
             enabled: enabled,
-            force: force,
+            reason: reason,
             lastCheck: defaults.object(forKey: Keys.lastCheck) as? Date,
             now: now()
         ) else {

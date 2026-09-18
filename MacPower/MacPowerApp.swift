@@ -48,6 +48,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationWillTerminate(_ notification: Notification) {
         snapshotWatch?.cancel()
+        appState?.stopAutomaticUpdateChecks()
         appState?.telemetry.stop()
         appState?.metricsService.stop()
     }
