@@ -10,6 +10,69 @@ struct EnergyFlowView: View {
     var language: AppLanguage
     var showsFooter: Bool = true
 
+    @State private var outgoingSnapshot: PowerSnapshot?
+    @State private var transitionProgress = 1.0
+    @State private var cleanupTask: Task<Void, Never>?
+
+    var body: some View {
+        ZStack {
+            if let outgoingSnapshot {
+                diagram(for: outgoingSnapshot)
+                    .opacity(1 - transitionProgress)
+                    .scaleEffect(1 - 0.015 * transitionProgress)
+            }
+
+            diagram(for: snapshot)
+                .opacity(outgoingSnapshot == nil ? 1 : transitionProgress)
+                .scaleEffect(outgoingSnapshot == nil ? 1 : 0.985 + 0.015 * transitionProgress)
+        }
+        .onChange(of: snapshot) { previous, current in
+            guard previous.flowMode != current.flowMode else { return }
+            beginTransition(from: previous)
+        }
+        .onDisappear {
+            cleanupTask?.cancel()
+        }
+    }
+
+    private func diagram(for snapshot: PowerSnapshot) -> some View {
+        EnergyFlowDiagram(
+            snapshot: snapshot,
+            theme: theme,
+            isAnimating: isAnimating,
+            motion: motion,
+            motionFrameRate: motionFrameRate,
+            pulseFlowIcons: pulseFlowIcons,
+            language: language,
+            showsFooter: showsFooter
+        )
+    }
+
+    private func beginTransition(from previous: PowerSnapshot) {
+        cleanupTask?.cancel()
+        outgoingSnapshot = previous
+        transitionProgress = 0
+        withAnimation(.easeInOut(duration: 0.42)) {
+            transitionProgress = 1
+        }
+        cleanupTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(460))
+            guard !Task.isCancelled else { return }
+            outgoingSnapshot = nil
+        }
+    }
+}
+
+private struct EnergyFlowDiagram: View {
+    var snapshot: PowerSnapshot
+    var theme: AppTheme
+    var isAnimating: Bool
+    var motion: EnergyMotionStyle
+    var motionFrameRate: EnergyMotionFrameRate = .hz60
+    var pulseFlowIcons: Bool
+    var language: AppLanguage
+    var showsFooter: Bool = true
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             diagram
