@@ -361,12 +361,23 @@ private struct EnergyFlowDiagram: View {
         let distanceFromTrunk = abs(progress * 2 - 1)
         let labelOpacity = distanceFromTrunk * distanceFromTrunk * (3 - 2 * distanceFromTrunk)
         let bubblePresentation = bubbles(for: progress, from: from.bubbles, to: to.bubbles)
+        let portProgress = smoothstep(progress)
+        let leftPortFraction = interpolate(
+            hasSingleLeftPort(morph.from.flowMode) ? 1.0 : 0.0,
+            hasSingleLeftPort(snapshot.flowMode) ? 1.0 : 0.0,
+            progress: portProgress
+        )
+        let rightPortFraction = interpolate(
+            hasSingleRightPort(morph.from.flowMode) ? 1.0 : 0.0,
+            hasSingleRightPort(snapshot.flowMode) ? 1.0 : 0.0,
+            progress: portProgress
+        )
         return Layout(
             body: bodyPath(
                 for: lanes,
                 in: size,
-                fixedLeftPort: hasSingleLeftPort(snapshot.flowMode),
-                fixedRightPort: hasSingleRightPort(snapshot.flowMode)
+                leftPortFraction: leftPortFraction,
+                rightPortFraction: rightPortFraction
             ),
             fill: from.fill.mix(with: to.fill, by: progress),
             lanes: lanes,
@@ -656,44 +667,80 @@ private struct EnergyFlowDiagram: View {
     private func bodyPath(
         for lanes: [Lane],
         in size: CGSize,
-        fixedLeftPort: Bool,
-        fixedRightPort: Bool
+        leftPortFraction: Double,
+        rightPortFraction: Double
     ) -> Path {
         var paths = lanes.map { ForkOutline.cubicCapsule($0.cubic, width: $0.width) }
         let trunk = FlowRibbon.trunkWidth(totalWatts: 1)
         let inset = FlowRibbon.capRadius(for: trunk)
-        let portDepth = max(
+        let maximumPortDepth = max(
             FlowRibbon.nodeDiameter,
             (size.width - inset * 2) * FlowRibbon.forkT + 1
         )
         let middle = size.height / 2
 
-        // The external ends are ports, not two independent lane caps. Keeping
-        // this short static trunk makes the popover edge read as one continuous
-        // object while the split is born inside the channel.
-        if fixedLeftPort {
-            paths.append(
-                ForkOutline.capsule(
-                    from: CGPoint(x: inset, y: middle),
-                    to: CGPoint(x: inset + portDepth, y: middle),
-                    width: trunk,
-                    startCap: .round,
-                    endCap: .butt
-                )
-            )
-        }
-        if fixedRightPort {
-            paths.append(
-                ForkOutline.capsule(
-                    from: CGPoint(x: size.width - inset - portDepth, y: middle),
-                    to: CGPoint(x: size.width - inset, y: middle),
-                    width: trunk,
-                    startCap: .butt,
-                    endCap: .round
-                )
-            )
-        }
+        paths.append(contentsOf: taperedLeftPort(
+            inset: inset,
+            middle: middle,
+            trunk: trunk,
+            depth: maximumPortDepth * CGFloat(leftPortFraction)
+        ))
+        paths.append(contentsOf: taperedRightPort(
+            right: size.width - inset,
+            middle: middle,
+            trunk: trunk,
+            depth: maximumPortDepth * CGFloat(rightPortFraction)
+        ))
         return ForkOutline.combinedSilhouette(paths)
+    }
+
+    /// A port ends in a moving wedge, rather than a butt join. The point is the
+    /// visible split/merge frontier and travels continuously as the port grows
+    /// or recedes with the topology transition.
+    private func taperedLeftPort(inset: CGFloat, middle: CGFloat, trunk: CGFloat, depth: CGFloat) -> [Path] {
+        guard depth > 0.5 else { return [] }
+        let taper = min(trunk * 0.52, depth)
+        let shoulder = inset + depth - taper
+        var paths: [Path] = []
+        if shoulder > inset + 0.5 {
+            paths.append(ForkOutline.capsule(
+                from: CGPoint(x: inset, y: middle),
+                to: CGPoint(x: shoulder, y: middle),
+                width: trunk,
+                startCap: .round,
+                endCap: .butt
+            ))
+        }
+        var tip = Path()
+        tip.move(to: CGPoint(x: shoulder, y: middle - trunk / 2))
+        tip.addLine(to: CGPoint(x: inset + depth, y: middle))
+        tip.addLine(to: CGPoint(x: shoulder, y: middle + trunk / 2))
+        tip.closeSubpath()
+        paths.append(tip)
+        return paths
+    }
+
+    private func taperedRightPort(right: CGFloat, middle: CGFloat, trunk: CGFloat, depth: CGFloat) -> [Path] {
+        guard depth > 0.5 else { return [] }
+        let taper = min(trunk * 0.52, depth)
+        let shoulder = right - depth + taper
+        var paths: [Path] = []
+        var tip = Path()
+        tip.move(to: CGPoint(x: right - depth, y: middle))
+        tip.addLine(to: CGPoint(x: shoulder, y: middle - trunk / 2))
+        tip.addLine(to: CGPoint(x: shoulder, y: middle + trunk / 2))
+        tip.closeSubpath()
+        paths.append(tip)
+        if shoulder < right - 0.5 {
+            paths.append(ForkOutline.capsule(
+                from: CGPoint(x: shoulder, y: middle),
+                to: CGPoint(x: right, y: middle),
+                width: trunk,
+                startCap: .butt,
+                endCap: .round
+            ))
+        }
+        return paths
     }
 
     private func straightCubic(from start: CGPoint, to end: CGPoint) -> FlowCubic {
