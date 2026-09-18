@@ -225,22 +225,54 @@ enum ForkOutline {
         startCap: Cap,
         endCap: Cap
     ) -> Path {
-        if startCap == .round, endCap == .round, abs(end.y - start.y) < 0.5 {
-            return continuousStadium(from: start, to: end, width: width)
-        }
-        var spine = Path()
-        spine.move(to: start)
         let dx = end.x - start.x
         let dy = end.y - start.y
         let c1 = CGPoint(x: start.x + dx * 0.42, y: start.y + dy * 0.08)
         let c2 = CGPoint(x: start.x + dx * 0.58, y: start.y + dy * 0.92)
-        spine.addCurve(to: end, control1: c1, control2: c2)
+        return cubicCapsule(
+            FlowCubic(p0: start, c1: c1, c2: c2, p1: end),
+            width: width,
+            startCap: startCap,
+            endCap: endCap
+        )
+    }
+
+    /// Builds a ribbon around an explicit bezier centre-line. This is also used
+    /// by the transition renderer so animated paths keep the exact same 16pt
+    /// rounded-rectangle caps as the static paths (instead of SwiftUI's much
+    /// larger semicircular stroke caps).
+    static func cubicCapsule(
+        _ cubic: FlowCubic,
+        width: CGFloat,
+        startCap: Cap = .round,
+        endCap: Cap = .round
+    ) -> Path {
+        if startCap == .round,
+           endCap == .round,
+           abs(cubic.p1.y - cubic.p0.y) < 0.5,
+           abs(cubic.c1.y - cubic.p0.y) < 0.5,
+           abs(cubic.c2.y - cubic.p1.y) < 0.5 {
+            return continuousStadium(from: cubic.p0, to: cubic.p1, width: width)
+        }
+        var spine = Path()
+        spine.move(to: cubic.p0)
+        spine.addCurve(to: cubic.p1, control1: cubic.c1, control2: cubic.c2)
         var path = spine.strokedPath(StrokeStyle(lineWidth: width, lineCap: .butt, lineJoin: .round))
         if startCap == .round {
-            addRoundedEndCap(&path, at: start, outward: CGPoint(x: start.x - c1.x, y: start.y - c1.y), width: width)
+            addRoundedEndCap(
+                &path,
+                at: cubic.p0,
+                outward: CGPoint(x: cubic.p0.x - cubic.c1.x, y: cubic.p0.y - cubic.c1.y),
+                width: width
+            )
         }
         if endCap == .round {
-            addRoundedEndCap(&path, at: end, outward: CGPoint(x: end.x - c2.x, y: end.y - c2.y), width: width)
+            addRoundedEndCap(
+                &path,
+                at: cubic.p1,
+                outward: CGPoint(x: cubic.p1.x - cubic.c2.x, y: cubic.p1.y - cubic.c2.y),
+                width: width
+            )
         }
         return path.normalizedSilhouette()
     }
