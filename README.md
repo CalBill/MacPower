@@ -90,4 +90,4 @@ xcodebuild -project MacPower.xcodeproj -scheme MacPower -configuration Release -
 
 ## 许可证
 
-MIT，见 [LICENSE](LICENSE)。
+本项目采用 MIT License，并附加 Commons Clause。允许免费使用、修改和分发，但不得销售本软件，或通过主要依赖本软件功能的产品或服务获利。详见 [LICENSE](LICENSE)。

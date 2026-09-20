@@ -90,4 +90,4 @@ The `.dmg` lands in `dist/`.
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+This project is licensed under the MIT License with the Commons Clause. You may use, modify, and distribute it free of charge, but you may not sell the software or monetize a product or service whose value derives substantially from its functionality. See [LICENSE](LICENSE).
