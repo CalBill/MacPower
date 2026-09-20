@@ -233,6 +233,18 @@ enum BatteryReader: Sendable {
     }
 }
 
+/// IOKit often publishes 0W for a few samples after unplug. Keep the last real
+/// load on screen instead of flashing 0.00 W.
+enum HeldLoadWatts {
+    static let floor = 0.4
+
+    static func hold(current: Double, previous: Double?) -> Double {
+        if current >= floor { return current }
+        guard let previous, previous >= floor else { return current }
+        return previous
+    }
+}
+
 @MainActor
 final class PowerTelemetryService {
     private var liveTimer: Timer?
@@ -351,10 +363,22 @@ final class PowerTelemetryService {
         )
 
         let instantEstimateLoad = max(snapshot.systemLoadWatts, snapshot.dischargeWatts)
-        if let previousEstimate = estimateLoadWatts, smooth {
-            estimateLoadWatts = ema(previousEstimate, instantEstimateLoad, alpha: 0.06)
-        } else {
+        let heldLoad = HeldLoadWatts.hold(current: instantEstimateLoad, previous: estimateLoadWatts)
+        if instantEstimateLoad >= HeldLoadWatts.floor {
+            if let previousEstimate = estimateLoadWatts, smooth {
+                estimateLoadWatts = ema(previousEstimate, instantEstimateLoad, alpha: 0.06)
+            } else {
+                estimateLoadWatts = instantEstimateLoad
+            }
+        } else if estimateLoadWatts == nil {
             estimateLoadWatts = instantEstimateLoad
+        }
+
+        if instantEstimateLoad < HeldLoadWatts.floor, heldLoad >= HeldLoadWatts.floor {
+            snapshot.systemLoadWatts = max(snapshot.systemLoadWatts, heldLoad)
+            if !snapshot.externalConnected, snapshot.dischargeWatts < HeldLoadWatts.floor {
+                snapshot.batteryWatts = -heldLoad
+            }
         }
 
         snapshot.timeToFullMinutes = TimeEstimateService.timeToFullMinutes(

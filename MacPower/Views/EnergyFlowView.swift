@@ -16,29 +16,18 @@ struct EnergyFlowView: View {
 
     /// This is deliberately long enough for the fork to read as a physical
     /// split/merge, rather than a replacement of one static diagram by another.
-    private let transitionDuration: TimeInterval = 1.65
+    private let transitionDuration: TimeInterval = RibbonMorph.duration
 
     var body: some View {
-        Group {
-            if let outgoingSnapshot, let transitionStartedAt {
-                // A TimelineView owns the clock instead of asking SwiftUI to
-                // interpolate a @State value once. Menu-bar popovers can coalesce
-                // state-animation frames; this guarantees a fresh ribbon path for
-                // every display frame throughout the split or merge.
-                TimelineView(.animation(minimumInterval: 1.0 / 60.0, paused: false)) { timeline in
-                    let progress = easedProgress(at: timeline.date, since: transitionStartedAt)
-                    diagram(
-                        for: snapshot,
-                        morph: FlowMorph(from: outgoingSnapshot, progress: progress)
-                    )
-                }
-            } else {
-                diagram(for: snapshot)
-            }
+        // Keep one TimelineView mounted for the whole popover lifetime of a
+        // transition. Swapping it in and out reset the inner motion clock, which
+        // made particles and filaments jump at the first and last frame.
+        TimelineView(.animation(minimumInterval: 1.0 / 60.0, paused: outgoingSnapshot == nil)) { timeline in
+            diagram(for: snapshot, morph: currentMorph(tick: timeline.date))
         }
         .onChange(of: snapshot) { previous, current in
             guard previous.flowMode != current.flowMode else { return }
-            beginTransition(from: previous)
+            applyFlowModeChange(previous: previous, next: current)
         }
         .onDisappear {
             cleanupTask?.cancel()
@@ -59,24 +48,52 @@ struct EnergyFlowView: View {
         )
     }
 
-    private func beginTransition(from previous: PowerSnapshot) {
+    private func currentMorph(tick: Date) -> FlowMorph? {
+        guard let outgoingSnapshot, let transitionStartedAt else { return nil }
+        // Wall clock owns the morph. TimelineView.date can jump when the
+        // animation schedule unpauses, which skipped the Y merge.
+        let elapsed = Date().timeIntervalSince(transitionStartedAt)
+        _ = tick
+        return FlowMorph(
+            from: outgoingSnapshot,
+            progress: RibbonMorph.easedProgress(elapsed: elapsed, duration: transitionDuration)
+        )
+    }
+
+    private func applyFlowModeChange(previous: PowerSnapshot, next: PowerSnapshot) {
+        let now = Date()
+        switch RibbonMorph.decide(
+            from: outgoingSnapshot,
+            startedAt: transitionStartedAt,
+            duration: transitionDuration,
+            previous: previous,
+            nextMode: next.flowMode,
+            now: now
+        ) {
+        case .keepGoing:
+            return
+        case .start(let from):
+            beginTransition(from: from, at: now)
+        case .reverse(let from, let elapsed):
+            beginTransition(from: from, at: now.addingTimeInterval(-(transitionDuration - elapsed)))
+        }
+    }
+
+    private func beginTransition(from previous: PowerSnapshot, at startedAt: Date) {
         cleanupTask?.cancel()
         outgoingSnapshot = previous
-        let startedAt = Date()
         transitionStartedAt = startedAt
+        let remaining = max(transitionDuration - nowElapsed(since: startedAt), 0)
         cleanupTask = Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(Int((transitionDuration + 0.08) * 1_000)))
+            try? await Task.sleep(for: .milliseconds(Int((remaining + 0.08) * 1_000)))
             guard !Task.isCancelled, transitionStartedAt == startedAt else { return }
             outgoingSnapshot = nil
             transitionStartedAt = nil
         }
     }
 
-    private func easedProgress(at date: Date, since startedAt: Date) -> Double {
-        let raw = min(max(date.timeIntervalSince(startedAt) / transitionDuration, 0), 1)
-        // Smoothstep has a calm beginning/end, but maintains visible movement in
-        // the middle of the animation where the trunk joins or separates.
-        return raw * raw * (3 - 2 * raw)
+    private func nowElapsed(since startedAt: Date) -> TimeInterval {
+        Date().timeIntervalSince(startedAt)
     }
 }
 
@@ -115,11 +132,9 @@ private struct EnergyFlowDiagram: View {
             // resample glassEffect.
             RibbonGlassSlot(
                 size: geo.size,
-                mode: snapshot.flowMode,
                 fill: layout.fill,
-                splitOrMerge: splitOrMerge || layout.isMorphing,
                 bodyPath: layout.body,
-                laneSignature: laneSignature(layout)
+                maskSignature: maskSignature(layout.body)
             )
             .equatable()
             .overlay {
@@ -140,33 +155,22 @@ private struct EnergyFlowDiagram: View {
                 let phase = timeline.date.timeIntervalSinceReferenceDate / 4.6
                 Canvas { context, _ in
                     context.clip(to: layout.body, style: FillStyle(eoFill: false, antialiased: true))
-                    context.opacity *= layout.motionOpacity
-                    switch motion {
-                    case .sheen:
-                        drawSheen(context: &context, layout: layout, phase: phase)
-                    case .filaments, .filamentsSolid, .filamentsWhite:
-                        for lane in motionLanes(for: layout) {
-                            drawFilaments(
-                                context: &context,
-                                lane: lane,
-                                phase: phase,
-                                pigment: motion.pigment ?? .gradient,
-                                baseColor: layout.fill
-                            )
-                        }
-                    case .particles, .particlesSolid, .particlesWhite:
-                        for lane in motionLanes(for: layout) {
-                            drawPowder(
-                                context: &context,
-                                lane: lane,
-                                phase: phase,
-                                pigment: motion.pigment ?? .gradient,
-                                baseColor: layout.fill
-                            )
-                        }
-                    case .off:
-                        break
-                    }
+                    drawMotion(
+                        context: &context,
+                        body: layout.body,
+                        lanes: layout.outgoingLanes,
+                        fill: layout.fill,
+                        opacity: layout.outgoingOverlayOpacity,
+                        phase: phase
+                    )
+                    drawMotion(
+                        context: &context,
+                        body: layout.body,
+                        lanes: layout.incomingLanes,
+                        fill: layout.fill,
+                        opacity: layout.incomingOverlayOpacity,
+                        phase: phase
+                    )
                 }
                 .drawingGroup(opaque: false)
             }
@@ -174,15 +178,62 @@ private struct EnergyFlowDiagram: View {
         }
     }
 
+    private func drawMotion(
+        context: inout GraphicsContext,
+        body: Path,
+        lanes: [Lane],
+        fill: Color,
+        opacity: Double,
+        phase: Double
+    ) {
+        guard opacity > 0.01, !lanes.isEmpty else { return }
+        let previous = context.opacity
+        context.opacity *= opacity
+        switch motion {
+        case .sheen:
+            drawSheen(context: &context, body: body, lanes: lanes, fill: fill, phase: phase)
+        case .filaments, .filamentsSolid, .filamentsWhite:
+            for lane in lanes {
+                drawFilaments(
+                    context: &context,
+                    lane: lane,
+                    phase: phase,
+                    pigment: motion.pigment ?? .gradient,
+                    baseColor: fill
+                )
+            }
+        case .particles, .particlesSolid, .particlesWhite:
+            for lane in lanes {
+                drawPowder(
+                    context: &context,
+                    lane: lane,
+                    phase: phase,
+                    pigment: motion.pigment ?? .gradient,
+                    baseColor: fill
+                )
+            }
+        case .off:
+            break
+        }
+        context.opacity = previous
+    }
+
     private func wattLabels(layout: Layout) -> some View {
         Canvas { context, _ in
-            guard layout.labelOpacity > 0.01 else { return }
-            context.opacity *= layout.labelOpacity
-            for lane in layout.lanes {
-                drawWattLabel(context: &context, lane: lane)
-            }
+            drawWattLabels(context: &context, lanes: layout.outgoingLanes, opacity: layout.outgoingOverlayOpacity)
+            drawWattLabels(context: &context, lanes: layout.incomingLanes, opacity: layout.incomingOverlayOpacity)
         }
         .allowsHitTesting(false)
+    }
+
+    private func drawWattLabels(context: inout GraphicsContext, lanes: [Lane], opacity: Double) {
+        guard opacity > 0.01 else { return }
+        let previous = context.opacity
+        context.opacity *= opacity
+        for lane in lanes {
+            drawWattLabel(context: &context, lane: lane)
+        }
+        context.opacity = previous
     }
 
     @ViewBuilder
@@ -213,14 +264,27 @@ private struct EnergyFlowDiagram: View {
         }
     }
 
-    private func laneSignature(_ layout: Layout) -> Int {
+    /// Occupancy of the glass mask, so a Y-notch filling in is visible while a
+    /// last-frame swap from a union-capsule to a stadium-capsule is not.
+    private func maskSignature(_ path: Path) -> Int {
         var hasher = Hasher()
-        for lane in layout.lanes {
-            hasher.combine(Int((lane.width * 10).rounded()))
-            hasher.combine(Int((lane.watts * 10).rounded()))
-            for point in [lane.cubic.p0, lane.cubic.c1, lane.cubic.c2, lane.cubic.p1] {
-                hasher.combine(Int((point.x * 10).rounded()))
-                hasher.combine(Int((point.y * 10).rounded()))
+        let bounds = path.boundingRect
+        hasher.combine(Int((bounds.minX * 4).rounded()))
+        hasher.combine(Int((bounds.maxX * 4).rounded()))
+        hasher.combine(Int((bounds.minY * 4).rounded()))
+        hasher.combine(Int((bounds.maxY * 4).rounded()))
+        let xs: [CGFloat] = [0.22, 0.4, 0.55, 0.7, 0.82, 0.9, 0.96]
+        let ys: [CGFloat] = [0.18, 0.38, 0.5, 0.62, 0.82]
+        for x in xs {
+            for y in ys {
+                hasher.combine(
+                    path.contains(
+                        CGPoint(
+                            x: bounds.minX + bounds.width * x,
+                            y: bounds.minY + bounds.height * y
+                        )
+                    )
+                )
             }
         }
         return hasher.finalize()
@@ -230,18 +294,14 @@ private struct EnergyFlowDiagram: View {
     /// can skip resampling when only the particle overlay ticks.
     private struct RibbonGlassSlot: View, @MainActor Equatable {
         var size: CGSize
-        var mode: EnergyFlowMode
         var fill: Color
-        var splitOrMerge: Bool
         var bodyPath: Path
-        var laneSignature: Int
+        var maskSignature: Int
 
         static func == (lhs: Self, rhs: Self) -> Bool {
             lhs.size == rhs.size
-                && lhs.mode == rhs.mode
                 && lhs.fill == rhs.fill
-                && lhs.splitOrMerge == rhs.splitOrMerge
-                && lhs.laneSignature == rhs.laneSignature
+                && lhs.maskSignature == rhs.maskSignature
         }
 
         var body: some View {
@@ -270,10 +330,6 @@ private struct EnergyFlowDiagram: View {
         // Reserve fork headroom in every power state so connecting, charging,
         // and unplugging never resize the surrounding popover.
         return trunk + 24
-    }
-
-    private var splitOrMerge: Bool {
-        snapshot.flowMode == .charging || snapshot.flowMode == .underpowered
     }
 
     @ViewBuilder
@@ -324,8 +380,10 @@ private struct EnergyFlowDiagram: View {
         var lanes: [Lane]
         var bubbles: [Bubble]
         var isMorphing = false
-        var labelOpacity = 1.0
-        var motionOpacity = 1.0
+        var outgoingLanes: [Lane] = []
+        var incomingLanes: [Lane] = []
+        var outgoingOverlayOpacity = 1.0
+        var incomingOverlayOpacity = 0.0
         var bubbleOpacity = 1.0
     }
 
@@ -337,7 +395,7 @@ private struct EnergyFlowDiagram: View {
         let progress = min(max(morph.progress, 0), 1)
         let from = layout(in: size, snapshot: morph.from)
         let to = layout(in: size, snapshot: snapshot)
-        guard progress > 0.001, progress < 0.999 else {
+        guard progress > 0.001, progress < 1 else {
             return progress <= 0.001 ? from : to
         }
 
@@ -355,8 +413,7 @@ private struct EnergyFlowDiagram: View {
         // Labels are information attached to finished branches, not decorations
         // for the temporary trunk. Fading them away before the channels meet
         // prevents the two watt values from colliding in the middle.
-        let distanceFromTrunk = abs(progress * 2 - 1)
-        let labelOpacity = distanceFromTrunk * distanceFromTrunk * (3 - 2 * distanceFromTrunk)
+        let overlay = FlowRibbonOverlay.opacities(progress: progress)
         let bubblePresentation = bubbles(for: progress, from: from.bubbles, to: to.bubbles)
         return Layout(
             body: movingTopologyBody(in: size, from: morph.from, to: snapshot, progress: progress)
@@ -365,10 +422,10 @@ private struct EnergyFlowDiagram: View {
             lanes: lanes,
             bubbles: bubblePresentation.bubbles,
             isMorphing: true,
-            labelOpacity: labelOpacity,
-            // A central trunk should feel quiet and concentrated, not become a
-            // snow globe while two invisible construction lanes overlap.
-            motionOpacity: 0.26 + 0.74 * labelOpacity,
+            outgoingLanes: from.lanes,
+            incomingLanes: to.lanes,
+            outgoingOverlayOpacity: overlay.outgoing,
+            incomingOverlayOpacity: overlay.incoming,
             bubbleOpacity: bubblePresentation.opacity
         )
     }
@@ -385,36 +442,6 @@ private struct EnergyFlowDiagram: View {
             return (to, smoothstep((progress - 0.62) / 0.38))
         }
         return ([], 0)
-    }
-
-    /// Morphing needs two mathematical centre-lines so a path can fork, but
-    /// when they nearly coincide they must not emit two identical particle
-    /// systems. Present one composed lane instead.
-    private func motionLanes(for layout: Layout) -> [Lane] {
-        guard layout.isMorphing, layout.lanes.count == 2 else { return layout.lanes }
-        let first = layout.lanes[0]
-        let second = layout.lanes[1]
-        guard laneDistance(first, second) < 24 else { return layout.lanes }
-        return [
-            Lane(
-                id: "morph-trunk-motion",
-                cubic: interpolate(first.cubic, second.cubic, progress: 0.5),
-                width: max(first.width, second.width),
-                watts: first.watts + second.watts,
-                color: first.color.mix(with: second.color, by: 0.5)
-            )
-        ]
-    }
-
-    private func laneDistance(_ first: Lane, _ second: Lane) -> CGFloat {
-        let pairs = zip(
-            [first.cubic.p0, first.cubic.c1, first.cubic.c2, first.cubic.p1],
-            [second.cubic.p0, second.cubic.c1, second.cubic.c2, second.cubic.p1]
-        )
-        let total = pairs.reduce(CGFloat.zero) { partial, pair in
-            partial + hypot(pair.0.x - pair.1.x, pair.0.y - pair.1.y)
-        }
-        return total / 4
     }
 
     private func layout(in size: CGSize, snapshot: PowerSnapshot) -> Layout {
@@ -451,7 +478,8 @@ private struct EnergyFlowDiagram: View {
                 endY: bot.y,
                 holdT: FlowRibbon.forkT
             )
-            return Layout(
+            return settle(
+                Layout(
                 body: ForkOutline.splitPath(left: left, top: top, bot: bot, topW: widths.0, botW: widths.1),
                 fill: theme.charging,
                 lanes: [
@@ -463,10 +491,12 @@ private struct EnergyFlowDiagram: View {
                     Bubble(id: "battery", symbol: "battery.100percent.bolt", point: CGPoint(x: size.width - logo, y: top.y)),
                     Bubble(id: "mac", symbol: "laptopcomputer", point: CGPoint(x: size.width - logo, y: bot.y))
                 ]
+                )
             )
         case .adapterHold:
             let watts = max(snapshot.systemLoadWatts, snapshot.adapterInWatts)
-            return Layout(
+            return settle(
+                Layout(
                 body: ForkOutline.capsule(from: left, to: right, width: trunk),
                 fill: theme.adapterHold,
                 lanes: [
@@ -482,10 +512,12 @@ private struct EnergyFlowDiagram: View {
                     Bubble(id: "supply", asset: "ChargeMark", point: leftLogo),
                     Bubble(id: "mac", symbol: "laptopcomputer", point: rightLogo)
                 ]
+                )
             )
         case .discharging:
             let watts = max(snapshot.dischargeWatts, snapshot.systemLoadWatts)
-            return Layout(
+            return settle(
+                Layout(
                 body: ForkOutline.capsule(from: left, to: right, width: trunk),
                 fill: theme.discharging,
                 lanes: [
@@ -501,6 +533,7 @@ private struct EnergyFlowDiagram: View {
                     Bubble(id: "battery", symbol: "battery.100percent", point: leftLogo),
                     Bubble(id: "mac", symbol: "laptopcomputer", point: rightLogo)
                 ]
+                )
             )
         case .underpowered:
             let adapter = max(snapshot.adapterInWatts, 0.01)
@@ -522,7 +555,8 @@ private struct EnergyFlowDiagram: View {
                 endY: right.y + trunk / 2 - widths.1 / 2,
                 holdT: 1 - FlowRibbon.forkT
             )
-            return Layout(
+            return settle(
+                Layout(
                 body: ForkOutline.mergePath(top: leftTop, bot: leftBot, right: right, topW: widths.0, botW: widths.1),
                 fill: theme.underpowered,
                 lanes: [
@@ -534,8 +568,18 @@ private struct EnergyFlowDiagram: View {
                     Bubble(id: "battery", symbol: "battery.100percent", point: CGPoint(x: logo, y: leftBot.y)),
                     Bubble(id: "mac", symbol: "laptopcomputer", point: rightLogo)
                 ]
+                )
             )
         }
+    }
+
+    private func settle(_ layout: Layout) -> Layout {
+        var layout = layout
+        layout.outgoingLanes = layout.lanes
+        layout.outgoingOverlayOpacity = 1
+        layout.incomingLanes = []
+        layout.incomingOverlayOpacity = 0
+        return layout
     }
 
     private func interpolateLanes(_ from: [Lane], _ to: [Lane], progress: Double) -> [Lane] {
@@ -638,43 +682,41 @@ private struct EnergyFlowDiagram: View {
         return t * t * (3 - 2 * t)
     }
 
-    /// Drives a single split/merge frontier across the ribbon. Unlike generic
-    /// coordinate interpolation, this never leaves a long, half-open seam: one
-    /// side is wholly joined while the frontier travels to its next position.
+    /// Capsule ↔ Y share one opening parameter. Closing is opening played
+    /// backwards, so the late Y→capsule swap is the same silhouette as the
+    /// early capsule→Y hold, not a different construction.
     private func movingTopologyBody(
         in size: CGSize,
         from source: PowerSnapshot,
         to destination: PowerSnapshot,
         progress: Double
     ) -> Path? {
-        let staticSplit = FlowRibbon.forkT
-        let staticMerge = 1 - FlowRibbon.forkT
-        let phase = smoothstep(progress)
+        let open = CGFloat(min(max(progress, 0), 1))
 
         switch (source.flowMode, destination.flowMode) {
         case (.underpowered, .charging):
-            if phase < 0.5 {
-                return underpoweredBody(in: size, snapshot: source, mergeT: staticMerge * (1 - CGFloat(smoothstep(phase * 2))))
+            if open < 0.5 {
+                return underpoweredBody(in: size, snapshot: source, mergeT: FlowRibbon.mergeT(open: 1 - open * 2))
             }
-            return chargingBody(in: size, snapshot: destination, splitT: 1 - (1 - staticSplit) * CGFloat(smoothstep((phase - 0.5) * 2)))
+            return chargingBody(in: size, snapshot: destination, splitT: FlowRibbon.splitT(open: (open - 0.5) * 2))
 
         case (.charging, .underpowered):
-            if phase < 0.5 {
-                return chargingBody(in: size, snapshot: source, splitT: staticSplit + (1 - staticSplit) * CGFloat(smoothstep(phase * 2)))
+            if open < 0.5 {
+                return chargingBody(in: size, snapshot: source, splitT: FlowRibbon.splitT(open: 1 - open * 2))
             }
-            return underpoweredBody(in: size, snapshot: destination, mergeT: staticMerge * CGFloat(smoothstep((phase - 0.5) * 2)))
+            return underpoweredBody(in: size, snapshot: destination, mergeT: FlowRibbon.mergeT(open: (open - 0.5) * 2))
 
         case (.charging, .adapterHold), (.charging, .discharging):
-            return chargingBody(in: size, snapshot: source, splitT: staticSplit + (1 - staticSplit) * CGFloat(phase))
+            return chargingBody(in: size, snapshot: source, splitT: FlowRibbon.splitT(open: 1 - open))
 
         case (.adapterHold, .charging), (.discharging, .charging):
-            return chargingBody(in: size, snapshot: destination, splitT: 1 - (1 - staticSplit) * CGFloat(phase))
+            return chargingBody(in: size, snapshot: destination, splitT: FlowRibbon.splitT(open: open))
 
         case (.underpowered, .adapterHold), (.underpowered, .discharging):
-            return underpoweredBody(in: size, snapshot: source, mergeT: staticMerge * (1 - CGFloat(phase)))
+            return underpoweredBody(in: size, snapshot: source, mergeT: FlowRibbon.mergeT(open: 1 - open))
 
         case (.adapterHold, .underpowered), (.discharging, .underpowered):
-            return underpoweredBody(in: size, snapshot: destination, mergeT: staticMerge * CGFloat(phase))
+            return underpoweredBody(in: size, snapshot: destination, mergeT: FlowRibbon.mergeT(open: open))
 
         case (.adapterHold, .discharging), (.discharging, .adapterHold):
             return singleBody(in: size)
@@ -687,14 +729,15 @@ private struct EnergyFlowDiagram: View {
     private func chargingBody(in size: CGSize, snapshot: PowerSnapshot, splitT: CGFloat) -> Path {
         let trunk = FlowRibbon.trunkWidth(totalWatts: 1)
         let inset = FlowRibbon.capRadius(for: trunk)
-        let branchLength = (size.width - inset * 2) * (1 - splitT)
-        guard branchLength >= minimumForkLength(trunk: trunk) else {
-            return singleBody(in: size)
-        }
-        let left = CGPoint(x: inset, y: size.height / 2)
+        let remaining = (size.width - inset * 2) * (1 - min(max(splitT, 0), 1))
+        let collapse = FlowRibbon.forkCollapse(
+            remainingLength: remaining,
+            minimum: minimumForkLength(trunk: trunk)
+        )
         let charge = max(snapshot.chargeWatts, 0.01)
         let load = max(snapshot.systemLoadWatts, 0.01)
         let widths = FlowRibbon.splitWidths(first: charge, second: load, trunk: trunk)
+        let left = CGPoint(x: inset, y: size.height / 2)
         let top = CGPoint(x: size.width - inset, y: widths.0 / 2)
         let bottom = CGPoint(x: size.width - inset, y: size.height - widths.1 / 2)
         return ForkOutline.splitPath(
@@ -703,17 +746,19 @@ private struct EnergyFlowDiagram: View {
             bot: bottom,
             topW: widths.0,
             botW: widths.1,
-            splitT: splitT
+            splitT: splitT,
+            collapse: collapse
         )
     }
 
     private func underpoweredBody(in size: CGSize, snapshot: PowerSnapshot, mergeT: CGFloat) -> Path {
         let trunk = FlowRibbon.trunkWidth(totalWatts: 1)
         let inset = FlowRibbon.capRadius(for: trunk)
-        let branchLength = (size.width - inset * 2) * mergeT
-        guard branchLength >= minimumForkLength(trunk: trunk) else {
-            return singleBody(in: size)
-        }
+        let remaining = (size.width - inset * 2) * min(max(mergeT, 0), 1)
+        let collapse = FlowRibbon.forkCollapse(
+            remainingLength: remaining,
+            minimum: minimumForkLength(trunk: trunk)
+        )
         let adapter = max(snapshot.adapterInWatts, 0.01)
         let battery = max(snapshot.dischargeWatts, 0.01)
         let widths = FlowRibbon.splitWidths(first: adapter, second: battery, trunk: trunk)
@@ -726,7 +771,8 @@ private struct EnergyFlowDiagram: View {
             right: right,
             topW: widths.0,
             botW: widths.1,
-            mergeT: mergeT
+            mergeT: mergeT,
+            collapse: collapse
         )
     }
 
@@ -740,11 +786,10 @@ private struct EnergyFlowDiagram: View {
         )
     }
 
-    /// A fork whose arms are shorter than their end-cap geometry folds back on
-    /// itself and produces the balloon-like bulge seen at the ribbon edge.
-    /// Keep a clean single trunk until the moving frontier has enough runway.
+    /// Below this remaining branch length, pinch the two fork ports together
+    /// instead of swapping to a capsule in one frame.
     private func minimumForkLength(trunk: CGFloat) -> CGFloat {
-        max(FlowRibbon.nodeDiameter * 2, FlowRibbon.capRadius(for: trunk) * 3)
+        max(trunk, FlowRibbon.nodeDiameter * 2)
     }
 
     private func bodyPath(for lanes: [Lane]) -> Path {
@@ -764,16 +809,22 @@ private struct EnergyFlowDiagram: View {
     }
 
     /// Full-height wash across the capsule; a soft peak travels left → right.
-    private func drawSheen(context: inout GraphicsContext, layout: Layout, phase: Double) {
-        let watts = layout.lanes.map(\.watts).max() ?? 1
+    private func drawSheen(
+        context: inout GraphicsContext,
+        body: Path,
+        lanes: [Lane],
+        fill: Color,
+        phase: Double
+    ) {
+        let watts = lanes.map(\.watts).max() ?? 1
         let speed = FlowRibbon.sheenSpeed(watts: watts)
         var t = (phase * speed).truncatingRemainder(dividingBy: 1)
         if t < 0 { t += 1 }
 
-        let bounds = layout.body.boundingRect
+        let bounds = body.boundingRect
         guard bounds.width > 1, bounds.height > 1 else { return }
 
-        let color = layout.fill
+        let color = fill
         let halo = Color.white.mix(with: color, by: 0.42)
         let core = Color.white.mix(with: color, by: 0.08)
         // Peak covers about a third of the capsule so it reads as a band, not a speck.
@@ -1039,7 +1090,7 @@ private struct EnergyFlowDiagram: View {
     }
 
     private func drawWattLabel(context: inout GraphicsContext, lane: Lane) {
-        let t: CGFloat = 0.52
+        let t: CGFloat = FlowRibbon.wattLabelT
         let point = lane.cubic.offsetPoint(t, distance: 0)
         let text = Text(String(format: "%.1f W", lane.watts))
             .font(.system(size: 11, weight: .semibold, design: .rounded).monospacedDigit())

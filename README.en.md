@@ -1,6 +1,8 @@
 # MacPower
 
-![MacPower](docs/readme/icon.png)
+<p align="center">
+  <img src="docs/readme/icon.png" width="96" alt="MacPower">
+</p>
 
 [中文](README.md) | English
 

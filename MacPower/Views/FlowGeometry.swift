@@ -24,6 +24,35 @@ enum FlowRibbon {
     /// Split/merge along the spine: keep a short trunk, then long fingers.
     static let forkT: CGFloat = 0.22
 
+    /// 0 = capsule, 1 = static charging Y. Closing is `splitT(open: 1 - open)`.
+    static func splitT(open: CGFloat) -> CGFloat {
+        let t = min(max(open, 0), 1)
+        return 1 - (1 - forkT) * t
+    }
+
+    /// 0 = capsule, 1 = static underpowered Y. Closing is `mergeT(open: 1 - open)`.
+    static func mergeT(open: CGFloat) -> CGFloat {
+        let t = min(max(open, 0), 1)
+        return (1 - forkT) * t
+    }
+
+    /// Remaining fork length at which the silhouette is already a capsule.
+    static func forkSwapLength(trunk: CGFloat) -> CGFloat {
+        capRadius(for: trunk) * 2
+    }
+
+    /// 0 = full fork opening, 1 = visually a capsule. Reaches 1 at `forkSwapLength`
+    /// so swapping to a stadium is the reverse of opening, not a late pop.
+    static func forkCollapse(remainingLength: CGFloat, minimum: CGFloat) -> CGFloat {
+        let floor = min(minimum, nodeDiameter)
+        if remainingLength >= minimum { return 0 }
+        if remainingLength <= floor { return 1 }
+        return 1 - (remainingLength - floor) / (minimum - floor)
+    }
+
+    /// Watt labels sit in the right-hand body, left of the end icon.
+    static let wattLabelT: CGFloat = 0.72
+
     /// Full-capsule sheen. Linear in watts, independent of filament speed.
     /// Floor is high enough that ~10 W still crosses in a few seconds.
     static func sheenSpeed(watts: Double) -> Double {
@@ -68,6 +97,32 @@ enum FlowRibbon {
             firstW = trunk - minW
         }
         return (firstW, secondW)
+    }
+}
+
+/// Watt labels and particle/filament fields stay on a finished topology.
+/// Interpolating them across a Y↔capsule morph makes values and seeds jump
+/// when the construction lanes collapse into one capsule lane.
+enum FlowRibbonOverlay {
+    static let outgoingEnd = 0.26
+    static let incomingStart = 0.62
+
+    static func opacities(progress: Double) -> (outgoing: Double, incoming: Double) {
+        let p = min(max(progress, 0), 1)
+        if p <= 0 { return (1, 0) }
+        if p >= 1 { return (0, 1) }
+        if p < outgoingEnd {
+            return (1 - smoothstep(p / outgoingEnd), 0)
+        }
+        if p > incomingStart {
+            return (0, smoothstep((p - incomingStart) / (1 - incomingStart)))
+        }
+        return (0, 0)
+    }
+
+    private static func smoothstep(_ value: Double) -> Double {
+        let t = min(max(value, 0), 1)
+        return t * t * (3 - 2 * t)
     }
 }
 
@@ -146,12 +201,21 @@ enum ForkOutline {
         bot: CGPoint,
         topW: CGFloat,
         botW: CGFloat,
-        splitT: CGFloat = FlowRibbon.forkT
+        splitT: CGFloat = FlowRibbon.forkT,
+        collapse: CGFloat = 0
     ) -> Path {
         let trunk = topW + botW
-        let splitX = left.x + (top.x - left.x) * splitT
+        let t = min(max(collapse, 0), 1)
+        let splitX = left.x + (top.x - left.x) * min(max(splitT, 0), 1)
+        let remaining = top.x - splitX
+        if t >= 1 || remaining <= FlowRibbon.forkSwapLength(trunk: trunk) {
+            return capsule(from: left, to: CGPoint(x: top.x, y: left.y), width: trunk)
+        }
+
         let topY = left.y - trunk / 2 + topW / 2
         let botY = left.y + trunk / 2 - botW / 2
+        let endTop = top.y + (topY - top.y) * t
+        let endBot = bot.y + (botY - bot.y) * t
         var path = Path()
         path.addPath(capsule(
             from: left,
@@ -160,16 +224,26 @@ enum ForkOutline {
             startCap: .round,
             endCap: .butt
         ))
-        path.addPath(capsule(
-            from: CGPoint(x: splitX - seam, y: topY),
-            to: top,
+        path.addPath(cubicCapsule(
+            stackedLane(
+                from: CGPoint(x: splitX - seam, y: topY),
+                to: CGPoint(x: top.x, y: endTop),
+                startY: topY,
+                endY: endTop,
+                holdT: 0.5
+            ),
             width: topW,
             startCap: .butt,
             endCap: .round
         ))
-        path.addPath(capsule(
-            from: CGPoint(x: splitX - seam, y: botY),
-            to: bot,
+        path.addPath(cubicCapsule(
+            stackedLane(
+                from: CGPoint(x: splitX - seam, y: botY),
+                to: CGPoint(x: top.x, y: endBot),
+                startY: botY,
+                endY: endBot,
+                holdT: 0.5
+            ),
             width: botW,
             startCap: .butt,
             endCap: .round
@@ -183,23 +257,42 @@ enum ForkOutline {
         right: CGPoint,
         topW: CGFloat,
         botW: CGFloat,
-        mergeT: CGFloat = 1 - FlowRibbon.forkT
+        mergeT: CGFloat = 1 - FlowRibbon.forkT,
+        collapse: CGFloat = 0
     ) -> Path {
         let trunk = topW + botW
-        let mergeX = top.x + (right.x - top.x) * mergeT
+        let t = min(max(collapse, 0), 1)
+        let mergeX = top.x + (right.x - top.x) * min(max(mergeT, 0), 1)
+        let remaining = mergeX - top.x
+        if t >= 1 || remaining <= FlowRibbon.forkSwapLength(trunk: trunk) {
+            return capsule(from: CGPoint(x: top.x, y: right.y), to: right, width: trunk)
+        }
+
         let topY = right.y - trunk / 2 + topW / 2
         let botY = right.y + trunk / 2 - botW / 2
+        let startTop = top.y + (topY - top.y) * t
+        let startBot = bot.y + (botY - bot.y) * t
         var path = Path()
-        path.addPath(capsule(
-            from: top,
-            to: CGPoint(x: mergeX + seam, y: topY),
+        path.addPath(cubicCapsule(
+            stackedLane(
+                from: CGPoint(x: top.x, y: startTop),
+                to: CGPoint(x: mergeX + seam, y: topY),
+                startY: startTop,
+                endY: topY,
+                holdT: 0.5
+            ),
             width: topW,
             startCap: .round,
             endCap: .butt
         ))
-        path.addPath(capsule(
-            from: bot,
-            to: CGPoint(x: mergeX + seam, y: botY),
+        path.addPath(cubicCapsule(
+            stackedLane(
+                from: CGPoint(x: bot.x, y: startBot),
+                to: CGPoint(x: mergeX + seam, y: botY),
+                startY: startBot,
+                endY: botY,
+                holdT: 0.5
+            ),
             width: botW,
             startCap: .round,
             endCap: .butt
@@ -363,5 +456,71 @@ private extension Path {
     /// not extra vertices at the rounded-end joins.
     func normalizedSilhouette() -> Path {
         Path(cgPath.normalized(using: .winding))
+    }
+}
+
+/// Capsule ↔ Y morphs are 1.65s long. Unplug/plugin often lands as two IOKit
+/// mode changes in a row (charging → adapterHold → discharging). Restarting
+/// the clock on the second sample replaces a live Y merge with capsule→capsule
+/// and reads as a jump. Keep the original fork source until that close finishes,
+/// and reverse elapsed time when the mode flaps back.
+enum RibbonMorph {
+    static let duration: TimeInterval = 1.65
+
+    enum Decision: Equatable {
+        case start(from: PowerSnapshot)
+        case keepGoing
+        case reverse(from: PowerSnapshot, elapsed: TimeInterval)
+    }
+
+    enum Silhouette: Equatable {
+        case chargingFork
+        case underpoweredFork
+        case capsule
+
+        init(_ mode: EnergyFlowMode) {
+            switch mode {
+            case .charging: self = .chargingFork
+            case .underpowered: self = .underpoweredFork
+            case .adapterHold, .discharging: self = .capsule
+            }
+        }
+    }
+
+    static func easedProgress(elapsed: TimeInterval, duration: TimeInterval = duration) -> Double {
+        let raw = min(max(elapsed / duration, 0), 1)
+        return raw * raw * (3 - 2 * raw)
+    }
+
+    static func decide(
+        from: PowerSnapshot?,
+        startedAt: Date?,
+        duration: TimeInterval,
+        previous: PowerSnapshot,
+        nextMode: EnergyFlowMode,
+        now: Date
+    ) -> Decision {
+        guard let from, let startedAt else {
+            return .start(from: previous)
+        }
+
+        let elapsed = now.timeIntervalSince(startedAt)
+        if elapsed >= duration {
+            return .start(from: previous)
+        }
+
+        let origin = Silhouette(from.flowMode)
+        let heading = Silhouette(previous.flowMode)
+        let next = Silhouette(nextMode)
+
+        if next == origin {
+            return .reverse(from: previous, elapsed: elapsed)
+        }
+
+        if next == heading {
+            return .keepGoing
+        }
+
+        return .start(from: previous)
     }
 }

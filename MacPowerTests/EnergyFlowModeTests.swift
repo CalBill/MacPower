@@ -48,6 +48,23 @@ final class EnergyFlowModeTests: XCTestCase {
     }
 }
 
+final class HeldLoadWattsTests: XCTestCase {
+    func testUnplugDropoutKeepsLastRealLoad() {
+        XCTAssertEqual(HeldLoadWatts.hold(current: 0, previous: 18.4), 18.4)
+        XCTAssertEqual(HeldLoadWatts.hold(current: 0.1, previous: 9), 9)
+    }
+
+    func testRealSampleReplacesHeldLoad() {
+        XCTAssertEqual(HeldLoadWatts.hold(current: 12.2, previous: 18.4), 12.2)
+        XCTAssertEqual(HeldLoadWatts.hold(current: 0.5, previous: 9), 0.5)
+    }
+
+    func testMissingHistoryDoesNotInventLoad() {
+        XCTAssertEqual(HeldLoadWatts.hold(current: 0, previous: nil), 0)
+        XCTAssertEqual(HeldLoadWatts.hold(current: 0.2, previous: 0.1), 0.2)
+    }
+}
+
 final class FlowRibbonTests: XCTestCase {
     func testTrunkWidthIsTripleNodeDiameter() {
         XCTAssertEqual(FlowRibbon.nodeDiameter, 32)
@@ -126,6 +143,215 @@ final class FlowRibbonTests: XCTestCase {
             botW: 64
         )
         XCTAssertEqual(path.subpathCount, 1)
+    }
+
+    func testWattLabelSitsInTheRightHandBody() {
+        XCTAssertGreaterThan(FlowRibbon.wattLabelT, 0.5)
+        XCTAssertLessThan(FlowRibbon.wattLabelT, 0.85)
+        XCTAssertEqual(FlowRibbon.wattLabelT, 0.72, accuracy: 0.001)
+    }
+
+    func testCollapseDoesNotDeflateCapsuleCorners() {
+        let trunk: CGFloat = 96
+        let topW: CGFloat = 40
+        let botW: CGFloat = 56
+        let top = CGPoint(x: 16, y: 20)
+        let bot = CGPoint(x: 16, y: 100)
+        let right = CGPoint(x: 344, y: 60)
+        let remaining: CGFloat = 40
+        let mergeT = remaining / (right.x - top.x)
+        let path = ForkOutline.mergePath(
+            top: top,
+            bot: bot,
+            right: right,
+            topW: topW,
+            botW: botW,
+            mergeT: mergeT,
+            collapse: FlowRibbon.forkCollapse(remainingLength: remaining, minimum: trunk)
+        )
+        let destination = ForkOutline.capsule(
+            from: CGPoint(x: top.x, y: right.y),
+            to: right,
+            width: trunk
+        )
+        let inset: CGFloat = 6
+        XCTAssertTrue(
+            path.contains(CGPoint(x: top.x + 20, y: destination.boundingRect.minY + inset)),
+            "top-left capsule corner caved in during collapse"
+        )
+        XCTAssertTrue(
+            path.contains(CGPoint(x: top.x + 20, y: destination.boundingRect.maxY - inset)),
+            "bottom-left capsule corner caved in during collapse"
+        )
+    }
+
+    func testCollapseDoesNotPunchAHoleThroughTheRibbon() {
+        let left = CGPoint(x: 16, y: 60)
+        let top = CGPoint(x: 344, y: 20)
+        let bot = CGPoint(x: 344, y: 100)
+        let minimum: CGFloat = 96
+        for step in 0...12 {
+            let phase = CGFloat(step) / 12
+            let splitT = FlowRibbon.forkT + (1 - FlowRibbon.forkT) * phase
+            let remaining = (top.x - left.x) * (1 - splitT)
+            let path = ForkOutline.splitPath(
+                left: left,
+                top: top,
+                bot: bot,
+                topW: 40,
+                botW: 56,
+                splitT: splitT,
+                collapse: FlowRibbon.forkCollapse(remainingLength: remaining, minimum: minimum)
+            )
+            XCTAssertTrue(
+                path.contains(CGPoint(x: left.x + 24, y: left.y)),
+                "trunk holed at phase \(phase)"
+            )
+            let splitX = left.x + (top.x - left.x) * splitT
+            if splitX - left.x > 20 {
+                XCTAssertTrue(
+                    path.contains(CGPoint(x: splitX - 10, y: left.y)),
+                    "crotch holed at phase \(phase)"
+                )
+            }
+        }
+    }
+
+    func testForkCollapsePinchesShortBranchesInsteadOfSnapping() {
+        XCTAssertEqual(FlowRibbon.forkCollapse(remainingLength: 80, minimum: 64), 0)
+        XCTAssertEqual(FlowRibbon.forkCollapse(remainingLength: 0, minimum: 64), 1)
+        XCTAssertEqual(FlowRibbon.forkCollapse(remainingLength: 32, minimum: 64), 1)
+        XCTAssertEqual(FlowRibbon.forkCollapse(remainingLength: 48, minimum: 64), 0.5, accuracy: 0.001)
+        XCTAssertEqual(FlowRibbon.forkCollapse(remainingLength: -4, minimum: 64), 1)
+    }
+
+    func testYCapsuleCloseIsOpeningPlayedBackwards() {
+        XCTAssertEqual(FlowRibbon.splitT(open: 0), 1)
+        XCTAssertEqual(FlowRibbon.splitT(open: 1), FlowRibbon.forkT, accuracy: 0.0001)
+        XCTAssertEqual(
+            FlowRibbon.splitT(open: 0.3),
+            1 - (1 - FlowRibbon.forkT) * 0.3,
+            accuracy: 0.0001
+        )
+        XCTAssertGreaterThan(FlowRibbon.splitT(open: 0.2), FlowRibbon.splitT(open: 0.8))
+        XCTAssertEqual(FlowRibbon.mergeT(open: 0), 0)
+        XCTAssertEqual(FlowRibbon.mergeT(open: 1), 1 - FlowRibbon.forkT)
+        XCTAssertEqual(FlowRibbon.mergeT(open: 0.4), (1 - FlowRibbon.forkT) * 0.4, accuracy: 0.0001)
+        XCTAssertLessThan(FlowRibbon.mergeT(open: 0.2), FlowRibbon.mergeT(open: 0.8))
+    }
+
+    func testCollapsedForkMatchesCapsuleBounds() {
+        let collapsed = ForkOutline.splitPath(
+            left: CGPoint(x: 16, y: 60),
+            top: CGPoint(x: 400, y: 16),
+            bot: CGPoint(x: 400, y: 104),
+            topW: 32,
+            botW: 64,
+            splitT: 0.9,
+            collapse: 1
+        )
+        let capsule = ForkOutline.capsule(
+            from: CGPoint(x: 16, y: 60),
+            to: CGPoint(x: 400, y: 60),
+            width: 96
+        )
+        XCTAssertEqual(collapsed.boundingRect, capsule.boundingRect, accuracy: 0.01)
+        XCTAssertEqual(collapsed.subpathCount, 1)
+    }
+
+    func testCollapseDoesNotBridgeForksWithATrunkBar() {
+        let size = CGSize(width: 360, height: 120)
+        let trunk = FlowRibbon.trunkWidth(totalWatts: 1)
+        let inset = FlowRibbon.capRadius(for: trunk)
+        let topW: CGFloat = 40
+        let botW: CGFloat = 56
+        let left = CGPoint(x: inset, y: size.height / 2)
+        let top = CGPoint(x: size.width - inset, y: topW / 2)
+        let bot = CGPoint(x: size.width - inset, y: size.height - botW / 2)
+        let gap = CGPoint(x: size.width - inset - 8, y: size.height / 2 - 8)
+
+        let open = ForkOutline.splitPath(
+            left: left, top: top, bot: bot, topW: topW, botW: botW, splitT: FlowRibbon.forkT, collapse: 0
+        )
+        XCTAssertFalse(open.contains(gap), "the charging Y must keep a gap between the two end ports")
+
+        let early = ForkOutline.splitPath(
+            left: left, top: top, bot: bot, topW: topW, botW: botW, splitT: 0.55, collapse: 0.08
+        )
+        XCTAssertFalse(
+            early.contains(gap),
+            "collapse must pinch the two ports together, not drop in a trunk-height bar that fills the gap"
+        )
+
+        let closed = ForkOutline.splitPath(
+            left: left, top: top, bot: bot, topW: topW, botW: botW, splitT: 1, collapse: 1
+        )
+        XCTAssertTrue(closed.contains(CGPoint(x: size.width / 2, y: size.height / 2)))
+    }
+
+    func testChargingMergeKeepsRightEdgeUntilCapsule() {
+        let size = CGSize(width: 360, height: 96)
+        let trunk = FlowRibbon.trunkWidth(totalWatts: 1)
+        let inset = FlowRibbon.capRadius(for: trunk)
+        let topW: CGFloat = 40
+        let botW: CGFloat = 56
+        let left = CGPoint(x: inset, y: size.height / 2)
+        let top = CGPoint(x: size.width - inset, y: topW / 2)
+        let bot = CGPoint(x: size.width - inset, y: size.height - botW / 2)
+        let destination = ForkOutline.capsule(
+            from: left,
+            to: CGPoint(x: top.x, y: left.y),
+            width: trunk
+        )
+        let expectedMaxX = destination.boundingRect.maxX
+        let minimum = max(trunk, FlowRibbon.nodeDiameter * 2)
+
+        var previousMaxX: CGFloat?
+        var worstJump: CGFloat = 0
+        for step in 0...120 {
+            let phase = CGFloat(step) / 120
+            let splitT = FlowRibbon.forkT + (1 - FlowRibbon.forkT) * phase
+            let remaining = (size.width - inset * 2) * (1 - splitT)
+            let path = ForkOutline.splitPath(
+                left: left,
+                top: top,
+                bot: bot,
+                topW: 40,
+                botW: 56,
+                splitT: splitT,
+                collapse: FlowRibbon.forkCollapse(remainingLength: remaining, minimum: minimum)
+            )
+            let maxX = path.boundingRect.maxX
+            XCTAssertEqual(maxX, expectedMaxX, accuracy: 1.2, "right edge receded at phase \(phase)")
+            if let previousMaxX {
+                worstJump = max(worstJump, abs(maxX - previousMaxX))
+            }
+            previousMaxX = maxX
+        }
+        XCTAssertLessThan(worstJump, 1.2, "right edge jumped \(worstJump) during Y merge")
+    }
+
+    func testRibbonOverlayHidesWattMotionBeforeIncomingAppears() {
+        let start = FlowRibbonOverlay.opacities(progress: 0)
+        XCTAssertEqual(start.outgoing, 1, accuracy: 0.001)
+        XCTAssertEqual(start.incoming, 0, accuracy: 0.001)
+
+        let mid = FlowRibbonOverlay.opacities(progress: 0.5)
+        XCTAssertEqual(mid.outgoing, 0, accuracy: 0.001)
+        XCTAssertEqual(mid.incoming, 0, accuracy: 0.001)
+
+        let end = FlowRibbonOverlay.opacities(progress: 1)
+        XCTAssertEqual(end.outgoing, 0, accuracy: 0.001)
+        XCTAssertEqual(end.incoming, 1, accuracy: 0.001)
+    }
+
+    func testRibbonOverlayDoesNotCrossfadeWattMotion() {
+        XCTAssertEqual(FlowRibbonOverlay.opacities(progress: 0.26).outgoing, 0, accuracy: 0.001)
+        XCTAssertEqual(FlowRibbonOverlay.opacities(progress: 0.26).incoming, 0, accuracy: 0.001)
+        XCTAssertEqual(FlowRibbonOverlay.opacities(progress: 0.62).outgoing, 0, accuracy: 0.001)
+        XCTAssertEqual(FlowRibbonOverlay.opacities(progress: 0.62).incoming, 0, accuracy: 0.001)
+        XCTAssertGreaterThan(FlowRibbonOverlay.opacities(progress: 0.8).incoming, 0.2)
+        XCTAssertEqual(FlowRibbonOverlay.opacities(progress: 0.8).outgoing, 0, accuracy: 0.001)
     }
 }
 
@@ -480,5 +706,94 @@ final class RingColorTests: XCTestCase {
         XCTAssertEqual(theme.batteryLevelFill(percent: 10), theme.discharging)
         XCTAssertEqual(theme.batteryLevelFill(percent: 9.9), theme.lowBatteryRed)
         XCTAssertEqual(theme.batteryLevelFill(percent: 0), theme.lowBatteryRed)
+    }
+}
+
+final class RibbonMorphTests: XCTestCase {
+    func testDirectUnplugStartsChargingClose() {
+        let decision = RibbonMorph.decide(
+            from: nil,
+            startedAt: nil,
+            duration: 1.65,
+            previous: stub(.charging),
+            nextMode: .discharging,
+            now: Date()
+        )
+        guard case .start(let from) = decision else {
+            return XCTFail("expected a new close, got \(decision)")
+        }
+        XCTAssertEqual(from.flowMode, .charging)
+    }
+
+    func testUnplugHoldThenDischargeKeepsTheSameChargingClose() {
+        let charging = stub(.charging)
+        let startedAt = Date()
+        let later = startedAt.addingTimeInterval(0.12)
+        let decision = RibbonMorph.decide(
+            from: charging,
+            startedAt: startedAt,
+            duration: 1.65,
+            previous: stub(.adapterHold),
+            nextMode: .discharging,
+            now: later
+        )
+        XCTAssertEqual(decision, .keepGoing)
+    }
+
+    func testUnplugDischargeThenHoldKeepsTheSameChargingClose() {
+        let charging = stub(.charging)
+        let startedAt = Date()
+        let decision = RibbonMorph.decide(
+            from: charging,
+            startedAt: startedAt,
+            duration: 1.65,
+            previous: stub(.discharging),
+            nextMode: .adapterHold,
+            now: startedAt.addingTimeInterval(0.4)
+        )
+        XCTAssertEqual(decision, .keepGoing)
+    }
+
+    func testPluginDuringUnplugReversesElapsedTime() {
+        let startedAt = Date()
+        let elapsed: TimeInterval = 0.55
+        let decision = RibbonMorph.decide(
+            from: stub(.charging),
+            startedAt: startedAt,
+            duration: 1.65,
+            previous: stub(.discharging),
+            nextMode: .charging,
+            now: startedAt.addingTimeInterval(elapsed)
+        )
+        guard case .reverse(let from, let reversedElapsed) = decision else {
+            return XCTFail("expected a reverse, got \(decision)")
+        }
+        XCTAssertEqual(from.flowMode, .discharging)
+        XCTAssertEqual(reversedElapsed, elapsed, accuracy: 0.001)
+    }
+
+    func testFinishedMorphStartsFresh() {
+        let startedAt = Date()
+        let decision = RibbonMorph.decide(
+            from: stub(.charging),
+            startedAt: startedAt,
+            duration: 1.65,
+            previous: stub(.discharging),
+            nextMode: .charging,
+            now: startedAt.addingTimeInterval(2)
+        )
+        guard case .start(let from) = decision else {
+            return XCTFail("expected a fresh morph, got \(decision)")
+        }
+        XCTAssertEqual(from.flowMode, .discharging)
+    }
+
+    private func stub(_ mode: EnergyFlowMode) -> PowerSnapshot {
+        var snapshot = PowerSnapshot.empty
+        snapshot.hasBattery = true
+        snapshot.flowMode = mode
+        snapshot.externalConnected = mode != .discharging
+        snapshot.isCharging = mode == .charging
+        return snapshot
     }
 }
