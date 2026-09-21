@@ -10,10 +10,18 @@ MacBook 菜单栏电池监视器。不进 Dock，点开后是 **Liquid Glass** �
 
 ## 预览
 
-| | |
-| --- | --- |
-| ![电池给电脑 · 粒子](docs/readme/flow-discharging.png) **电池 → 电脑** · 粒子 | ![电源给电脑 · 渐变](docs/readme/flow-adapter-hold.png) **电源 → 电脑** · 渐变 |
-| ![电源和电池给电脑 · 细线 · 高对比](docs/readme/flow-underpowered.png) **电源 + 电池 → 电脑** · 细线 · 高对比 | ![电源给电池和电脑 · 滑动](docs/readme/flow-charging.png) **电源 → 电池 + 电脑** · 滑动 |
+<table>
+  <tr>
+    <td align="center" width="33%"><img src="docs/readme/flow-discharging.png" alt="电池给电脑 · 粒子"><br><b>电池 → 电脑</b> · 粒子</td>
+    <td align="center" width="33%"><img src="docs/readme/flow-adapter-hold.png" alt="电源给电脑 · 渐变"><br><b>电源 → 电脑</b> · 渐变</td>
+    <td align="center" width="33%"><img src="docs/readme/flow-underpowered.png" alt="电源和电池给电脑 · 细线 · 高对比"><br><b>电源 + 电池 → 电脑</b> · 细线 · 高对比</td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/readme/flow-charging.png" alt="电源给电池和电脑 · 滑动"><br><b>电源 → 电池 + 电脑</b> · 滑动</td>
+    <td align="center"><img src="docs/readme/flow-discharging-smooth.png" alt="电池给电脑 · 柔和 · 细线"><br><b>电池 → 电脑</b> · 柔和 · 细线</td>
+    <td align="center"><img src="docs/readme/flow-charging-off.png" alt="电源给电池和电脑 · 无动效"><br><b>电源 → 电池 + 电脑</b> · 无动效</td>
+  </tr>
+</table>
 
 ## 功能
 

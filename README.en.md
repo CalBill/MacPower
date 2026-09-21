@@ -10,10 +10,18 @@ A menu-bar battery monitor for MacBook. It stays out of the Dock and opens a **L
 
 ## Preview
 
-| | |
-| --- | --- |
-| ![Battery → Mac · particles](docs/readme/flow-discharging.png) **Battery → Mac** · particles | ![Adapter → Mac · gradient](docs/readme/flow-adapter-hold.png) **Adapter → Mac** · gradient |
-| ![Adapter + battery → Mac · filaments · high contrast](docs/readme/flow-underpowered.png) **Adapter + battery → Mac** · filaments · high contrast | ![Adapter → battery + Mac · slide](docs/readme/flow-charging.png) **Adapter → battery + Mac** · slide |
+<table>
+  <tr>
+    <td align="center" width="33%"><img src="docs/readme/flow-discharging.png" alt="Battery → Mac · particles"><br><b>Battery → Mac</b> · particles</td>
+    <td align="center" width="33%"><img src="docs/readme/flow-adapter-hold.png" alt="Adapter → Mac · gradient"><br><b>Adapter → Mac</b> · gradient</td>
+    <td align="center" width="33%"><img src="docs/readme/flow-underpowered.png" alt="Adapter + battery → Mac · filaments · high contrast"><br><b>Adapter + battery → Mac</b> · filaments · high contrast</td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/readme/flow-charging.png" alt="Adapter → battery + Mac · slide"><br><b>Adapter → battery + Mac</b> · slide</td>
+    <td align="center"><img src="docs/readme/flow-discharging-smooth.png" alt="Battery → Mac · smooth · filaments"><br><b>Battery → Mac</b> · smooth · filaments</td>
+    <td align="center"><img src="docs/readme/flow-charging-off.png" alt="Adapter → battery + Mac · no motion"><br><b>Adapter → battery + Mac</b> · no motion</td>
+  </tr>
+</table>
 
 ## Features
 

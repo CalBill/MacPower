@@ -69,13 +69,15 @@ enum ReadmeAssetCapture {
             popover.setValue(true, forKey: "shouldHideAnchor")
         }
 
-        // One shot per flow shape. Tint and motion ride along so the gallery
-        // does not need a separate image for every customization axis.
+        // Six gallery shots: each pairs a flow shape with a distinct tint/motion
+        // so color and animation show up without a separate axis of images.
         let shots: [Shot] = [
             .init(name: "flow-discharging", mode: .discharging, motion: .particles, tint: .semantic),
             .init(name: "flow-adapter-hold", mode: .adapterHold, motion: .particlesWhite, tint: .gradient),
             .init(name: "flow-underpowered", mode: .underpowered, motion: .filaments, tint: .highContrast),
-            .init(name: "flow-charging", mode: .charging, motion: .sheen, tint: .glide)
+            .init(name: "flow-charging", mode: .charging, motion: .sheen, tint: .glide),
+            .init(name: "flow-discharging-smooth", mode: .discharging, motion: .filamentsSolid, tint: .smooth),
+            .init(name: "flow-charging-off", mode: .charging, motion: .off, tint: .semantic)
         ]
 
         for shot in shots {
