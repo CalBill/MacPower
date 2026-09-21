@@ -5,6 +5,13 @@ import SwiftUI
 /// One-shot README shots. Launch with `--readme-gallery`, then the process quits.
 @MainActor
 enum ReadmeAssetCapture {
+    private struct Shot {
+        var name: String
+        var mode: EnergyFlowMode
+        var motion: EnergyMotionStyle
+        var tint: PopoverTintPreset
+    }
+
     static func startIfNeeded() -> Bool {
         guard CommandLine.arguments.contains("--readme-gallery") else { return false }
         NSApp.setActivationPolicy(.regular)
@@ -19,7 +26,7 @@ enum ReadmeAssetCapture {
         try? FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
 
         let anchor = NSWindow(
-            contentRect: NSRect(x: 24, y: 24, width: 2, height: 2),
+            contentRect: NSRect(x: 40, y: 40, width: 4, height: 4),
             styleMask: [.borderless],
             backing: .buffered,
             defer: false
@@ -36,8 +43,10 @@ enum ReadmeAssetCapture {
         state.telemetry.onChange = nil
         state.metricsService.onChange = nil
         state.settings.language = .simplifiedChinese
-        state.settings.motionStyle = .particles
         state.settings.pulseFlowIcons = false
+        state.settings.showStatusRings = true
+        state.settings.showEnergyFlow = true
+        state.settings.showPopoverArrow = false
         state.metrics = SystemSnapshot(cpuPercent: 19, gpuPercent: 31, memoryPercent: 67)
         state.isPopoverOpen = true
 
@@ -55,29 +64,42 @@ enum ReadmeAssetCapture {
             popover.setValue(true, forKey: "shouldHideAnchor")
         }
 
-        let shots: [(String, EnergyFlowMode)] = [
-            ("flow-adapter-hold", .adapterHold),
-            ("flow-underpowered", .underpowered),
-            ("flow-charging", .charging)
+        let shots: [Shot] = [
+            .init(name: "flow-discharging", mode: .discharging, motion: .particles, tint: .semantic),
+            .init(name: "flow-adapter-hold", mode: .adapterHold, motion: .particles, tint: .semantic),
+            .init(name: "flow-underpowered", mode: .underpowered, motion: .particles, tint: .semantic),
+            .init(name: "flow-charging", mode: .charging, motion: .particles, tint: .semantic),
+            .init(name: "flow-charging-filaments", mode: .charging, motion: .filaments, tint: .semantic),
+            .init(name: "flow-charging-off", mode: .charging, motion: .off, tint: .semantic),
+            .init(name: "flow-charging-highContrast", mode: .charging, motion: .particles, tint: .highContrast),
+            .init(name: "flow-charging-glide", mode: .charging, motion: .sheen, tint: .glide),
+            .init(name: "flow-discharging-smooth", mode: .discharging, motion: .filamentsSolid, tint: .smooth),
+            .init(name: "flow-adapter-hold-gradient", mode: .adapterHold, motion: .particlesWhite, tint: .gradient)
         ]
-        for (name, mode) in shots {
-            state.snapshot = .readme(mode)
+
+        for shot in shots {
+            state.settings.motionStyle = shot.motion
+            state.settings.applyRingTintPreset(shot.tint)
+            state.settings.applyFlowTintPreset(shot.tint)
+            state.snapshot = .readme(shot.mode)
             popover.show(
                 relativeTo: anchor.contentView!.bounds,
                 of: anchor.contentView!,
                 preferredEdge: .maxY
             )
-            try? await Task.sleep(for: .milliseconds(700))
-            if let window = hosting.view.window {
-                window.displayIfNeeded()
-                let dest = output.appendingPathComponent("\(name).png")
-                capture(window: window, to: dest)
+            try? await Task.sleep(for: .milliseconds(shot.motion == .off ? 500 : 1_050))
+            hosting.view.layoutSubtreeIfNeeded()
+            hosting.view.window?.displayIfNeeded()
+            let dest = output.appendingPathComponent("\(shot.name).png")
+            if captureView(hosting.view, to: dest) {
                 trimOpaqueContent(at: dest)
+                print("wrote \(dest.lastPathComponent)")
+            } else {
+                print("failed \(shot.name)")
             }
         }
 
         state.isPopoverOpen = false
-        state.settings.motionStyle = .off
         popover.close()
         anchor.close()
         NSApp.terminate(nil)
@@ -90,12 +112,19 @@ enum ReadmeAssetCapture {
         return URL(fileURLWithPath: "/Users/wangshaoyan/Code/MacPower/docs/readme", isDirectory: true)
     }
 
-    private static func capture(window: NSWindow, to url: URL) {
-        let capture = Process()
-        capture.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
-        capture.arguments = ["-l", String(window.windowNumber), "-o", "-x", url.path]
-        try? capture.run()
-        capture.waitUntilExit()
+    @discardableResult
+    private static func captureView(_ view: NSView, to url: URL) -> Bool {
+        let size = view.bounds.size
+        guard size.width > 1, size.height > 1 else { return false }
+        guard let rep = view.bitmapImageRepForCachingDisplay(in: view.bounds) else { return false }
+        view.cacheDisplay(in: view.bounds, to: rep)
+        guard let png = rep.representation(using: .png, properties: [:]) else { return false }
+        do {
+            try png.write(to: url)
+            return true
+        } catch {
+            return false
+        }
     }
 
     private static func trimOpaqueContent(at url: URL) {
@@ -112,7 +141,8 @@ enum ReadmeAssetCapture {
             for x in 0..<width {
                 guard let color = rep.colorAt(x: x, y: y) else { continue }
                 let lum = color.redComponent * 0.3 + color.greenComponent * 0.59 + color.blueComponent * 0.11
-                if lum > 0.22 {
+                // Keep glass / colored content; drop near-black empty canvas.
+                if lum > 0.08 || color.alphaComponent < 0.95 {
                     minX = min(minX, x)
                     minY = min(minY, y)
                     maxX = max(maxX, x)
@@ -120,6 +150,11 @@ enum ReadmeAssetCapture {
                 }
             }
         }
+        let pad = 6
+        minX = max(0, minX - pad)
+        minY = max(0, minY - pad)
+        maxX = min(width - 1, maxX + pad)
+        maxY = min(height - 1, maxY + pad)
         let cropW = maxX - minX + 1
         let cropH = maxY - minY + 1
         guard cropW > 8, cropH > 8,
