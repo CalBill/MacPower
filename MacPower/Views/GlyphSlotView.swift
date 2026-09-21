@@ -9,6 +9,8 @@ struct GlyphSlotView: View {
     /// Callers fold user zoom into this; built-in `opticalScale` is applied here.
     var assetSide: CGFloat = 20
     var weight: Font.Weight = .semibold
+    /// Flow nodes should match watt-label `.primary`; rings keep hierarchical depth.
+    var prefersMonochrome: Bool = false
 
     var body: some View {
         // Built-in assets (GPUMark) ink more of their canvas than SF Symbols, so
@@ -19,13 +21,14 @@ struct GlyphSlotView: View {
             case .system:
                 Image(systemName: slot.name)
                     .font(.system(size: systemPointSize, weight: weight))
-                    .symbolRenderingMode(.hierarchical)
+                    .symbolRenderingMode(prefersMonochrome ? .monochrome : .hierarchical)
                     .foregroundStyle(.primary)
             case .asset:
                 if let image = Self.rasterized(named: slot.name, side: drawSide, template: slot.template) {
                     Image(nsImage: image)
                         .resizable()
                         .interpolation(.high)
+                        .renderingMode(slot.template ? .template : .original)
                         .scaledToFit()
                         .foregroundStyle(.primary)
                         .frame(width: drawSide, height: drawSide)
@@ -40,6 +43,7 @@ struct GlyphSlotView: View {
                     Image(nsImage: image)
                         .resizable()
                         .interpolation(.high)
+                        .renderingMode(slot.template ? .template : .original)
                         .scaledToFit()
                         .foregroundStyle(.primary)
                         .frame(width: drawSide, height: drawSide)

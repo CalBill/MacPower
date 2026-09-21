@@ -422,7 +422,7 @@ private struct EnergyFlowDiagram<Trailing: View>: View {
     private func flowNode(_ bubble: Bubble, breath: CGFloat) -> some View {
         let scale = CGFloat(bubble.glyph.normalizedScale)
         let side = 16 * scale
-        GlyphSlotView(slot: bubble.glyph, systemPointSize: side, assetSide: side)
+        GlyphSlotView(slot: bubble.glyph, systemPointSize: side, assetSide: side, prefersMonochrome: true)
             .frame(width: side, height: max(side, 24 * min(scale, 1.25)))
             .scaleEffect(1 + 0.16 * breath)
             .opacity(1 - 0.32 * breath)
@@ -532,11 +532,9 @@ private struct EnergyFlowDiagram<Trailing: View>: View {
     private func layout(in size: CGSize, snapshot: PowerSnapshot) -> Layout {
         let trunk = FlowRibbon.trunkWidth(totalWatts: 1)
         let midY = size.height / 2
-        // The static and animated ribbons share the same rounded-rectangle end
-        // caps. Keeping their centre line one cap radius from the edge fixes the
-        // external frame for every state, while the fork changes only inside it.
-        let inset = FlowRibbon.capRadius(for: trunk)
-        let logo = FlowRibbon.logoInset
+        // Keep rounded end caps clear of the GeometryReader clip edge.
+        let inset = FlowRibbon.capRadius(for: trunk) + FlowRibbon.edgePadding
+        let logo = max(FlowRibbon.logoInset, inset + 10)
         let left = CGPoint(x: inset, y: midY)
         let right = CGPoint(x: size.width - inset, y: midY)
         let leftLogo = CGPoint(x: logo, y: midY)
@@ -696,7 +694,7 @@ private struct EnergyFlowDiagram<Trailing: View>: View {
     /// then peel apart from the opposite end.
     private func bridgeLanes(from: [Lane], to: [Lane], in size: CGSize) -> [Lane] {
         let trunk = FlowRibbon.trunkWidth(totalWatts: 1)
-        let endInset = FlowRibbon.capRadius(for: trunk)
+        let endInset = FlowRibbon.capRadius(for: trunk) + FlowRibbon.edgePadding
         let left = CGPoint(x: endInset, y: size.height / 2)
         let right = CGPoint(x: size.width - endInset, y: size.height / 2)
         let watts = max(
@@ -822,7 +820,7 @@ private struct EnergyFlowDiagram<Trailing: View>: View {
 
     private func chargingBody(in size: CGSize, snapshot: PowerSnapshot, splitT: CGFloat) -> Path {
         let trunk = FlowRibbon.trunkWidth(totalWatts: 1)
-        let inset = FlowRibbon.capRadius(for: trunk)
+        let inset = FlowRibbon.capRadius(for: trunk) + FlowRibbon.edgePadding
         let remaining = (size.width - inset * 2) * (1 - min(max(splitT, 0), 1))
         let collapse = FlowRibbon.forkCollapse(
             remainingLength: remaining,
@@ -847,7 +845,7 @@ private struct EnergyFlowDiagram<Trailing: View>: View {
 
     private func underpoweredBody(in size: CGSize, snapshot: PowerSnapshot, mergeT: CGFloat) -> Path {
         let trunk = FlowRibbon.trunkWidth(totalWatts: 1)
-        let inset = FlowRibbon.capRadius(for: trunk)
+        let inset = FlowRibbon.capRadius(for: trunk) + FlowRibbon.edgePadding
         let remaining = (size.width - inset * 2) * min(max(mergeT, 0), 1)
         let collapse = FlowRibbon.forkCollapse(
             remainingLength: remaining,
@@ -872,7 +870,7 @@ private struct EnergyFlowDiagram<Trailing: View>: View {
 
     private func singleBody(in size: CGSize) -> Path {
         let trunk = FlowRibbon.trunkWidth(totalWatts: 1)
-        let inset = FlowRibbon.capRadius(for: trunk)
+        let inset = FlowRibbon.capRadius(for: trunk) + FlowRibbon.edgePadding
         return ForkOutline.capsule(
             from: CGPoint(x: inset, y: size.height / 2),
             to: CGPoint(x: size.width - inset, y: size.height / 2),

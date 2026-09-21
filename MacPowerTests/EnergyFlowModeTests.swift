@@ -145,10 +145,10 @@ final class FlowRibbonTests: XCTestCase {
         XCTAssertEqual(path.subpathCount, 1)
     }
 
-    func testWattLabelSitsInTheRightHandBody() {
-        XCTAssertGreaterThan(FlowRibbon.wattLabelT, 0.5)
-        XCTAssertLessThan(FlowRibbon.wattLabelT, 0.85)
-        XCTAssertEqual(FlowRibbon.wattLabelT, 0.72, accuracy: 0.001)
+    func testWattLabelSitsInTheMidBody() {
+        XCTAssertGreaterThan(FlowRibbon.wattLabelT, 0.4)
+        XCTAssertLessThan(FlowRibbon.wattLabelT, 0.65)
+        XCTAssertEqual(FlowRibbon.wattLabelT, 0.52, accuracy: 0.001)
     }
 
     func testWattLabelUsesLocalRibbonCenterNotTipY() {
