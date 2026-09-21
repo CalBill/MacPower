@@ -7,9 +7,15 @@ struct StatusRingView: View {
     var caption: String
     var accessibilityName: String
     var glyph: GlyphSlot
+    @Environment(\.colorScheme) private var colorScheme
 
     private let diameter: CGFloat = 58
     private let lineWidth: CGFloat = 7
+
+    /// Match caption ink; hierarchical SF battery fills go white on glass.
+    private var glyphInk: Color {
+        colorScheme == .dark ? Color(white: 0.92) : Color(white: 0.14)
+    }
 
     var body: some View {
         let clamped = min(100, max(0, percent))
@@ -34,7 +40,9 @@ struct StatusRingView: View {
                 GlyphSlotView(
                     slot: glyph,
                     systemPointSize: 17 * scale,
-                    assetSide: 20 * scale
+                    assetSide: 20 * scale,
+                    prefersMonochrome: true,
+                    ink: glyphInk
                 )
             }
             .frame(width: diameter, height: diameter)

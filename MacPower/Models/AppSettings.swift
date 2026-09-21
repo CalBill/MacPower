@@ -14,9 +14,12 @@ final class AppSettings {
         static let ringIcons = "ringIcons"
         static let flowIcons = "flowIcons"
         static let savedTintLibrary = "savedTintLibrary"
+        static let savedIconLibrary = "savedIconLibrary"
         static let menuBarActiveSavedTint = "menuBarActiveSavedTint"
         static let ringActiveSavedTint = "ringActiveSavedTint"
         static let flowActiveSavedTint = "flowActiveSavedTint"
+        static let ringActiveSavedIcon = "ringActiveSavedIcon"
+        static let flowActiveSavedIcon = "flowActiveSavedIcon"
         static let lowBatteryTintEnabled = "lowBatteryTintEnabled"
         static let showChargeGlyphs = "showChargeGlyphs"
         static let motionStyle = "motionStyle"
@@ -55,9 +58,6 @@ final class AppSettings {
     var menuBarTint: MenuBarTintScheme {
         didSet {
             persistTint()
-            if !isApplyingSavedTint {
-                menuBarActiveSavedID = nil
-            }
         }
     }
 
@@ -68,18 +68,12 @@ final class AppSettings {
     var ringTint: RingTintSettings {
         didSet {
             persistRingTint()
-            if !isApplyingSavedTint {
-                ringActiveSavedID = nil
-            }
         }
     }
 
     var flowTint: FlowTintSettings {
         didSet {
             persistFlowTint()
-            if !isApplyingSavedTint {
-                flowActiveSavedID = nil
-            }
         }
     }
 
@@ -95,6 +89,10 @@ final class AppSettings {
         didSet { persistSavedTintLibrary() }
     }
 
+    var savedIconLibrary: SavedIconLibrary {
+        didSet { persistSavedIconLibrary() }
+    }
+
     var menuBarActiveSavedID: UUID? {
         didSet { store.set(menuBarActiveSavedID?.uuidString, forKey: Keys.menuBarActiveSavedTint) }
     }
@@ -107,8 +105,19 @@ final class AppSettings {
         didSet { store.set(flowActiveSavedID?.uuidString, forKey: Keys.flowActiveSavedTint) }
     }
 
+    var ringActiveSavedIconID: UUID? {
+        didSet { store.set(ringActiveSavedIconID?.uuidString, forKey: Keys.ringActiveSavedIcon) }
+    }
+
+    var flowActiveSavedIconID: UUID? {
+        didSet { store.set(flowActiveSavedIconID?.uuidString, forKey: Keys.flowActiveSavedIcon) }
+    }
+
     @ObservationIgnored
     private var isApplyingSavedTint = false
+
+    @ObservationIgnored
+    private var isApplyingSavedIcon = false
 
     var showChargeGlyphs: Bool {
         didSet { store.set(showChargeGlyphs, forKey: Keys.showChargeGlyphs) }
@@ -223,6 +232,15 @@ final class AppSettings {
         }
         savedTintLibrary = library
 
+        let iconLibrary: SavedIconLibrary
+        if let data = defaults.data(forKey: Keys.savedIconLibrary),
+           let decoded = try? JSONDecoder().decode(SavedIconLibrary.self, from: data) {
+            iconLibrary = decoded
+        } else {
+            iconLibrary = .empty
+        }
+        savedIconLibrary = iconLibrary
+
         if let raw = defaults.string(forKey: Keys.menuBarActiveSavedTint),
            let id = UUID(uuidString: raw),
            library.menuBar.contains(where: { $0.id == id }) {
@@ -243,6 +261,20 @@ final class AppSettings {
             flowActiveSavedID = id
         } else {
             flowActiveSavedID = nil
+        }
+        if let raw = defaults.string(forKey: Keys.ringActiveSavedIcon),
+           let id = UUID(uuidString: raw),
+           iconLibrary.ring.contains(where: { $0.id == id }) {
+            ringActiveSavedIconID = id
+        } else {
+            ringActiveSavedIconID = nil
+        }
+        if let raw = defaults.string(forKey: Keys.flowActiveSavedIcon),
+           let id = UUID(uuidString: raw),
+           iconLibrary.flow.contains(where: { $0.id == id }) {
+            flowActiveSavedIconID = id
+        } else {
+            flowActiveSavedIconID = nil
         }
 
         if defaults.object(forKey: Keys.showChargeGlyphs) == nil {
@@ -349,6 +381,7 @@ final class AppSettings {
     }
 
     func applyRingIconPreset(_ preset: RingIconPreset) {
+        ringActiveSavedIconID = nil
         if preset == .custom {
             ringIcons = ringIcons.markedCustom()
             return
@@ -357,6 +390,7 @@ final class AppSettings {
     }
 
     func applyFlowIconPreset(_ preset: FlowIconPreset) {
+        flowActiveSavedIconID = nil
         if preset == .custom {
             flowIcons = flowIcons.markedCustom()
             return
@@ -380,6 +414,14 @@ final class AppSettings {
     }
 
     @discardableResult
+    func updateMenuBarTintPreset() -> Bool {
+        guard let id = menuBarActiveSavedID,
+              savedTintLibrary.menuBar.contains(where: { $0.id == id }) else { return false }
+        savedTintLibrary = savedTintLibrary.updatingMenuBar(id: id, scheme: menuBarTint)
+        return true
+    }
+
+    @discardableResult
     func saveRingTintPreset(named name: String) -> UUID? {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return nil }
@@ -395,6 +437,14 @@ final class AppSettings {
     }
 
     @discardableResult
+    func updateRingTintPreset() -> Bool {
+        guard let id = ringActiveSavedID,
+              savedTintLibrary.ring.contains(where: { $0.id == id }) else { return false }
+        savedTintLibrary = savedTintLibrary.updatingRing(id: id, settings: ringTint)
+        return true
+    }
+
+    @discardableResult
     func saveFlowTintPreset(named name: String) -> UUID? {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return nil }
@@ -407,6 +457,60 @@ final class AppSettings {
         flowActiveSavedID = id
         isApplyingSavedTint = false
         return id
+    }
+
+    @discardableResult
+    func updateFlowTintPreset() -> Bool {
+        guard let id = flowActiveSavedID,
+              savedTintLibrary.flow.contains(where: { $0.id == id }) else { return false }
+        savedTintLibrary = savedTintLibrary.updatingFlow(id: id, settings: flowTint)
+        return true
+    }
+
+    @discardableResult
+    func saveRingIconPreset(named name: String) -> UUID? {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        let before = Set(savedIconLibrary.ring.map(\.id))
+        savedIconLibrary = savedIconLibrary.addingRing(name: trimmed, settings: ringIcons)
+        let id = savedIconLibrary.ring.first(where: { !before.contains($0.id) })?.id
+            ?? savedIconLibrary.ring.last?.id
+        guard let id else { return nil }
+        isApplyingSavedIcon = true
+        ringActiveSavedIconID = id
+        isApplyingSavedIcon = false
+        return id
+    }
+
+    @discardableResult
+    func updateRingIconPreset() -> Bool {
+        guard let id = ringActiveSavedIconID,
+              savedIconLibrary.ring.contains(where: { $0.id == id }) else { return false }
+        savedIconLibrary = savedIconLibrary.updatingRing(id: id, settings: ringIcons)
+        return true
+    }
+
+    @discardableResult
+    func saveFlowIconPreset(named name: String) -> UUID? {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        let before = Set(savedIconLibrary.flow.map(\.id))
+        savedIconLibrary = savedIconLibrary.addingFlow(name: trimmed, settings: flowIcons)
+        let id = savedIconLibrary.flow.first(where: { !before.contains($0.id) })?.id
+            ?? savedIconLibrary.flow.last?.id
+        guard let id else { return nil }
+        isApplyingSavedIcon = true
+        flowActiveSavedIconID = id
+        isApplyingSavedIcon = false
+        return id
+    }
+
+    @discardableResult
+    func updateFlowIconPreset() -> Bool {
+        guard let id = flowActiveSavedIconID,
+              savedIconLibrary.flow.contains(where: { $0.id == id }) else { return false }
+        savedIconLibrary = savedIconLibrary.updatingFlow(id: id, settings: flowIcons)
+        return true
     }
 
     func applySavedMenuBarTint(id: UUID) {
@@ -433,6 +537,22 @@ final class AppSettings {
         isApplyingSavedTint = false
     }
 
+    func applySavedRingIcon(id: UUID) {
+        guard let item = savedIconLibrary.ring.first(where: { $0.id == id }) else { return }
+        isApplyingSavedIcon = true
+        ringActiveSavedIconID = id
+        ringIcons = item.payload
+        isApplyingSavedIcon = false
+    }
+
+    func applySavedFlowIcon(id: UUID) {
+        guard let item = savedIconLibrary.flow.first(where: { $0.id == id }) else { return }
+        isApplyingSavedIcon = true
+        flowActiveSavedIconID = id
+        flowIcons = item.payload
+        isApplyingSavedIcon = false
+    }
+
     func deleteSavedMenuBarTint(id: UUID) {
         savedTintLibrary = savedTintLibrary.removingMenuBar(id: id)
         if menuBarActiveSavedID == id {
@@ -451,6 +571,20 @@ final class AppSettings {
         savedTintLibrary = savedTintLibrary.removingFlow(id: id)
         if flowActiveSavedID == id {
             flowActiveSavedID = nil
+        }
+    }
+
+    func deleteSavedRingIcon(id: UUID) {
+        savedIconLibrary = savedIconLibrary.removingRing(id: id)
+        if ringActiveSavedIconID == id {
+            ringActiveSavedIconID = nil
+        }
+    }
+
+    func deleteSavedFlowIcon(id: UUID) {
+        savedIconLibrary = savedIconLibrary.removingFlow(id: id)
+        if flowActiveSavedIconID == id {
+            flowActiveSavedIconID = nil
         }
     }
 
@@ -488,6 +622,12 @@ final class AppSettings {
     private func persistSavedTintLibrary() {
         if let data = try? JSONEncoder().encode(savedTintLibrary) {
             store.set(data, forKey: Keys.savedTintLibrary)
+        }
+    }
+
+    private func persistSavedIconLibrary() {
+        if let data = try? JSONEncoder().encode(savedIconLibrary) {
+            store.set(data, forKey: Keys.savedIconLibrary)
         }
     }
 

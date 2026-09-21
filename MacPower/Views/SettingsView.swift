@@ -14,12 +14,14 @@ struct SettingsView: View {
     @State private var saveDialog: SaveTintDialog?
 
     private enum SaveTintDialog: Identifiable {
-        case menuBar, ring, flow
+        case menuBar, ring, flow, ringIcon, flowIcon
         var id: String {
             switch self {
             case .menuBar: "menuBar"
             case .ring: "ring"
             case .flow: "flow"
+            case .ringIcon: "ringIcon"
+            case .flowIcon: "flowIcon"
             }
         }
     }
@@ -76,7 +78,7 @@ struct SettingsView: View {
             flowIconsEditorExpanded = false
         }
         .alert(
-            Text("settings.tint.save.title"),
+            Text("settings.tint.saveAs.title"),
             isPresented: Binding(
                 get: { saveDialog != nil },
                 set: { if !$0 { saveDialog = nil } }
@@ -91,7 +93,7 @@ struct SettingsView: View {
                 savePresetName = ""
             }
         } message: {
-            Text("settings.tint.save.message")
+            Text("settings.tint.saveAs.message")
         }
     }
 
@@ -190,9 +192,9 @@ struct SettingsView: View {
                 expanded: $menuBarTintEditorExpanded,
                 toolbar: {
                     tintPresetSaveControls(
-                        isBuiltIn: appState.settings.menuBarActiveSavedID == nil
-                            && appState.settings.menuBarTint.preset != .custom,
-                        onSave: {
+                        canOverwrite: appState.settings.menuBarActiveSavedID != nil,
+                        onSave: { _ = appState.settings.updateMenuBarTintPreset() },
+                        onSaveAs: {
                             savePresetName = defaultSaveName(for: .menuBar)
                             saveDialog = .menuBar
                         },
@@ -424,9 +426,9 @@ struct SettingsView: View {
                 expanded: $ringTintEditorExpanded,
                 toolbar: {
                     tintPresetSaveControls(
-                        isBuiltIn: appState.settings.ringActiveSavedID == nil
-                            && appState.settings.ringTint.preset != .custom,
-                        onSave: {
+                        canOverwrite: appState.settings.ringActiveSavedID != nil,
+                        onSave: { _ = appState.settings.updateRingTintPreset() },
+                        onSaveAs: {
                             savePresetName = defaultSaveName(for: .ring)
                             saveDialog = .ring
                         },
@@ -468,15 +470,30 @@ struct SettingsView: View {
         }
 
         Section {
-            Picker("settings.icons.preset", selection: ringIconPresetBinding) {
+            Picker("settings.icons.preset", selection: ringIconPresetPickerBinding) {
                 ForEach(RingIconPreset.allCases) { preset in
-                    Text(LocalizedStringKey(preset.localizationKey)).tag(preset)
+                    Text(LocalizedStringKey(preset.localizationKey)).tag(RingIconPresetPickerItem.builtin(preset))
+                }
+                if !appState.settings.savedIconLibrary.ring.isEmpty {
+                    Divider()
+                    ForEach(appState.settings.savedIconLibrary.ring) { item in
+                        Text(item.name).tag(RingIconPresetPickerItem.saved(item.id))
+                    }
                 }
             }
             collapsiblePresetEditor(
                 expanded: $ringIconsEditorExpanded,
                 toolbar: {
-                    iconPresetEditorCaption(isBuiltIn: appState.settings.ringIcons.preset != .custom)
+                    iconPresetEditorCaption(
+                        canOverwrite: appState.settings.ringActiveSavedIconID != nil,
+                        onSave: { _ = appState.settings.updateRingIconPreset() },
+                        onSaveAs: {
+                            savePresetName = defaultSaveName(for: .ringIcon)
+                            saveDialog = .ringIcon
+                        },
+                        deleteID: appState.settings.ringActiveSavedIconID,
+                        onDelete: { appState.settings.deleteSavedRingIcon(id: $0) }
+                    )
                 }
             ) {
                 HStack(spacing: 10) {
@@ -506,9 +523,9 @@ struct SettingsView: View {
                 expanded: $flowTintEditorExpanded,
                 toolbar: {
                     tintPresetSaveControls(
-                        isBuiltIn: appState.settings.flowActiveSavedID == nil
-                            && appState.settings.flowTint.preset != .custom,
-                        onSave: {
+                        canOverwrite: appState.settings.flowActiveSavedID != nil,
+                        onSave: { _ = appState.settings.updateFlowTintPreset() },
+                        onSaveAs: {
                             savePresetName = defaultSaveName(for: .flow)
                             saveDialog = .flow
                         },
@@ -561,15 +578,30 @@ struct SettingsView: View {
         }
 
         Section {
-            Picker("settings.icons.preset", selection: flowIconPresetBinding) {
+            Picker("settings.icons.preset", selection: flowIconPresetPickerBinding) {
                 ForEach(FlowIconPreset.allCases) { preset in
-                    Text(LocalizedStringKey(preset.localizationKey)).tag(preset)
+                    Text(LocalizedStringKey(preset.localizationKey)).tag(FlowIconPresetPickerItem.builtin(preset))
+                }
+                if !appState.settings.savedIconLibrary.flow.isEmpty {
+                    Divider()
+                    ForEach(appState.settings.savedIconLibrary.flow) { item in
+                        Text(item.name).tag(FlowIconPresetPickerItem.saved(item.id))
+                    }
                 }
             }
             collapsiblePresetEditor(
                 expanded: $flowIconsEditorExpanded,
                 toolbar: {
-                    iconPresetEditorCaption(isBuiltIn: appState.settings.flowIcons.preset != .custom)
+                    iconPresetEditorCaption(
+                        canOverwrite: appState.settings.flowActiveSavedIconID != nil,
+                        onSave: { _ = appState.settings.updateFlowIconPreset() },
+                        onSaveAs: {
+                            savePresetName = defaultSaveName(for: .flowIcon)
+                            saveDialog = .flowIcon
+                        },
+                        deleteID: appState.settings.flowActiveSavedIconID,
+                        onDelete: { appState.settings.deleteSavedFlowIcon(id: $0) }
+                    )
                 }
             ) {
                 HStack(spacing: 10) {
@@ -596,17 +628,41 @@ struct SettingsView: View {
         }
     }
 
-    private var ringIconPresetBinding: Binding<RingIconPreset> {
+    private var ringIconPresetPickerBinding: Binding<RingIconPresetPickerItem> {
         Binding(
-            get: { appState.settings.ringIcons.preset },
-            set: { appState.settings.applyRingIconPreset($0) }
+            get: {
+                if let id = appState.settings.ringActiveSavedIconID {
+                    return .saved(id)
+                }
+                return .builtin(appState.settings.ringIcons.preset)
+            },
+            set: { item in
+                switch item {
+                case .builtin(let preset):
+                    appState.settings.applyRingIconPreset(preset)
+                case .saved(let id):
+                    appState.settings.applySavedRingIcon(id: id)
+                }
+            }
         )
     }
 
-    private var flowIconPresetBinding: Binding<FlowIconPreset> {
+    private var flowIconPresetPickerBinding: Binding<FlowIconPresetPickerItem> {
         Binding(
-            get: { appState.settings.flowIcons.preset },
-            set: { appState.settings.applyFlowIconPreset($0) }
+            get: {
+                if let id = appState.settings.flowActiveSavedIconID {
+                    return .saved(id)
+                }
+                return .builtin(appState.settings.flowIcons.preset)
+            },
+            set: { item in
+                switch item {
+                case .builtin(let preset):
+                    appState.settings.applyFlowIconPreset(preset)
+                case .saved(let id):
+                    appState.settings.applySavedFlowIcon(id: id)
+                }
+            }
         )
     }
 
@@ -640,18 +696,22 @@ struct SettingsView: View {
 
     @ViewBuilder
     private func tintPresetSaveControls(
-        isBuiltIn: Bool,
+        canOverwrite: Bool,
         onSave: @escaping () -> Void,
+        onSaveAs: @escaping () -> Void,
         deleteID: UUID?,
         onDelete: @escaping (UUID) -> Void
     ) -> some View {
-        Button("settings.tint.save", action: onSave)
+        if canOverwrite {
+            Button("settings.tint.save", action: onSave)
+        }
+        Button("settings.tint.saveAs", action: onSaveAs)
         if let deleteID {
             Button("settings.tint.delete", role: .destructive) {
                 onDelete(deleteID)
             }
         }
-        if isBuiltIn {
+        if !canOverwrite {
             Text("settings.icons.builtinEditNote")
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -661,17 +721,23 @@ struct SettingsView: View {
     }
 
     @ViewBuilder
-    private func iconPresetEditorCaption(isBuiltIn: Bool) -> some View {
+    private func iconPresetEditorCaption(
+        canOverwrite: Bool,
+        onSave: @escaping () -> Void,
+        onSaveAs: @escaping () -> Void,
+        deleteID: UUID?,
+        onDelete: @escaping (UUID) -> Void
+    ) -> some View {
         Text("settings.icons.clickToChange")
             .font(.caption)
             .foregroundStyle(.secondary)
-        if isBuiltIn {
-            Text("settings.icons.builtinEditNote")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .lineLimit(2)
-                .fixedSize(horizontal: false, vertical: true)
-        }
+        tintPresetSaveControls(
+            canOverwrite: canOverwrite,
+            onSave: onSave,
+            onSaveAs: onSaveAs,
+            deleteID: deleteID,
+            onDelete: onDelete
+        )
     }
 
     private var iconSlotColumnWidth: CGFloat { 56 }
@@ -904,6 +970,8 @@ struct SettingsView: View {
             case .menuBar: appState.settings.savedTintLibrary.menuBar.count
             case .ring: appState.settings.savedTintLibrary.ring.count
             case .flow: appState.settings.savedTintLibrary.flow.count
+            case .ringIcon: appState.settings.savedIconLibrary.ring.count
+            case .flowIcon: appState.settings.savedIconLibrary.flow.count
             }
         }()
         return "\(base) \(count + 1)"
@@ -922,6 +990,10 @@ struct SettingsView: View {
             _ = appState.settings.saveRingTintPreset(named: savePresetName)
         case .flow:
             _ = appState.settings.saveFlowTintPreset(named: savePresetName)
+        case .ringIcon:
+            _ = appState.settings.saveRingIconPreset(named: savePresetName)
+        case .flowIcon:
+            _ = appState.settings.saveFlowIconPreset(named: savePresetName)
         }
     }
 

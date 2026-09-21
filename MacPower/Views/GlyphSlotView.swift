@@ -9,20 +9,43 @@ struct GlyphSlotView: View {
     /// Callers fold user zoom into this; built-in `opticalScale` is applied here.
     var assetSide: CGFloat = 20
     var weight: Font.Weight = .semibold
-    /// Flow nodes should match watt-label `.primary`; rings keep hierarchical depth.
+    /// Flow nodes should match watt-label ink; rings keep hierarchical depth unless asked.
     var prefersMonochrome: Bool = false
+    /// Absolute ink for glass overlays. Semantic `.primary` goes vibrant/white on
+    /// Liquid Glass, which made SF Symbol batteries white while ChargeMark stayed black.
+    var ink: Color? = nil
 
     var body: some View {
         // Built-in assets (GPUMark) ink more of their canvas than SF Symbols, so
         // draw them slightly smaller inside the shared layout box.
         let drawSide = assetSide * CGFloat(slot.normalizedOpticalScale)
+        let tint = ink ?? Color.primary
         Group {
             switch slot.source {
             case .system:
-                Image(systemName: slot.name)
-                    .font(.system(size: systemPointSize, weight: weight))
-                    .symbolRenderingMode(prefersMonochrome ? .monochrome : .hierarchical)
-                    .foregroundStyle(.primary)
+                if prefersMonochrome, ink != nil,
+                   let image = Self.rasterizedSystemSymbol(
+                    name: slot.name,
+                    side: drawSide,
+                    pointSize: systemPointSize,
+                    weight: weight
+                   ) {
+                    // Bake SF Symbols to a template bitmap. Live symbols on Liquid
+                    // Glass still went white (battery.100percent) even with monochrome
+                    // + absolute ink; ChargeMark assets never had that problem.
+                    Image(nsImage: image)
+                        .resizable()
+                        .interpolation(.high)
+                        .renderingMode(.template)
+                        .scaledToFit()
+                        .foregroundStyle(tint)
+                        .frame(width: drawSide, height: drawSide)
+                } else {
+                    Image(systemName: slot.name)
+                        .font(.system(size: systemPointSize, weight: weight))
+                        .symbolRenderingMode(prefersMonochrome ? .monochrome : .hierarchical)
+                        .foregroundStyle(tint)
+                }
             case .asset:
                 if let image = Self.rasterized(named: slot.name, side: drawSide, template: slot.template) {
                     Image(nsImage: image)
@@ -30,7 +53,7 @@ struct GlyphSlotView: View {
                         .interpolation(.high)
                         .renderingMode(slot.template ? .template : .original)
                         .scaledToFit()
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(tint)
                         .frame(width: drawSide, height: drawSide)
                 } else {
                     Image(systemName: "questionmark")
@@ -45,7 +68,7 @@ struct GlyphSlotView: View {
                         .interpolation(.high)
                         .renderingMode(slot.template ? .template : .original)
                         .scaledToFit()
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(tint)
                         .frame(width: drawSide, height: drawSide)
                 } else {
                     Image(systemName: "photo")
@@ -63,6 +86,34 @@ struct GlyphSlotView: View {
     private static func rasterized(named name: String, side: CGFloat, template: Bool) -> NSImage? {
         guard let source = NSImage(named: name) else { return nil }
         return rasterized(source, side: side, template: template)
+    }
+
+    private static func rasterizedSystemSymbol(
+        name: String,
+        side: CGFloat,
+        pointSize: CGFloat,
+        weight: Font.Weight
+    ) -> NSImage? {
+        let config = NSImage.SymbolConfiguration(pointSize: pointSize, weight: nsWeight(weight))
+            .applying(NSImage.SymbolConfiguration(paletteColors: [.black]))
+        guard let source = NSImage(systemSymbolName: name, accessibilityDescription: nil)?
+            .withSymbolConfiguration(config) else { return nil }
+        return rasterized(source, side: side, template: true)
+    }
+
+    private static func nsWeight(_ weight: Font.Weight) -> NSFont.Weight {
+        switch weight {
+        case .ultraLight: return .ultraLight
+        case .thin: return .thin
+        case .light: return .light
+        case .regular: return .regular
+        case .medium: return .medium
+        case .semibold: return .semibold
+        case .bold: return .bold
+        case .heavy: return .heavy
+        case .black: return .black
+        default: return .semibold
+        }
     }
 
     private static func rasterized(_ source: NSImage, side: CGFloat, template: Bool) -> NSImage? {

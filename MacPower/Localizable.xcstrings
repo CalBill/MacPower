@@ -9095,31 +9095,31 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Save Preset"
+            "value": "Save"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "保存预设"
+            "value": "保存"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "儲存預設"
+            "value": "儲存"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "プリセットを保存"
+            "value": "保存"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "프리셋 저장"
+            "value": "저장"
           }
         },
         "fr": {
@@ -9131,31 +9131,31 @@
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Preset speichern"
+            "value": "Speichern"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Guardar ajuste"
+            "value": "Guardar"
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Salvar predefinição"
+            "value": "Salvar"
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Salva predefinito"
+            "value": "Salva"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Сохранить пресет"
+            "value": "Сохранить"
           }
         }
       }
@@ -11083,67 +11083,280 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Editing a built-in preset automatically creates a custom preset."
+            "value": "Built-in presets cannot be overwritten. Use Save As to create a custom copy."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "修改默认预设会自动新建一个自定义预设。"
+            "value": "系统预设不能覆盖，请使用「另存为」创建自定义副本。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "修改內建預設會自動建立自訂預設。"
+            "value": "內建預設無法覆寫，請使用「另存新檔」建立自訂副本。"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "内蔵プリセットを変更すると、自動的にカスタムプリセットが作成されます。"
+            "value": "内蔵プリセットは上書きできません。「名前を付けて保存」でカスタムコピーを作成してください。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "기본 프리셋을 수정하면 사용자 지정 프리셋이 자동으로 만들어집니다."
+            "value": "기본 제공 프리셋은 덮어쓸 수 없습니다. 다른 이름으로 저장하여 사용자 지정 사본을 만드세요."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Modifier un préréglage intégré crée automatiquement un préréglage personnalisé."
+            "value": "Les préréglages intégrés ne peuvent pas être écrasés. Utilisez Enregistrer sous pour créer une copie personnalisée."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Das Bearbeiten eines integrierten Presets erstellt automatisch ein eigenes Preset."
+            "value": "Eingebaute Presets können nicht überschrieben werden. Speichern Sie unter einem neuen Namen eine eigene Kopie."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Editar un ajuste integrado crea automáticamente uno personalizado."
+            "value": "Los ajustes integrados no se pueden sobrescribir. Usa Guardar como para crear una copia personalizada."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Editar um preset integrado cria automaticamente um preset personalizado."
+            "value": "Predefinições integradas não podem ser substituídas. Use Salvar como para criar uma cópia personalizada."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Modificare un preset integrato crea automaticamente un preset personalizzato."
+            "value": "I predefiniti integrati non possono essere sovrascritti. Usa Salva con nome per creare una copia personalizzata."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Изменение встроенного пресета автоматически создаёт пользовательский."
+            "value": "Встроенные пресеты нельзя перезаписать. Используйте «Сохранить как», чтобы создать свою копию."
+          }
+        }
+      }
+    },
+    "settings.tint.saveAs": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save As…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "另存为…"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "另存新檔…"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "名前を付けて保存…"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "다른 이름으로 저장…"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enregistrer sous…"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Speichern unter…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guardar como…"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salvar como…"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salva con nome…"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сохранить как…"
+          }
+        }
+      }
+    },
+    "settings.tint.saveAs.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save As New Preset"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "另存为新预设"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "另存為新預設"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新しいプリセットとして保存"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "새 프리셋으로 저장"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enregistrer un nouveau préréglage"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Als neues Preset speichern"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guardar como ajuste nuevo"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salvar como nova predefinição"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salva come nuovo predefinito"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сохранить как новый пресет"
+          }
+        }
+      }
+    },
+    "settings.tint.saveAs.message": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Name the new custom preset."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "为这个新的自定义预设命名。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "為這個新的自訂預設命名。"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新しいカスタムプリセットの名前を入力してください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "새 사용자 지정 프리셋 이름을 입력하세요."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nommez le nouveau préréglage personnalisé."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Benennen Sie das neue benutzerdefinierte Preset."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pon un nombre al nuevo ajuste personalizado."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dê um nome à nova predefinição personalizada."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Assegna un nome al nuovo predefinito personalizzato."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Назовите новый пользовательский пресет."
           }
         }
       }

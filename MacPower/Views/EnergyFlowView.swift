@@ -149,6 +149,12 @@ private struct EnergyFlowDiagram<Trailing: View>: View {
     /// the old telemetry reading to the new one.
     var morph: FlowMorph?
     @ViewBuilder var trailingAccessory: () -> Trailing
+    @Environment(\.colorScheme) private var colorScheme
+
+    /// Non-vibrant ink so SF Symbols match Canvas watt labels on Liquid Glass.
+    private var ribbonInk: Color {
+        colorScheme == .dark ? Color(white: 0.92) : Color(white: 0.14)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -422,7 +428,13 @@ private struct EnergyFlowDiagram<Trailing: View>: View {
     private func flowNode(_ bubble: Bubble, breath: CGFloat) -> some View {
         let scale = CGFloat(bubble.glyph.normalizedScale)
         let side = 16 * scale
-        GlyphSlotView(slot: bubble.glyph, systemPointSize: side, assetSide: side, prefersMonochrome: true)
+        GlyphSlotView(
+            slot: bubble.glyph,
+            systemPointSize: side,
+            assetSide: side,
+            prefersMonochrome: true,
+            ink: ribbonInk
+        )
             .frame(width: side, height: max(side, 24 * min(scale, 1.25)))
             .scaleEffect(1 + 0.16 * breath)
             .opacity(1 - 0.32 * breath)
@@ -1182,22 +1194,22 @@ private struct EnergyFlowDiagram<Trailing: View>: View {
     }
 
     private func drawWattLabel(context: inout GraphicsContext, body: Path, lane: Lane) {
-        let t: CGFloat = FlowRibbon.wattLabelT
-        let along = lane.cubic.point(t)
-        // Spine Y at wattLabelT is already locked to the tip on forked lanes;
-        // sample the filled ribbon at this X so the label sits in the local tube.
+        // Use horizontal mid-span, not cubic parameter t — merge lanes hold Y late,
+        // so mid-t sits near the right tip next to the Mac icon.
+        let x = FlowRibbon.wattLabelX(on: lane.cubic)
+        let hintY = lane.cubic.point(FlowRibbon.wattLabelT).y
         let point = CGPoint(
-            x: along.x,
+            x: x,
             y: FlowRibbon.centerY(
                 of: body,
-                atX: along.x,
-                hintY: along.y,
+                atX: x,
+                hintY: hintY,
                 searchRadius: lane.width * 0.5 + 8
             )
         )
         let text = Text(String(format: "%.1f W", lane.watts))
             .font(.system(size: 11, weight: .semibold, design: .rounded).monospacedDigit())
-            .foregroundStyle(.primary)
+            .foregroundStyle(ribbonInk)
         // Digit strings optically sit high in the em-box; nudge down a hair.
         context.draw(text, at: CGPoint(x: point.x, y: point.y + 1.5), anchor: .center)
     }

@@ -16,10 +16,10 @@ enum FlowRibbon {
     }
 
     /// Icons sit a bit inward of the rounded end, toward the ribbon middle.
-    static let logoInset: CGFloat = 34
+    static let logoInset: CGFloat = 42
 
     /// Keep rounded caps clear of the diagram’s clip edge.
-    static let edgePadding: CGFloat = 8
+    static let edgePadding: CGFloat = 16
 
     /// Shared Liquid Glass tint so the battery bar and energy ribbon match.
     static let glassTintOpacity: Double = 0.42
@@ -53,8 +53,15 @@ enum FlowRibbon {
         return 1 - (remainingLength - floor) / (minimum - floor)
     }
 
-    /// Watt labels sit near the middle of each lane’s body.
-    static let wattLabelT: CGFloat = 0.52
+    /// Watt labels sit near the middle of each lane’s body, as a fraction of
+    /// horizontal span (not cubic parameter `t`). Merge lanes use a late `holdT`,
+    /// so parametric mid-t lands near the right tip.
+    static let wattLabelT: CGFloat = 0.42
+
+    /// X along a lane spine at `wattLabelT` of the end-to-end span.
+    static func wattLabelX(on cubic: FlowCubic) -> CGFloat {
+        cubic.p0.x + (cubic.p1.x - cubic.p0.x) * wattLabelT
+    }
 
     /// Vertical centre of `path` at `x` near `hintY`. Restricting the scan
     /// keeps forked ribbons from averaging both fingers into one mid-line.

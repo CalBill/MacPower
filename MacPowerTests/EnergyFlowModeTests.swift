@@ -148,7 +148,19 @@ final class FlowRibbonTests: XCTestCase {
     func testWattLabelSitsInTheMidBody() {
         XCTAssertGreaterThan(FlowRibbon.wattLabelT, 0.4)
         XCTAssertLessThan(FlowRibbon.wattLabelT, 0.65)
-        XCTAssertEqual(FlowRibbon.wattLabelT, 0.52, accuracy: 0.001)
+        XCTAssertEqual(FlowRibbon.wattLabelT, 0.42, accuracy: 0.001)
+        // Merge lanes use late holdT; parametric mid-t is near the tip, mid-X is not.
+        let mergeLane = ForkOutline.stackedLane(
+            from: CGPoint(x: 24, y: 20),
+            to: CGPoint(x: 360, y: 60),
+            startY: 20,
+            endY: 52,
+            holdT: 1 - FlowRibbon.forkT
+        )
+        let midX = FlowRibbon.wattLabelX(on: mergeLane)
+        let parametricX = mergeLane.point(FlowRibbon.wattLabelT).x
+        XCTAssertEqual(midX, 24 + (360 - 24) * FlowRibbon.wattLabelT, accuracy: 0.01)
+        XCTAssertGreaterThan(parametricX - midX, 40)
     }
 
     func testWattLabelUsesLocalRibbonCenterNotTipY() {
@@ -165,16 +177,17 @@ final class FlowRibbonTests: XCTestCase {
             endY: top.y,
             holdT: FlowRibbon.forkT
         )
-        let along = topLane.point(FlowRibbon.wattLabelT)
+        let x = FlowRibbon.wattLabelX(on: topLane)
+        let hintY = topLane.point(FlowRibbon.wattLabelT).y
         let centered = FlowRibbon.centerY(
             of: body,
-            atX: along.x,
-            hintY: along.y,
+            atX: x,
+            hintY: hintY,
             searchRadius: topW * 0.5 + 8
         )
         // Tip Y locks early on forked spines; the filled tube at the label X is lower.
-        XCTAssertGreaterThan(centered, along.y)
-        XCTAssertNotEqual(centered, along.y, accuracy: 0.5)
+        XCTAssertGreaterThan(centered, hintY)
+        XCTAssertNotEqual(centered, hintY, accuracy: 0.5)
     }
 
     func testCollapseDoesNotDeflateCapsuleCorners() {
@@ -1136,13 +1149,81 @@ final class RingColorTests: XCTestCase {
         XCTAssertEqual(settings.ringActiveSavedID, id)
         XCTAssertEqual(settings.ringTint.battery.bands.map(\.blend), [.gradient])
 
+        // Editing a saved custom keeps the active ID so Save can overwrite.
         settings.ringTint = settings.ringTint.mapAll { $0.addingBand() }
-        XCTAssertNil(settings.ringActiveSavedID)
+        XCTAssertEqual(settings.ringActiveSavedID, id)
+        XCTAssertTrue(settings.updateRingTintPreset())
+        XCTAssertEqual(settings.savedTintLibrary.ring.first(where: { $0.id == id })?.payload.battery.bands.count, 2)
+        XCTAssertEqual(settings.ringActiveSavedID, id)
+        XCTAssertEqual(settings.savedTintLibrary.ring.count, 1)
 
         settings.applySavedRingTint(id: id!)
         settings.deleteSavedRingTint(id: id!)
         XCTAssertTrue(settings.savedTintLibrary.ring.isEmpty)
         XCTAssertNil(settings.ringActiveSavedID)
+        defaults.removePersistentDomain(forName: suite)
+    }
+
+    func testUpdateTintPresetRequiresActiveSavedID() {
+        let suite = "MacPower.UpdateTint.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defaults.removePersistentDomain(forName: suite)
+        let settings = AppSettings(defaults: defaults)
+        settings.applyFlowTintPreset(.smooth)
+        XCTAssertFalse(settings.updateFlowTintPreset())
+        let id = settings.saveFlowTintPreset(named: "柔和")
+        settings.flowTint = settings.flowTint.markedCustom()
+        var tint = settings.flowTint
+        tint.motionColor = .systemOrange
+        settings.flowTint = tint
+        XCTAssertTrue(settings.updateFlowTintPreset())
+        XCTAssertEqual(settings.savedTintLibrary.flow.first?.payload.motionColor, .systemOrange)
+        XCTAssertEqual(settings.flowActiveSavedID, id)
+        defaults.removePersistentDomain(forName: suite)
+    }
+
+    func testSavingAndUpdatingNamedIconPresets() throws {
+        let suite = "MacPower.SavedIcon.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defaults.removePersistentDomain(forName: suite)
+        let settings = AppSettings(defaults: defaults)
+        settings.applyRingIconPreset(.circles)
+        let id = settings.saveRingIconPreset(named: "  圆环备份  ")
+        XCTAssertEqual(settings.savedIconLibrary.ring.count, 1)
+        XCTAssertEqual(settings.savedIconLibrary.ring[0].name, "圆环备份")
+        XCTAssertEqual(settings.ringActiveSavedIconID, id)
+
+        settings.applyRingIconPreset(.classic)
+        XCTAssertNil(settings.ringActiveSavedIconID)
+        settings.applySavedRingIcon(id: id!)
+        XCTAssertEqual(settings.ringIcons.battery.name, "bolt.circle.fill")
+        XCTAssertEqual(settings.ringActiveSavedIconID, id)
+
+        settings.ringIcons = settings.ringIcons.withScale(1.4, for: .gpu)
+        XCTAssertEqual(settings.ringActiveSavedIconID, id)
+        XCTAssertTrue(settings.updateRingIconPreset())
+        let savedGPU = try XCTUnwrap(settings.savedIconLibrary.ring.first(where: { $0.id == id })?.payload.gpu.scale)
+        XCTAssertEqual(savedGPU, 1.4, accuracy: 0.001)
+
+        let asNew = settings.saveRingIconPreset(named: "圆环备份2")
+        XCTAssertEqual(settings.savedIconLibrary.ring.count, 2)
+        XCTAssertEqual(settings.ringActiveSavedIconID, asNew)
+
+        settings.applyFlowIconPreset(.bolt)
+        let flowID = settings.saveFlowIconPreset(named: "闪电")
+        settings.flowIcons = settings.flowIcons.withScale(0.8, for: .mac)
+        XCTAssertTrue(settings.updateFlowIconPreset())
+        let savedMac = try XCTUnwrap(settings.savedIconLibrary.flow.first(where: { $0.id == flowID })?.payload.mac.scale)
+        XCTAssertEqual(savedMac, 0.8, accuracy: 0.001)
+
+        settings.deleteSavedRingIcon(id: id!)
+        settings.deleteSavedFlowIcon(id: flowID!)
+        XCTAssertEqual(settings.savedIconLibrary.ring.count, 1)
+        XCTAssertTrue(settings.savedIconLibrary.flow.isEmpty)
+
+        let reloaded = AppSettings(defaults: defaults)
+        XCTAssertEqual(reloaded.savedIconLibrary.ring.count, 1)
+        XCTAssertEqual(reloaded.savedIconLibrary.ring[0].name, "圆环备份2")
         defaults.removePersistentDomain(forName: suite)
     }
 
