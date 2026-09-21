@@ -33,12 +33,16 @@
 		C4FABB659148ED0D35A073E7 /* ReadmeAssetCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B63B3D8D85DA870F690F5AF /* ReadmeAssetCapture.swift */; };
 		CE35A94AAA802FA535FAFB65 /* StatusItemController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFC5BF114A1B6DF65790D248 /* StatusItemController.swift */; };
 		CE824792B085DE3B56568E98 /* MenuBarIconStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = C238426EC73D173324F283A9 /* MenuBarIconStyle.swift */; };
+		87F53106FFA5474FA547F2E9 /* PopoverTintSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 313E83308AB843638D2B289C /* PopoverTintSettings.swift */; };
+		70D6462DDDDE4F2BBC99121C /* SavedTintLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 675E876F2D1B4020B26A9F95 /* SavedTintLibrary.swift */; };
 		D00A2FB9CA62CEB4F9D8AE67 /* PopoverRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567E626D5987780BEB24265E /* PopoverRootView.swift */; };
 		DC0EB15541D10D69D1D8FB28 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F32418AF410C0C43E82CEC2 /* SettingsView.swift */; };
 		F49AC23404C038E06308DDDA /* PowerSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 424B895D8EAD698D2709E1C4 /* PowerSnapshot.swift */; };
 		F676AEA3B2252403F2114D1F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 04FD5D63D480A11EE0E91E88 /* Assets.xcassets */; };
 		FB4B3DAE9DADFC5B54C7AA51 /* EnergyFlowMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBEE380CB6A3631813F77B9B /* EnergyFlowMode.swift */; };
 		FD176A1FA9DE4D0BCEBC6FD9 /* StatusRingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A87ED6CEDCC37BA32FEFD25 /* StatusRingView.swift */; };
+		B2C3D4E5F60718293A4B5C6D /* IconPackSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B5C /* IconPackSettings.swift */; };
+		D4E5F60718293A4B5C6D7E8F /* GlyphSlotView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3D4E5F60718293A4B5C6D7E /* GlyphSlotView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -79,6 +83,8 @@
 		B07D3EE64903A4F05FF797FF /* EnergyMotionFrameRate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnergyMotionFrameRate.swift; sourceTree = "<group>"; };
 		BB22BA21030C6770FD5A2BE1 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		C238426EC73D173324F283A9 /* MenuBarIconStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarIconStyle.swift; sourceTree = "<group>"; };
+		313E83308AB843638D2B289C /* PopoverTintSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopoverTintSettings.swift; sourceTree = "<group>"; };
+		675E876F2D1B4020B26A9F95 /* SavedTintLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedTintLibrary.swift; sourceTree = "<group>"; };
 		C2AFE15BB6E2593BA442FDA8 /* TimeEstimateService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeEstimateService.swift; sourceTree = "<group>"; };
 		CF97ADE4B8CDD69AECEE68E7 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		CFC5BF114A1B6DF65790D248 /* StatusItemController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusItemController.swift; sourceTree = "<group>"; };
@@ -88,6 +94,8 @@
 		F95C96E9DDFF3C8713B85B2C /* AppVersion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppVersion.swift; sourceTree = "<group>"; };
 		F9B0E2FB7D8D2AA02DDF0C93 /* EnergyFlowModeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnergyFlowModeTests.swift; sourceTree = "<group>"; };
 		FC8ABD41752590181D0D4236 /* FlowGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowGeometry.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B5C /* IconPackSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IconPackSettings.swift; sourceTree = "<group>"; };
+		C3D4E5F60718293A4B5C6D7E /* GlyphSlotView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlyphSlotView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -130,6 +138,7 @@
 				AA21DF4EFAFE0D26294AD728 /* MenuBarBatteryIcon.swift */,
 				567E626D5987780BEB24265E /* PopoverRootView.swift */,
 				7F32418AF410C0C43E82CEC2 /* SettingsView.swift */,
+				C3D4E5F60718293A4B5C6D7E /* GlyphSlotView.swift */,
 				2A87ED6CEDCC37BA32FEFD25 /* StatusRingView.swift */,
 				D014F62CBF5CA300F430CDA1 /* TimeEstimateRow.swift */,
 			);
@@ -182,6 +191,9 @@
 				B07D3EE64903A4F05FF797FF /* EnergyMotionFrameRate.swift */,
 				67BAA20C54FB8A583F882002 /* EnergyMotionStyle.swift */,
 				C238426EC73D173324F283A9 /* MenuBarIconStyle.swift */,
+				313E83308AB843638D2B289C /* PopoverTintSettings.swift */,
+				675E876F2D1B4020B26A9F95 /* SavedTintLibrary.swift */,
+				A1B2C3D4E5F60718293A4B5C /* IconPackSettings.swift */,
 				424B895D8EAD698D2709E1C4 /* PowerSnapshot.swift */,
 				60C6B948DE1AAE52D2E5843A /* SystemSnapshot.swift */,
 				20A295272AA067DB3D994259 /* ThemePalette.swift */,
@@ -318,12 +330,16 @@
 				2A95F446F5027526CFD94321 /* MacPowerApp.swift in Sources */,
 				32BB523DC26D6D16D0B912B1 /* MenuBarBatteryIcon.swift in Sources */,
 				CE824792B085DE3B56568E98 /* MenuBarIconStyle.swift in Sources */,
+				87F53106FFA5474FA547F2E9 /* PopoverTintSettings.swift in Sources */,
+				70D6462DDDDE4F2BBC99121C /* SavedTintLibrary.swift in Sources */,
+				B2C3D4E5F60718293A4B5C6D /* IconPackSettings.swift in Sources */,
 				D00A2FB9CA62CEB4F9D8AE67 /* PopoverRootView.swift in Sources */,
 				F49AC23404C038E06308DDDA /* PowerSnapshot.swift in Sources */,
 				ACDD4EE1BC69433B15D4113D /* PowerTelemetryService.swift in Sources */,
 				C4FABB659148ED0D35A073E7 /* ReadmeAssetCapture.swift in Sources */,
 				DC0EB15541D10D69D1D8FB28 /* SettingsView.swift in Sources */,
 				CE35A94AAA802FA535FAFB65 /* StatusItemController.swift in Sources */,
+				D4E5F60718293A4B5C6D7E8F /* GlyphSlotView.swift in Sources */,
 				FD176A1FA9DE4D0BCEBC6FD9 /* StatusRingView.swift in Sources */,
 				9C2C68B2B7510476A25638C2 /* SystemMetricsService.swift in Sources */,
 				BD8EE84E503D9BC507AAFF5F /* SystemSnapshot.swift in Sources */,

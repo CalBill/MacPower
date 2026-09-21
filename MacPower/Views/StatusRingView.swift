@@ -2,11 +2,11 @@ import SwiftUI
 
 struct StatusRingView: View {
     var percent: Double
-    var color: Color
+    var fillLeft: Color
+    var fillRight: Color
     var caption: String
     var accessibilityName: String
-    var systemImage: String?
-    var assetImage: String?
+    var glyph: GlyphSlot
 
     private let diameter: CGFloat = 58
     private let lineWidth: CGFloat = 7
@@ -14,6 +14,7 @@ struct StatusRingView: View {
     var body: some View {
         let clamped = min(100, max(0, percent))
         let progress = clamped / 100
+        let scale = CGFloat(glyph.normalizedScale)
         VStack(spacing: 6) {
             ZStack {
                 glassTrack
@@ -21,16 +22,20 @@ struct StatusRingView: View {
                 Circle()
                     .trim(from: 0, to: progress)
                     .stroke(
-                        color,
+                        ringStroke(progress: progress),
                         style: StrokeStyle(lineWidth: lineWidth, lineCap: .round, lineJoin: .round)
                     )
                     .rotationEffect(.degrees(-90))
                     .frame(width: diameter - lineWidth, height: diameter - lineWidth)
                     .animation(.smooth(duration: 0.85), value: progress)
-                    .animation(.smooth(duration: 0.85), value: color)
+                    .animation(.smooth(duration: 0.85), value: fillLeft)
+                    .animation(.smooth(duration: 0.85), value: fillRight)
 
-                glyph
-                    .foregroundStyle(.primary)
+                GlyphSlotView(
+                    slot: glyph,
+                    systemPointSize: 17 * scale,
+                    assetSide: 20 * scale
+                )
             }
             .frame(width: diameter, height: diameter)
 
@@ -44,7 +49,21 @@ struct StatusRingView: View {
         .accessibilityLabel(Text("\(accessibilityName) \(Int(clamped.rounded()))%"))
     }
 
-    /// Liquid Glass is sampled as a circle, then masked to a stroke so the center stays hollow.
+    private func ringStroke(progress: Double) -> AnyShapeStyle {
+        if fillLeft == fillRight {
+            return AnyShapeStyle(fillLeft)
+        }
+        let sweep = max(progress, 0.002)
+        return AnyShapeStyle(
+            AngularGradient(
+                colors: [fillLeft, fillRight],
+                center: .center,
+                startAngle: .degrees(0),
+                endAngle: .degrees(360 * sweep)
+            )
+        )
+    }
+
     private var glassTrack: some View {
         Color.clear
             .frame(width: diameter, height: diameter)
@@ -55,27 +74,9 @@ struct StatusRingView: View {
                     .frame(width: diameter - lineWidth, height: diameter - lineWidth)
             }
     }
-
-    @ViewBuilder
-    private var glyph: some View {
-        if let assetImage {
-            // 20pt frame makes the inner die match cpu.fill at 17pt (~13.7pt square).
-            Image(assetImage)
-                .resizable()
-                .renderingMode(.template)
-                .interpolation(.high)
-                .scaledToFit()
-                .frame(width: 20, height: 20)
-        } else if let systemImage {
-            Image(systemName: systemImage)
-                .font(.system(size: 17, weight: .semibold))
-                .symbolRenderingMode(.hierarchical)
-        }
-    }
 }
 
 extension View {
-    /// Shrinks to a single line instead of wrapping when the label is longer than the slot.
     func autoFittingCaption(minimumScale: CGFloat = 0.6) -> some View {
         self
             .lineLimit(1)

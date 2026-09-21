@@ -53,6 +53,35 @@ enum FlowRibbon {
     /// Watt labels sit in the right-hand body, left of the end icon.
     static let wattLabelT: CGFloat = 0.72
 
+    /// Vertical centre of `path` at `x` near `hintY`. Restricting the scan
+    /// keeps forked ribbons from averaging both fingers into one mid-line.
+    static func centerY(
+        of path: Path,
+        atX x: CGFloat,
+        hintY: CGFloat,
+        searchRadius: CGFloat
+    ) -> CGFloat {
+        let bounds = path.boundingRect
+        guard bounds.width > 0, bounds.height > 0 else { return hintY }
+        let clampedX = min(max(x, bounds.minX), bounds.maxX)
+        let yMin = max(bounds.minY, hintY - searchRadius)
+        let yMax = min(bounds.maxY, hintY + searchRadius)
+        guard yMax > yMin else { return hintY }
+        var minY = CGFloat.infinity
+        var maxY = -CGFloat.infinity
+        var y = yMin
+        let step = max(0.35, (yMax - yMin) / 80)
+        while y <= yMax {
+            if path.contains(CGPoint(x: clampedX, y: y), eoFill: false) {
+                minY = min(minY, y)
+                maxY = max(maxY, y)
+            }
+            y += step
+        }
+        guard minY.isFinite, maxY.isFinite, maxY >= minY else { return hintY }
+        return (minY + maxY) / 2
+    }
+
     /// Full-capsule sheen. Linear in watts, independent of filament speed.
     /// Floor is high enough that ~10 W still crosses in a few seconds.
     static func sheenSpeed(watts: Double) -> Double {

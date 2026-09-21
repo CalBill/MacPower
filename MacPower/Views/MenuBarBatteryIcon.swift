@@ -5,7 +5,7 @@ enum MenuBarBatteryRenderer {
     static func image(
         snapshot: PowerSnapshot,
         style: MenuBarIconStyle,
-        fillColor: NSColor,
+        fill: MenuBarResolvedFill,
         appearance: NSAppearance,
         showChargeGlyphs: Bool
     ) -> NSImage {
@@ -27,11 +27,11 @@ enum MenuBarBatteryRenderer {
                 metrics: metrics,
                 percent: snapshot.percent / 100,
                 style: style,
-                fillColor: fillColor,
+                fill: fill,
                 glyph: glyph
             )
         }
-        image.isTemplate = true
+        image.isTemplate = fill.isTemplate
         return image
     }
 
@@ -163,7 +163,7 @@ enum MenuBarBatteryRenderer {
         metrics: Metrics,
         percent: CGFloat,
         style: MenuBarIconStyle,
-        fillColor: NSColor,
+        fill: MenuBarResolvedFill,
         glyph: MenuBarGlyph?
     ) {
         let body = metrics.body
@@ -173,7 +173,7 @@ enum MenuBarBatteryRenderer {
                 body: body,
                 cap: metrics.cap,
                 percent: percent,
-                fillColor: fillColor,
+                fill: fill,
                 radius: radius
             )
         } else {
@@ -181,7 +181,7 @@ enum MenuBarBatteryRenderer {
                 body: body,
                 cap: metrics.cap,
                 percent: percent,
-                fillColor: fillColor,
+                fill: fill,
                 radius: radius
             )
         }
@@ -211,27 +211,40 @@ enum MenuBarBatteryRenderer {
         body: NSRect,
         cap: NSRect,
         percent: CGFloat,
-        fillColor: NSColor,
+        fill: MenuBarResolvedFill,
         radius: CGFloat
     ) {
         let clamped = min(1, max(0, percent))
         let bodyPath = NSBezierPath(roundedRect: body, xRadius: radius, yRadius: radius)
         let capRadius = min(cap.width, cap.height) / 2
         let capPath = NSBezierPath(roundedRect: cap, xRadius: capRadius, yRadius: capRadius)
-
-        fillColor.withAlphaComponent(0.62).setFill()
-        bodyPath.fill()
-        capPath.fill()
+        let dim = fill.withAlpha(0.62)
 
         NSGraphicsContext.saveGraphicsState()
         bodyPath.addClip()
-        fillColor.setFill()
-        NSRect(x: body.minX, y: body.minY, width: body.width * clamped, height: body.height).fill()
+        paint(dim, in: body)
+        NSGraphicsContext.restoreGraphicsState()
+        NSGraphicsContext.saveGraphicsState()
+        capPath.addClip()
+        paint(dim, in: cap)
+        NSGraphicsContext.restoreGraphicsState()
+
+        NSGraphicsContext.saveGraphicsState()
+        bodyPath.addClip()
+        NSBezierPath(rect: NSRect(
+            x: body.minX,
+            y: body.minY,
+            width: body.width * clamped,
+            height: body.height
+        )).addClip()
+        paint(fill, in: body)
         NSGraphicsContext.restoreGraphicsState()
 
         if clamped >= 0.995 {
-            fillColor.setFill()
-            capPath.fill()
+            NSGraphicsContext.saveGraphicsState()
+            capPath.addClip()
+            paint(fill, in: cap)
+            NSGraphicsContext.restoreGraphicsState()
         }
 
         // Template rendering blends anti-aliased edges; cut the gap so the terminal stays detached.
@@ -255,7 +268,7 @@ enum MenuBarBatteryRenderer {
         body: NSRect,
         cap: NSRect,
         percent: CGFloat,
-        fillColor: NSColor,
+        fill: MenuBarResolvedFill,
         radius: CGFloat
     ) {
         let clamped = min(1, max(0, percent))
@@ -271,18 +284,25 @@ enum MenuBarBatteryRenderer {
         if clamped > 0.004 {
             NSGraphicsContext.saveGraphicsState()
             innerPath.addClip()
-            fillColor.setFill()
-            NSRect(x: inner.minX, y: inner.minY, width: inner.width * clamped, height: inner.height).fill()
+            NSBezierPath(rect: NSRect(
+                x: inner.minX,
+                y: inner.minY,
+                width: inner.width * clamped,
+                height: inner.height
+            )).addClip()
+            paint(fill, in: inner)
             NSGraphicsContext.restoreGraphicsState()
         }
 
-        fillColor.setStroke()
+        fill.right.setStroke()
         bodyPath.lineWidth = line
         bodyPath.lineJoinStyle = .round
         bodyPath.stroke()
 
-        fillColor.setFill()
-        capPath.fill()
+        NSGraphicsContext.saveGraphicsState()
+        capPath.addClip()
+        paint(fill, in: cap)
+        NSGraphicsContext.restoreGraphicsState()
 
         let gap = NSRect(
             x: body.maxX,
@@ -297,6 +317,28 @@ enum MenuBarBatteryRenderer {
             gap.fill()
             NSGraphicsContext.restoreGraphicsState()
         }
+    }
+
+    private static func paint(_ fill: MenuBarResolvedFill, in rect: NSRect) {
+        if samePaint(fill) {
+            fill.left.setFill()
+            rect.fill()
+            return
+        }
+        NSGradient(starting: fill.left, ending: fill.right)?.draw(in: rect, angle: 0)
+    }
+
+    private static func samePaint(_ fill: MenuBarResolvedFill) -> Bool {
+        guard
+            let left = fill.left.usingColorSpace(.sRGB),
+            let right = fill.right.usingColorSpace(.sRGB)
+        else {
+            return fill.left == fill.right
+        }
+        return abs(left.redComponent - right.redComponent) < 0.004
+            && abs(left.greenComponent - right.greenComponent) < 0.004
+            && abs(left.blueComponent - right.blueComponent) < 0.004
+            && abs(left.alphaComponent - right.alphaComponent) < 0.004
     }
 
     private static func punchCenteredText(_ text: String, font: NSFont, in box: NSRect) {

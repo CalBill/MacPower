@@ -31,59 +31,139 @@ struct PopoverRootView: View {
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, minHeight: 80)
         } else {
+            let showRings = appState.settings.showStatusRings
+            let showFlow = appState.settings.showEnergyFlow
             VStack(alignment: .leading, spacing: 14) {
-                header(theme: theme)
-                TimeEstimateRow(snapshot: appState.snapshot, language: appState.settings.language)
-                EnergyFlowView(
-                    snapshot: appState.snapshot,
-                    theme: theme,
-                    isAnimating: appState.isPopoverOpen,
-                    motion: appState.settings.motionStyle,
-                    motionFrameRate: appState.settings.motionFrameRate,
-                    pulseFlowIcons: appState.settings.pulseFlowIcons,
-                    language: appState.settings.language
-                )
+                if showRings {
+                    ringsHeader
+                }
+
+                if showFlow {
+                    TimeEstimateRow(snapshot: appState.snapshot, language: appState.settings.language)
+                    if showRings {
+                        energyFlow(theme: theme)
+                    } else {
+                        // Gear-only layout height so HStack can center it on the
+                        // ribbon; caption is painted below without shifting alignment.
+                        energyFlow(theme: theme) {
+                            flowSideSettingsButton
+                        }
+                    }
+                } else if !showRings {
+                    settingsButton
+                        .frame(maxWidth: .infinity)
+                }
             }
         }
     }
 
-    private func header(theme: AppTheme) -> some View {
+    private var ringsHeader: some View {
         let language = appState.settings.language
+        let ringTint = appState.settings.ringTint
+        let ringIcons = appState.settings.ringIcons
         let battery = Int(appState.snapshot.percent.rounded())
         let cpu = Int(appState.metrics.cpuPercent.rounded())
         let gpu = Int(appState.metrics.gpuPercent.rounded())
         let memory = Int(appState.metrics.memoryPercent.rounded())
+        let batteryColors = ringTint.scheme(for: .battery).colors(percent: appState.snapshot.percent)
+        let cpuColors = ringTint.scheme(for: .cpu).colors(percent: appState.metrics.cpuPercent)
+        let gpuColors = ringTint.scheme(for: .gpu).colors(percent: appState.metrics.gpuPercent)
+        let memoryColors = ringTint.scheme(for: .memory).colors(percent: appState.metrics.memoryPercent)
         return HStack(alignment: .top, spacing: 8) {
             StatusRingView(
                 percent: appState.snapshot.percent,
-                color: theme.batteryLevelFill(percent: appState.snapshot.percent),
+                fillLeft: batteryColors.left,
+                fillRight: batteryColors.right,
                 caption: Localization.string("ring.caption.battery %lld", language: language, Int64(battery)),
                 accessibilityName: Localization.string("ring.battery", language: language),
-                systemImage: "laptopcomputer"
+                glyph: ringIcons.slot(for: .battery)
             )
             StatusRingView(
                 percent: appState.metrics.cpuPercent,
-                color: theme.loadFill(percent: appState.metrics.cpuPercent),
+                fillLeft: cpuColors.left,
+                fillRight: cpuColors.right,
                 caption: Localization.string("ring.caption.cpu %lld", language: language, Int64(cpu)),
                 accessibilityName: Localization.string("ring.cpu", language: language),
-                systemImage: "cpu.fill"
+                glyph: ringIcons.slot(for: .cpu)
             )
             StatusRingView(
                 percent: appState.metrics.gpuPercent,
-                color: theme.loadFill(percent: appState.metrics.gpuPercent),
+                fillLeft: gpuColors.left,
+                fillRight: gpuColors.right,
                 caption: Localization.string("ring.caption.gpu %lld", language: language, Int64(gpu)),
                 accessibilityName: Localization.string("ring.gpu", language: language),
-                assetImage: "GPUMark"
+                glyph: ringIcons.slot(for: .gpu)
             )
             StatusRingView(
                 percent: appState.metrics.memoryPercent,
-                color: theme.loadFill(percent: appState.metrics.memoryPercent),
+                fillLeft: memoryColors.left,
+                fillRight: memoryColors.right,
                 caption: Localization.string("ring.caption.memory %lld", language: language, Int64(memory)),
                 accessibilityName: Localization.string("ring.memory", language: language),
-                systemImage: "memorychip.fill"
+                glyph: ringIcons.slot(for: .memory)
             )
             settingsButton
         }
+    }
+
+    private func energyFlow(theme: AppTheme) -> some View {
+        EnergyFlowView(
+            snapshot: appState.snapshot,
+            theme: theme,
+            flowTint: appState.settings.flowTint,
+            flowIcons: appState.settings.flowIcons,
+            isAnimating: appState.isPopoverOpen,
+            motion: appState.settings.motionStyle,
+            motionFrameRate: appState.settings.motionFrameRate,
+            pulseFlowIcons: appState.settings.pulseFlowIcons,
+            language: appState.settings.language
+        )
+    }
+
+    private func energyFlow<Trailing: View>(
+        theme: AppTheme,
+        @ViewBuilder trailing: @escaping () -> Trailing
+    ) -> some View {
+        EnergyFlowView(
+            snapshot: appState.snapshot,
+            theme: theme,
+            flowTint: appState.settings.flowTint,
+            flowIcons: appState.settings.flowIcons,
+            isAnimating: appState.isPopoverOpen,
+            motion: appState.settings.motionStyle,
+            motionFrameRate: appState.settings.motionFrameRate,
+            pulseFlowIcons: appState.settings.pulseFlowIcons,
+            language: appState.settings.language,
+            trailingAccessory: trailing
+        )
+    }
+
+    /// Compact settings control for the flow-only layout: layout size is the
+    /// gear alone so it centers on the ribbon; the title sits underneath.
+    private var flowSideSettingsButton: some View {
+        let language = appState.settings.language
+        let title = Localization.string("settings.title", language: language)
+        return Button {
+            appState.openSettings()
+        } label: {
+            Image(systemName: "gearshape.fill")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(.primary)
+                .frame(width: 58, height: 58)
+                .glassEffect(.regular.interactive(), in: .circle)
+                .overlay(alignment: .bottom) {
+                    Text(title)
+                        .font(.system(size: 11, weight: .semibold, design: .rounded))
+                        .foregroundStyle(.primary)
+                        .autoFittingCaption(minimumScale: 0.55)
+                        .fixedSize()
+                        .offset(y: 16)
+                }
+        }
+        .buttonStyle(.plain)
+        .frame(width: 58, height: 58)
+        .help(title)
+        .accessibilityLabel(title)
     }
 
     private var settingsButton: some View {
@@ -101,11 +181,12 @@ struct PopoverRootView: View {
                     .font(.system(size: 11, weight: .semibold, design: .rounded))
                     .foregroundStyle(.primary)
                     .autoFittingCaption(minimumScale: 0.55)
-                    .frame(maxWidth: .infinity)
+                    .multilineTextAlignment(.center)
             }
             .frame(maxWidth: .infinity)
         }
         .buttonStyle(.plain)
+        .frame(maxWidth: .infinity)
         .help(Localization.string("settings.title", language: language))
         .accessibilityLabel(Localization.string("settings.title", language: language))
     }

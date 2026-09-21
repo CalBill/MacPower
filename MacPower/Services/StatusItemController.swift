@@ -8,6 +8,13 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
     private let popover = NSPopover()
     private var hosting: NSHostingController<PopoverRootView>
     private var defaultArrowHeight: CGFloat?
+    private var appearanceObservation: NSKeyValueObservation?
+    private var themeChangeObserver: NSObjectProtocol?
+    private var lastRenderedKey: MenuBarIconKey?
+    private var lastAppearanceName: NSAppearance.Name?
+    private var lastTitle: String?
+    private var lastTooltip: String?
+    private var isRefreshingIcon = false
 
     init(appState: AppState) {
         self.appState = appState
@@ -28,9 +35,26 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
             button.action = #selector(togglePopover)
             button.sendAction(on: [.leftMouseUp, .rightMouseUp])
             configureHighlightAppearance(for: button)
+            // Observe the app appearance — not the button's. Button
+            // effectiveAppearance churns while AppKit redraws Liquid Glass
+            // replicants, which previously re-entered refreshIcon in a loop.
+            appearanceObservation = NSApp.observe(\.effectiveAppearance, options: [.new]) { [weak self] _, _ in
+                Task { @MainActor in
+                    self?.refreshIcon(force: false)
+                }
+            }
+            themeChangeObserver = DistributedNotificationCenter.default().addObserver(
+                forName: Notification.Name("AppleInterfaceThemeChangedNotification"),
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                Task { @MainActor in
+                    self?.refreshIcon(force: true)
+                }
+            }
         }
 
-        refreshIcon()
+        refreshIcon(force: true)
     }
 
     func applyLocalization() {
@@ -38,7 +62,7 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
         replacement.sizingOptions = [.intrinsicContentSize]
         popover.contentViewController = replacement
         hosting = replacement
-        refreshIcon()
+        refreshIcon(force: true)
     }
 
     func applyArrowVisibility() {
@@ -57,25 +81,54 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
     }
 
     func refreshIcon() {
+        refreshIcon(force: false)
+    }
+
+    func refreshIcon(force: Bool) {
         guard let button = statusItem.button else { return }
+        guard !isRefreshingIcon else { return }
         let appearance = button.effectiveAppearance
-        let fill = appState.menuBarFillColor(appearance: appearance)
+        let key = MenuBarIconKey(appState)
+        let appearanceName = appearance.name
+        if !force,
+           key == lastRenderedKey,
+           appearanceName == lastAppearanceName {
+            return
+        }
+
+        isRefreshingIcon = true
+        defer { isRefreshingIcon = false }
+
+        let fill = appState.menuBarFill(appearance: appearance)
         let image = MenuBarBatteryRenderer.image(
             snapshot: appState.snapshot,
             style: appState.settings.iconStyle,
-            fillColor: fill,
+            fill: fill,
             appearance: appearance,
             showChargeGlyphs: appState.settings.showChargeGlyphs
         )
+        image.isTemplate = fill.isTemplate
         button.image = image
-        let usesColor = fill != NSColor.black && appState.settings.lowBatteryTintEnabled
-        image.isTemplate = !usesColor
-        if appState.settings.iconStyle.showsPercentBeside {
-            button.title = " \(Int(appState.snapshot.percent.rounded()))%"
+
+        let title: String
+        if appState.settings.digitPlacement == .beside {
+            title = " \(Int(appState.snapshot.percent.rounded()))%"
         } else {
-            button.title = ""
+            title = ""
         }
-        button.toolTip = tooltip
+        if title != lastTitle {
+            button.title = title
+            lastTitle = title
+        }
+
+        let tip = tooltip
+        if tip != lastTooltip {
+            button.toolTip = tip
+            lastTooltip = tip
+        }
+
+        lastRenderedKey = key
+        lastAppearanceName = appearanceName
     }
 
     private var tooltip: String {

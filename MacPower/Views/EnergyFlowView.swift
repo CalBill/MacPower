@@ -1,14 +1,17 @@
 import SwiftUI
 
-struct EnergyFlowView: View {
+struct EnergyFlowView<Trailing: View>: View {
     var snapshot: PowerSnapshot
     var theme: AppTheme
+    var flowTint: FlowTintSettings
+    var flowIcons: FlowIconSettings = .classic
     var isAnimating: Bool
     var motion: EnergyMotionStyle
     var motionFrameRate: EnergyMotionFrameRate = .hz60
     var pulseFlowIcons: Bool
     var language: AppLanguage
     var showsFooter: Bool = true
+    @ViewBuilder var trailingAccessory: () -> Trailing
 
     @State private var outgoingSnapshot: PowerSnapshot?
     @State private var transitionStartedAt: Date?
@@ -17,6 +20,32 @@ struct EnergyFlowView: View {
     /// This is deliberately long enough for the fork to read as a physical
     /// split/merge, rather than a replacement of one static diagram by another.
     private let transitionDuration: TimeInterval = RibbonMorph.duration
+
+    init(
+        snapshot: PowerSnapshot,
+        theme: AppTheme,
+        flowTint: FlowTintSettings,
+        flowIcons: FlowIconSettings = .classic,
+        isAnimating: Bool,
+        motion: EnergyMotionStyle,
+        motionFrameRate: EnergyMotionFrameRate = .hz60,
+        pulseFlowIcons: Bool,
+        language: AppLanguage,
+        showsFooter: Bool = true,
+        @ViewBuilder trailingAccessory: @escaping () -> Trailing = { EmptyView() }
+    ) {
+        self.snapshot = snapshot
+        self.theme = theme
+        self.flowTint = flowTint
+        self.flowIcons = flowIcons
+        self.isAnimating = isAnimating
+        self.motion = motion
+        self.motionFrameRate = motionFrameRate
+        self.pulseFlowIcons = pulseFlowIcons
+        self.language = language
+        self.showsFooter = showsFooter
+        self.trailingAccessory = trailingAccessory
+    }
 
     var body: some View {
         // Keep one TimelineView mounted for the whole popover lifetime of a
@@ -38,13 +67,16 @@ struct EnergyFlowView: View {
         EnergyFlowDiagram(
             snapshot: snapshot,
             theme: theme,
+            flowTint: flowTint,
+            flowIcons: flowIcons,
             isAnimating: isAnimating,
             motion: motion,
             motionFrameRate: motionFrameRate,
             pulseFlowIcons: pulseFlowIcons,
             language: language,
             showsFooter: showsFooter,
-            morph: morph
+            morph: morph,
+            trailingAccessory: trailingAccessory
         )
     }
 
@@ -102,9 +134,11 @@ private struct FlowMorph {
     var progress: Double
 }
 
-private struct EnergyFlowDiagram: View {
+private struct EnergyFlowDiagram<Trailing: View>: View {
     var snapshot: PowerSnapshot
     var theme: AppTheme
+    var flowTint: FlowTintSettings
+    var flowIcons: FlowIconSettings
     var isAnimating: Bool
     var motion: EnergyMotionStyle
     var motionFrameRate: EnergyMotionFrameRate = .hz60
@@ -114,10 +148,15 @@ private struct EnergyFlowDiagram: View {
     /// During a mode change, the ribbon geometry and pigment interpolate from
     /// the old telemetry reading to the new one.
     var morph: FlowMorph?
+    @ViewBuilder var trailingAccessory: () -> Trailing
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            diagram
+            HStack(alignment: .center, spacing: 8) {
+                diagram
+                    .frame(maxWidth: .infinity)
+                trailingAccessory()
+            }
             if showsFooter {
                 footer
             }
@@ -132,7 +171,8 @@ private struct EnergyFlowDiagram: View {
             // resample glassEffect.
             RibbonGlassSlot(
                 size: geo.size,
-                fill: layout.fill,
+                fillLeft: layout.fillLeft,
+                fillRight: layout.fillRight,
                 bodyPath: layout.body,
                 maskSignature: maskSignature(layout.body)
             )
@@ -159,7 +199,7 @@ private struct EnergyFlowDiagram: View {
                         context: &context,
                         body: layout.body,
                         lanes: layout.outgoingLanes,
-                        fill: layout.fill,
+                        fill: layout.fillLeft,
                         opacity: layout.outgoingOverlayOpacity,
                         phase: phase
                     )
@@ -167,7 +207,7 @@ private struct EnergyFlowDiagram: View {
                         context: &context,
                         body: layout.body,
                         lanes: layout.incomingLanes,
-                        fill: layout.fill,
+                        fill: layout.fillLeft,
                         opacity: layout.incomingOverlayOpacity,
                         phase: phase
                     )
@@ -189,6 +229,14 @@ private struct EnergyFlowDiagram: View {
         guard opacity > 0.01, !lanes.isEmpty else { return }
         let previous = context.opacity
         context.opacity *= opacity
+        let motionBase = flowTint.motionColor?.color ?? fill
+        let pigment: FlowMotionPigment = {
+            if flowTint.motionColor != nil {
+                // Custom motion color overrides gradient/solid/white pigment path.
+                return motion.pigment == .white ? .white : .solid
+            }
+            return motion.pigment ?? .gradient
+        }()
         switch motion {
         case .sheen:
             drawSheen(context: &context, body: body, lanes: lanes, fill: fill, phase: phase)
@@ -198,8 +246,8 @@ private struct EnergyFlowDiagram: View {
                     context: &context,
                     lane: lane,
                     phase: phase,
-                    pigment: motion.pigment ?? .gradient,
-                    baseColor: fill
+                    pigment: pigment,
+                    baseColor: motionBase
                 )
             }
         case .particles, .particlesSolid, .particlesWhite:
@@ -208,8 +256,8 @@ private struct EnergyFlowDiagram: View {
                     context: &context,
                     lane: lane,
                     phase: phase,
-                    pigment: motion.pigment ?? .gradient,
-                    baseColor: fill
+                    pigment: pigment,
+                    baseColor: motionBase
                 )
             }
         case .off:
@@ -220,18 +268,33 @@ private struct EnergyFlowDiagram: View {
 
     private func wattLabels(layout: Layout) -> some View {
         Canvas { context, _ in
-            drawWattLabels(context: &context, lanes: layout.outgoingLanes, opacity: layout.outgoingOverlayOpacity)
-            drawWattLabels(context: &context, lanes: layout.incomingLanes, opacity: layout.incomingOverlayOpacity)
+            drawWattLabels(
+                context: &context,
+                body: layout.body,
+                lanes: layout.outgoingLanes,
+                opacity: layout.outgoingOverlayOpacity
+            )
+            drawWattLabels(
+                context: &context,
+                body: layout.body,
+                lanes: layout.incomingLanes,
+                opacity: layout.incomingOverlayOpacity
+            )
         }
         .allowsHitTesting(false)
     }
 
-    private func drawWattLabels(context: inout GraphicsContext, lanes: [Lane], opacity: Double) {
+    private func drawWattLabels(
+        context: inout GraphicsContext,
+        body: Path,
+        lanes: [Lane],
+        opacity: Double
+    ) {
         guard opacity > 0.01 else { return }
         let previous = context.opacity
         context.opacity *= opacity
         for lane in lanes {
-            drawWattLabel(context: &context, lane: lane)
+            drawWattLabel(context: &context, body: body, lane: lane)
         }
         context.opacity = previous
     }
@@ -294,34 +357,57 @@ private struct EnergyFlowDiagram: View {
     /// can skip resampling when only the particle overlay ticks.
     private struct RibbonGlassSlot: View, @MainActor Equatable {
         var size: CGSize
-        var fill: Color
+        var fillLeft: Color
+        var fillRight: Color
         var bodyPath: Path
         var maskSignature: Int
 
         static func == (lhs: Self, rhs: Self) -> Bool {
             lhs.size == rhs.size
-                && lhs.fill == rhs.fill
+                && lhs.fillLeft == rhs.fillLeft
+                && lhs.fillRight == rhs.fillRight
                 && lhs.maskSignature == rhs.maskSignature
         }
 
         var body: some View {
-            let tint = fill.opacity(FlowRibbon.glassTintOpacity)
             let stadium = RoundedRectangle(
                 cornerRadius: FlowRibbon.capRadius(for: FlowRibbon.trunkWidth(totalWatts: 1)),
                 style: .continuous
             )
+            // Tint glass with a mid mix so neither end of a gradient disappears.
+            let glassTint = fillLeft.mix(with: fillRight, by: 0.5).opacity(FlowRibbon.glassTintOpacity)
             let sampled = Color.clear
                 .frame(width: size.width, height: size.height)
-                .glassEffect(.regular.tint(tint), in: stadium)
+                .glassEffect(.regular.tint(glassTint), in: stadium)
             ZStack {
                 FlowRibbonShape(path: bodyPath)
-                    .fill(tint)
+                    .fill(ribbonFill)
                 // The hosting slot reserves 120pt of headroom, while a single
                 // ribbon is intentionally 96pt tall. Always mask the sampled
                 // glass to the real silhouette; otherwise the final frame after
                 // a morph expands to the reserved slot and visibly jumps width.
                 sampled.mask { FlowRibbonShape(path: bodyPath) }
             }
+        }
+
+        private var ribbonFill: AnyShapeStyle {
+            if fillLeft == fillRight {
+                return AnyShapeStyle(fillLeft.opacity(0.78))
+            }
+            // Bias the right stop later and stronger so charging forks keep a
+            // readable tip color under Liquid Glass.
+            return AnyShapeStyle(
+                LinearGradient(
+                    stops: [
+                        .init(color: fillLeft.opacity(0.82), location: 0),
+                        .init(color: fillLeft.opacity(0.70), location: 0.38),
+                        .init(color: fillRight.opacity(0.72), location: 0.62),
+                        .init(color: fillRight.opacity(0.92), location: 1)
+                    ],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            )
         }
     }
 
@@ -334,23 +420,13 @@ private struct EnergyFlowDiagram: View {
 
     @ViewBuilder
     private func flowNode(_ bubble: Bubble, breath: CGFloat) -> some View {
-        Group {
-            if let asset = bubble.asset {
-                Image(asset)
-                    .resizable()
-                    .renderingMode(.template)
-                    .interpolation(.high)
-                    .scaledToFit()
-                    .frame(width: 16, height: 24)
-            } else if let symbol = bubble.symbol {
-                Image(systemName: symbol)
-                    .font(.system(size: 16, weight: .semibold))
-            }
-        }
-        .foregroundStyle(.primary)
-        .scaleEffect(1 + 0.16 * breath)
-        .opacity(1 - 0.32 * breath)
-        .frame(width: FlowRibbon.nodeDiameter, height: FlowRibbon.nodeDiameter)
+        let scale = CGFloat(bubble.glyph.normalizedScale)
+        let side = 16 * scale
+        GlyphSlotView(slot: bubble.glyph, systemPointSize: side, assetSide: side)
+            .frame(width: side, height: max(side, 24 * min(scale, 1.25)))
+            .scaleEffect(1 + 0.16 * breath)
+            .opacity(1 - 0.32 * breath)
+            .frame(width: FlowRibbon.nodeDiameter, height: FlowRibbon.nodeDiameter)
     }
 
     private func iconBreath(at date: Date) -> CGFloat {
@@ -361,9 +437,12 @@ private struct EnergyFlowDiagram: View {
 
     private struct Bubble: Identifiable {
         var id: String
-        var symbol: String?
-        var asset: String?
+        var glyph: GlyphSlot
         var point: CGPoint
+    }
+
+    private func bubble(_ id: String, at point: CGPoint, charging: Bool = false) -> Bubble {
+        Bubble(id: id, glyph: flowIcons.slot(forBubbleID: id, charging: charging), point: point)
     }
 
     private struct Lane {
@@ -376,7 +455,8 @@ private struct EnergyFlowDiagram: View {
 
     private struct Layout {
         var body: Path
-        var fill: Color
+        var fillLeft: Color
+        var fillRight: Color
         var lanes: [Lane]
         var bubbles: [Bubble]
         var isMorphing = false
@@ -385,6 +465,10 @@ private struct EnergyFlowDiagram: View {
         var outgoingOverlayOpacity = 1.0
         var incomingOverlayOpacity = 0.0
         var bubbleOpacity = 1.0
+    }
+
+    private func tintColors(for mode: EnergyFlowMode, percent: Double) -> (left: Color, right: Color) {
+        flowTint.scheme(for: mode).colors(percent: percent)
     }
 
     private func layout(in size: CGSize, morph: FlowMorph?) -> Layout {
@@ -418,7 +502,8 @@ private struct EnergyFlowDiagram: View {
         return Layout(
             body: movingTopologyBody(in: size, from: morph.from, to: snapshot, progress: progress)
                 ?? bodyPath(for: lanes),
-            fill: from.fill.mix(with: to.fill, by: progress),
+            fillLeft: from.fillLeft.mix(with: to.fillLeft, by: progress),
+            fillRight: from.fillRight.mix(with: to.fillRight, by: progress),
             lanes: lanes,
             bubbles: bubblePresentation.bubbles,
             isMorphing: true,
@@ -478,60 +563,66 @@ private struct EnergyFlowDiagram: View {
                 endY: bot.y,
                 holdT: FlowRibbon.forkT
             )
+            let colors = tintColors(for: .charging, percent: snapshot.percent)
             return settle(
                 Layout(
                 body: ForkOutline.splitPath(left: left, top: top, bot: bot, topW: widths.0, botW: widths.1),
-                fill: theme.charging,
+                fillLeft: colors.left,
+                fillRight: colors.right,
                 lanes: [
-                    Lane(id: "to-battery", cubic: topLane, width: widths.0, watts: snapshot.chargeWatts, color: theme.charging),
-                    Lane(id: "to-system", cubic: botLane, width: widths.1, watts: snapshot.systemLoadWatts, color: theme.charging)
+                    Lane(id: "to-battery", cubic: topLane, width: widths.0, watts: snapshot.chargeWatts, color: colors.left),
+                    Lane(id: "to-system", cubic: botLane, width: widths.1, watts: snapshot.systemLoadWatts, color: colors.right)
                 ],
                 bubbles: [
-                    Bubble(id: "supply", asset: "ChargeMark", point: leftLogo),
-                    Bubble(id: "battery", symbol: "battery.100percent.bolt", point: CGPoint(x: size.width - logo, y: top.y)),
-                    Bubble(id: "mac", symbol: "laptopcomputer", point: CGPoint(x: size.width - logo, y: bot.y))
+                    bubble("supply", at: leftLogo),
+                    bubble("battery", at: CGPoint(x: size.width - logo, y: top.y), charging: true),
+                    bubble("mac", at: CGPoint(x: size.width - logo, y: bot.y))
                 ]
                 )
             )
         case .adapterHold:
             let watts = max(snapshot.systemLoadWatts, snapshot.adapterInWatts)
+            let colors = tintColors(for: .adapterHold, percent: snapshot.percent)
             return settle(
                 Layout(
                 body: ForkOutline.capsule(from: left, to: right, width: trunk),
-                fill: theme.adapterHold,
+                fillLeft: colors.left,
+                fillRight: colors.right,
                 lanes: [
                     Lane(
                         id: "adapter-system",
                         cubic: straightCubic(from: left, to: right),
                         width: trunk,
                         watts: watts,
-                        color: theme.adapterHold
+                        color: colors.left
                     )
                 ],
                 bubbles: [
-                    Bubble(id: "supply", asset: "ChargeMark", point: leftLogo),
-                    Bubble(id: "mac", symbol: "laptopcomputer", point: rightLogo)
+                    bubble("supply", at: leftLogo),
+                    bubble("mac", at: rightLogo)
                 ]
                 )
             )
         case .discharging:
             let watts = max(snapshot.dischargeWatts, snapshot.systemLoadWatts)
+            let colors = tintColors(for: .discharging, percent: snapshot.percent)
             return settle(
                 Layout(
                 body: ForkOutline.capsule(from: left, to: right, width: trunk),
-                fill: theme.discharging,
+                fillLeft: colors.left,
+                fillRight: colors.right,
                 lanes: [
                     Lane(
                         id: "battery-system",
                         cubic: straightCubic(from: left, to: right),
                         width: trunk,
                         watts: watts,
-                        color: theme.discharging
+                        color: colors.left
                     )
                 ],
                 bubbles: [
-                    Bubble(id: "battery", symbol: "battery.100percent", point: leftLogo),
-                    Bubble(id: "mac", symbol: "laptopcomputer", point: rightLogo)
+                    bubble("battery", at: leftLogo),
+                    bubble("mac", at: rightLogo)
                 ]
                 )
             )
@@ -555,18 +646,21 @@ private struct EnergyFlowDiagram: View {
                 endY: right.y + trunk / 2 - widths.1 / 2,
                 holdT: 1 - FlowRibbon.forkT
             )
+            let colors = tintColors(for: .underpowered, percent: snapshot.percent)
+            let discharge = tintColors(for: .discharging, percent: snapshot.percent)
             return settle(
                 Layout(
                 body: ForkOutline.mergePath(top: leftTop, bot: leftBot, right: right, topW: widths.0, botW: widths.1),
-                fill: theme.underpowered,
+                fillLeft: colors.left,
+                fillRight: colors.right,
                 lanes: [
-                    Lane(id: "adapter-system", cubic: topLane, width: widths.0, watts: snapshot.adapterInWatts, color: theme.underpowered),
-                    Lane(id: "battery-system", cubic: botLane, width: widths.1, watts: snapshot.dischargeWatts, color: theme.discharging)
+                    Lane(id: "adapter-system", cubic: topLane, width: widths.0, watts: snapshot.adapterInWatts, color: colors.left),
+                    Lane(id: "battery-system", cubic: botLane, width: widths.1, watts: snapshot.dischargeWatts, color: discharge.left)
                 ],
                 bubbles: [
-                    Bubble(id: "supply", asset: "ChargeMark", point: CGPoint(x: logo, y: leftTop.y)),
-                    Bubble(id: "battery", symbol: "battery.100percent", point: CGPoint(x: logo, y: leftBot.y)),
-                    Bubble(id: "mac", symbol: "laptopcomputer", point: rightLogo)
+                    bubble("supply", at: CGPoint(x: logo, y: leftTop.y)),
+                    bubble("battery", at: CGPoint(x: logo, y: leftBot.y)),
+                    bubble("mac", at: rightLogo)
                 ]
                 )
             )
@@ -614,7 +708,7 @@ private struct EnergyFlowDiagram: View {
             cubic: straightCubic(from: left, to: right),
             width: trunk,
             watts: watts,
-            color: theme.color(for: snapshot.flowMode)
+            color: tintColors(for: snapshot.flowMode, percent: snapshot.percent).left
         )
         return [lane, lane]
     }
@@ -1089,13 +1183,25 @@ private struct EnergyFlowDiagram: View {
         return base.mix(with: tail, by: (t - 0.48) / 0.52)
     }
 
-    private func drawWattLabel(context: inout GraphicsContext, lane: Lane) {
+    private func drawWattLabel(context: inout GraphicsContext, body: Path, lane: Lane) {
         let t: CGFloat = FlowRibbon.wattLabelT
-        let point = lane.cubic.offsetPoint(t, distance: 0)
+        let along = lane.cubic.point(t)
+        // Spine Y at wattLabelT is already locked to the tip on forked lanes;
+        // sample the filled ribbon at this X so the label sits in the local tube.
+        let point = CGPoint(
+            x: along.x,
+            y: FlowRibbon.centerY(
+                of: body,
+                atX: along.x,
+                hintY: along.y,
+                searchRadius: lane.width * 0.5 + 8
+            )
+        )
         let text = Text(String(format: "%.1f W", lane.watts))
             .font(.system(size: 11, weight: .semibold, design: .rounded).monospacedDigit())
             .foregroundStyle(.primary)
-        context.draw(text, at: point, anchor: .center)
+        // Digit strings optically sit high in the em-box; nudge down a hair.
+        context.draw(text, at: CGPoint(x: point.x, y: point.y + 1.5), anchor: .center)
     }
 
     private var footer: some View {

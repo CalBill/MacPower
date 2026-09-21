@@ -272,7 +272,7 @@ final class PowerTelemetryService {
 
         if open {
             refresh(smooth: true)
-            liveTimer = makeTimer(interval: 0.5, tolerance: 0.1, selector: #selector(handleLiveTimer))
+            liveTimer = makeTimer(interval: 1.0, tolerance: 0.25, selector: #selector(handleLiveTimer))
         } else {
             scheduleIdleTimer()
         }
@@ -292,7 +292,9 @@ final class PowerTelemetryService {
     }
 
     private func scheduleIdleTimer() {
-        idleTimer = makeTimer(interval: 10, tolerance: 2, selector: #selector(handleIdleTimer))
+        // IOPS notifications cover plug/charge flips; this is only a backup for
+        // integer percent drift while the panel is closed.
+        idleTimer = makeTimer(interval: 60, tolerance: 15, selector: #selector(handleIdleTimer))
     }
 
     private func makeTimer(interval: TimeInterval, tolerance: TimeInterval, selector: Selector) -> Timer {
@@ -394,8 +396,21 @@ final class PowerTelemetryService {
             averageLoadWatts: estimateLoadWatts ?? instantEstimateLoad
         )
 
+        // Panel closed: keep internal EMA state, but skip UI publishes when the
+        // menu-bar glyph would not change (watts jitter is invisible there).
+        if !popoverOpen, let previous = smoothed, Self.menuBarEqual(previous, snapshot) {
+            smoothed = snapshot
+            return
+        }
+
         smoothed = snapshot
         onChange?(snapshot)
+    }
+
+    private static func menuBarEqual(_ a: PowerSnapshot, _ b: PowerSnapshot) -> Bool {
+        Int(a.percent.rounded(.towardZero)) == Int(b.percent.rounded(.towardZero))
+            && a.flowMode == b.flowMode
+            && a.hasBattery == b.hasBattery
     }
 
     private func ema(_ previous: Double, _ next: Double, alpha: Double) -> Double {

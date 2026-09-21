@@ -16,6 +16,8 @@ final class AppState {
     var onLanguageChange: (() -> Void)?
     @ObservationIgnored
     var onPopoverChromeChange: (() -> Void)?
+    @ObservationIgnored
+    var onMenuBarNeedsRefresh: (() -> Void)?
 
     let telemetry = PowerTelemetryService()
     let metricsService = SystemMetricsService()
@@ -29,6 +31,7 @@ final class AppState {
     init() {
         telemetry.onChange = { [weak self] snapshot in
             self?.snapshot = snapshot
+            self?.onMenuBarNeedsRefresh?()
         }
         metricsService.onChange = { [weak self] metrics in
             self?.metrics = metrics
@@ -146,22 +149,11 @@ final class AppState {
         onLanguageChange?()
     }
 
-    func menuBarFillColor(appearance: NSAppearance) -> NSColor {
-        var color = NSColor.black
-        appearance.performAsCurrentDrawingAppearance {
-            if settings.lowBatteryTintEnabled,
-               snapshot.flowMode == .discharging || snapshot.flowMode == .underpowered {
-                if snapshot.percent <= 10 {
-                    color = NSColor.systemRed
-                    return
-                }
-                if snapshot.percent <= 20 {
-                    color = NSColor.systemYellow
-                    return
-                }
-            }
-            color = NSColor.black
-        }
-        return color
+    func menuBarFill(appearance: NSAppearance) -> MenuBarResolvedFill {
+        settings.menuBarTint.fill(
+            percent: snapshot.percent,
+            flowMode: snapshot.flowMode,
+            appearance: appearance
+        )
     }
 }

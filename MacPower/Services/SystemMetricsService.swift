@@ -15,7 +15,7 @@ final class SystemMetricsService {
 
     func start() {
         previousCPU = Self.cpuTicks()
-        schedule(heavy: false)
+        // No idle timer: CPU/GPU/memory rings are only visible in the popover.
     }
 
     func setPopoverOpen(_ open: Bool) {
@@ -24,8 +24,6 @@ final class SystemMetricsService {
         if open {
             refresh(heavy: true)
             schedule(heavy: true)
-        } else {
-            schedule(heavy: false)
         }
     }
 

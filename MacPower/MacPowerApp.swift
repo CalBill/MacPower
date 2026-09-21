@@ -32,18 +32,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         state.onPopoverChromeChange = { [weak statusItemController] in
             statusItemController?.applyArrowVisibility()
         }
+        state.onMenuBarNeedsRefresh = { [weak statusItemController] in
+            statusItemController?.refreshIcon()
+        }
+        // Rare backup for settings edits that don't push a telemetry tick.
         snapshotWatch = Task { [weak self, weak state] in
             guard let state else { return }
             var last = MenuBarIconKey(state)
             while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(1))
+                try? await Task.sleep(for: .seconds(5))
                 let key = MenuBarIconKey(state)
                 guard key != last else { continue }
                 last = key
                 self?.statusItemController?.refreshIcon()
             }
         }
-        statusItemController?.refreshIcon()
+        statusItemController?.refreshIcon(force: true)
     }
 
     func applicationWillTerminate(_ notification: Notification) {
@@ -55,11 +59,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 }
 
 /// Only fields that actually change the menu-bar glyph. Watts jitter must not redraw it.
-private struct MenuBarIconKey: Equatable {
+struct MenuBarIconKey: Equatable {
     var percent: Int
     var flowMode: EnergyFlowMode
-    var style: MenuBarIconStyle
-    var lowBatteryTint: Bool
+    var outlined: Bool
+    var digits: MenuBarDigitPlacement
+    var tint: MenuBarTintScheme
     var showChargeGlyphs: Bool
     var language: AppLanguage
 
@@ -67,8 +72,9 @@ private struct MenuBarIconKey: Equatable {
     init(_ state: AppState) {
         percent = Int(state.snapshot.percent.rounded(.towardZero))
         flowMode = state.snapshot.flowMode
-        style = state.settings.iconStyle
-        lowBatteryTint = state.settings.lowBatteryTintEnabled
+        outlined = state.settings.iconOutlined
+        digits = state.settings.digitPlacement
+        tint = state.settings.menuBarTint
         showChargeGlyphs = state.settings.showChargeGlyphs
         language = state.settings.language
     }
