@@ -12,9 +12,9 @@ enum ReadmeAssetCapture {
         var tint: PopoverTintPreset
     }
 
-    /// Opaque page color so GitHub dark/light both show a real panel, not a
-    /// transparent hole that reads as black.
-    private static let canvasColor = NSColor.windowBackgroundColor
+    /// Soft frosted panel for README embeds — lets the page theme show through.
+    private static let panelFill = NSColor(deviceRed: 1, green: 1, blue: 1, alpha: 0.58)
+    private static let panelCornerPoints: CGFloat = 18
 
     static func startIfNeeded() -> Bool {
         guard CommandLine.arguments.contains("--readme-gallery") else { return false }
@@ -124,12 +124,12 @@ enum ReadmeAssetCapture {
         let size = view.bounds.size
         guard size.width > 1, size.height > 1 else { return false }
         guard let rep = view.bitmapImageRepForCachingDisplay(in: view.bounds) else { return false }
-        // Paint an opaque canvas first — transparent glass holes otherwise ship
-        // as empty alpha and look black on GitHub's dark README theme.
+        // Clear canvas — empty glass holes stay transparent; polish step adds a
+        // frosted rounded panel behind the real content.
         if let ctx = NSGraphicsContext(bitmapImageRep: rep) {
             NSGraphicsContext.saveGraphicsState()
             NSGraphicsContext.current = ctx
-            canvasColor.setFill()
+            NSColor.clear.setFill()
             NSBezierPath.fill(view.bounds)
             NSGraphicsContext.restoreGraphicsState()
         }
@@ -146,26 +146,12 @@ enum ReadmeAssetCapture {
     private static func flattenAndTrim(at url: URL) {
         guard let image = NSImage(contentsOf: url),
               let tiff = image.tiffRepresentation,
-              let rep = NSBitmapImageRep(data: tiff) else { return }
-        let width = rep.pixelsWide
-        let height = rep.pixelsHigh
-        let bg = canvasColor.usingColorSpace(.deviceRGB) ?? canvasColor
-        let bgR = bg.redComponent
-        let bgG = bg.greenComponent
-        let bgB = bg.blueComponent
-
-        // Flatten remaining alpha onto the canvas color.
-        for y in 0..<height {
-            for x in 0..<width {
-                guard let color = rep.colorAt(x: x, y: y) else { continue }
-                let a = color.alphaComponent
-                if a >= 0.999 { continue }
-                let r = color.redComponent * a + bgR * (1 - a)
-                let g = color.greenComponent * a + bgG * (1 - a)
-                let b = color.blueComponent * a + bgB * (1 - a)
-                rep.setColor(NSColor(deviceRed: r, green: g, blue: b, alpha: 1), atX: x, y: y)
-            }
-        }
+              let source = NSBitmapImageRep(data: tiff),
+              let cg = source.cgImage else { return }
+        let width = source.pixelsWide
+        let height = source.pixelsHigh
+        let scale = max(1.0, CGFloat(width) / max(image.size.width, 1))
+        let radius = panelCornerPoints * scale
 
         var minX = width
         var minY = height
@@ -173,12 +159,10 @@ enum ReadmeAssetCapture {
         var maxY = 0
         for y in 0..<height {
             for x in 0..<width {
-                guard let color = rep.colorAt(x: x, y: y) else { continue }
-                let dr = abs(color.redComponent - bgR)
-                let dg = abs(color.greenComponent - bgG)
-                let db = abs(color.blueComponent - bgB)
-                // Keep anything that is not the empty canvas.
-                if dr + dg + db > 0.04 {
+                guard let color = source.colorAt(x: x, y: y) else { continue }
+                let a = color.alphaComponent
+                let lum = color.redComponent * 0.3 + color.greenComponent * 0.59 + color.blueComponent * 0.11
+                if a > 0.08 && lum > 0.04 {
                     minX = min(minX, x)
                     minY = min(minY, y)
                     maxX = max(maxX, x)
@@ -186,7 +170,7 @@ enum ReadmeAssetCapture {
                 }
             }
         }
-        let pad = 8
+        let pad = Int((12 * scale).rounded())
         minX = max(0, minX - pad)
         minY = max(0, minY - pad)
         maxX = min(width - 1, maxX + pad)
@@ -194,12 +178,84 @@ enum ReadmeAssetCapture {
         let cropW = maxX - minX + 1
         let cropH = maxY - minY + 1
         guard cropW > 8, cropH > 8,
-              let cropped = rep.cgImage?.cropping(to: CGRect(x: minX, y: minY, width: cropW, height: cropH))
+              let cropped = cg.cropping(to: CGRect(x: minX, y: minY, width: cropW, height: cropH))
         else { return }
-        let out = NSBitmapImageRep(cgImage: cropped)
+
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        guard let ctx = CGContext(
+            data: nil,
+            width: cropW,
+            height: cropH,
+            bitsPerComponent: 8,
+            bytesPerRow: 0,
+            space: colorSpace,
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ) else { return }
+
+        let rect = CGRect(x: 0, y: 0, width: cropW, height: cropH)
+        let panel = CGPath(
+            roundedRect: rect.insetBy(dx: 0.5, dy: 0.5),
+            cornerWidth: radius,
+            cornerHeight: radius,
+            transform: nil
+        )
+
+        // Soften opaque popover chrome before compositing.
+        guard let softened = softenChrome(cropped) else { return }
+
+        ctx.clear(rect)
+        ctx.setFillColor(red: 1, green: 1, blue: 1, alpha: 0.58)
+        ctx.addPath(panel)
+        ctx.fillPath()
+        ctx.draw(softened, in: rect)
+        ctx.setBlendMode(.destinationIn)
+        ctx.setFillColor(gray: 1, alpha: 1)
+        ctx.addPath(panel)
+        ctx.fillPath()
+
+        guard let polished = ctx.makeImage() else { return }
+        let out = NSBitmapImageRep(cgImage: polished)
         if let png = out.representation(using: .png, properties: [:]) {
             try? png.write(to: url)
         }
+    }
+
+    /// Turn near-white chrome into translucent frost so GitHub themes show through.
+    private static func softenChrome(_ image: CGImage) -> CGImage? {
+        let width = image.width
+        let height = image.height
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        guard let ctx = CGContext(
+            data: nil,
+            width: width,
+            height: height,
+            bitsPerComponent: 8,
+            bytesPerRow: 0,
+            space: colorSpace,
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ), let data = ctx.data else { return image }
+        ctx.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+        let ptr = data.bindMemory(to: UInt8.self, capacity: width * height * 4)
+        let frost: UInt8 = 148 // ~0.58 * 255 premul white
+        for i in 0..<(width * height) {
+            let o = i * 4
+            let r = Int(ptr[o])
+            let g = Int(ptr[o + 1])
+            let b = Int(ptr[o + 2])
+            let a = Int(ptr[o + 3])
+            if a < 20 {
+                ptr[o] = 0; ptr[o + 1] = 0; ptr[o + 2] = 0; ptr[o + 3] = 0
+                continue
+            }
+            let lum = (r * 30 + g * 59 + b * 11) / 100
+            if lum > 235 && r > 230 && g > 230 && b > 230 {
+                ptr[o] = frost
+                ptr[o + 1] = frost
+                ptr[o + 2] = frost
+                ptr[o + 3] = frost
+            }
+        }
+        return ctx.makeImage()
     }
 }
 
