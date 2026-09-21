@@ -382,7 +382,7 @@ private struct EnergyFlowDiagram<Trailing: View>: View {
                 style: .continuous
             )
             // Tint glass with a mid mix so neither end of a gradient disappears.
-            let glassTint = fillLeft.mix(with: fillRight, by: 0.5).opacity(FlowRibbon.glassTintOpacity)
+            let glassTint = fillLeft.mixed(with: fillRight, by: 0.5).opacity(FlowRibbon.glassTintOpacity)
             ZStack {
                 FlowRibbonShape(path: bodyPath)
                     .fill(ribbonFill)
@@ -390,11 +390,18 @@ private struct EnergyFlowDiagram<Trailing: View>: View {
                     // Offscreen bitmaps do not sample Liquid Glass; keep the
                     // opaque pigment so gradient / smooth presets stay visible.
                     EmptyView()
-                } else {
+                } else if #available(macOS 26.0, *) {
                     let sampled = Color.clear
                         .frame(width: size.width, height: size.height)
-                        .glassEffect(.regular.tint(glassTint), in: stadium)
+                        .macPowerGlassEffect(.regularTint(glassTint), in: stadium)
                     sampled.mask { FlowRibbonShape(path: bodyPath) }
+                } else {
+                    // Avoid clear + material-background + path mask (often invisible
+                    // on 14/15). Fill the ribbon silhouette directly.
+                    FlowRibbonShape(path: bodyPath)
+                        .fill(.ultraThinMaterial)
+                    FlowRibbonShape(path: bodyPath)
+                        .fill(glassTint)
                 }
             }
         }
@@ -517,8 +524,8 @@ private struct EnergyFlowDiagram<Trailing: View>: View {
         return Layout(
             body: movingTopologyBody(in: size, from: morph.from, to: snapshot, progress: progress)
                 ?? bodyPath(for: lanes),
-            fillLeft: from.fillLeft.mix(with: to.fillLeft, by: progress),
-            fillRight: from.fillRight.mix(with: to.fillRight, by: progress),
+            fillLeft: from.fillLeft.mixed(with: to.fillLeft, by: progress),
+            fillRight: from.fillRight.mixed(with: to.fillRight, by: progress),
             lanes: lanes,
             bubbles: bubblePresentation.bubbles,
             isMorphing: true,
@@ -699,7 +706,7 @@ private struct EnergyFlowDiagram<Trailing: View>: View {
                 cubic: interpolate(a.cubic, b.cubic, progress: progress),
                 width: interpolate(a.width, b.width, progress: progress),
                 watts: interpolate(a.watts, b.watts, progress: progress),
-                color: a.color.mix(with: b.color, by: progress)
+                color: a.color.mixed(with: b.color, by: progress)
             )
         }
     }
@@ -932,8 +939,8 @@ private struct EnergyFlowDiagram<Trailing: View>: View {
         guard bounds.width > 1, bounds.height > 1 else { return }
 
         let color = fill
-        let halo = Color.white.mix(with: color, by: 0.42)
-        let core = Color.white.mix(with: color, by: 0.08)
+        let halo = Color.white.mixed(with: color, by: 0.42)
+        let core = Color.white.mixed(with: color, by: 0.08)
         // Peak covers about a third of the capsule so it reads as a band, not a speck.
         let stops = sheenStops(peak: t, half: 0.18, halo: halo, core: core)
 
@@ -1053,7 +1060,7 @@ private struct EnergyFlowDiagram<Trailing: View>: View {
                 )
             )
         case .solid, .white:
-            let color: Color = pigment == .white ? .white : baseColor.mix(with: .black, by: 0.42)
+            let color: Color = pigment == .white ? .white : baseColor.mixed(with: .black, by: 0.42)
             context.fill(
                 body,
                 with: .linearGradient(tipFade(color), startPoint: start, endPoint: end)
@@ -1177,7 +1184,7 @@ private struct EnergyFlowDiagram<Trailing: View>: View {
                 with: .color(Color.white.opacity(alpha * spark))
             )
         case .solid:
-            let color = baseColor.mix(with: .black, by: 0.42)
+            let color = baseColor.mixed(with: .black, by: 0.42)
             context.fill(Path(ellipseIn: rect), with: .color(color.opacity(alpha)))
         case .white:
             context.fill(Path(ellipseIn: rect), with: .color(Color.white.opacity(alpha)))
@@ -1185,15 +1192,15 @@ private struct EnergyFlowDiagram<Trailing: View>: View {
     }
 
     private func travelingColor(base: Color, t: Double) -> Color {
-        let head = Color.white.mix(with: base, by: 0.06)
-        let tail = base.mix(with: .black, by: 0.18)
+        let head = Color.white.mixed(with: base, by: 0.06)
+        let tail = base.mixed(with: .black, by: 0.18)
         if t < 0.22 {
-            return Color.white.mix(with: head, by: t / 0.22)
+            return Color.white.mixed(with: head, by: t / 0.22)
         }
         if t < 0.48 {
-            return head.mix(with: base, by: (t - 0.22) / 0.26)
+            return head.mixed(with: base, by: (t - 0.22) / 0.26)
         }
-        return base.mix(with: tail, by: (t - 0.48) / 0.52)
+        return base.mixed(with: tail, by: (t - 0.48) / 0.52)
     }
 
     private func drawWattLabel(context: inout GraphicsContext, body: Path, lane: Lane) {

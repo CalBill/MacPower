@@ -2,7 +2,7 @@ name: MacPower
 options:
   bundleIdPrefix: app.macpower
   deploymentTarget:
-    macOS: "26.0"
+    macOS: "14.0"
   xcodeVersion: "26.0"
   createIntermediateGroups: true
   developmentLanguage: en
@@ -22,7 +22,7 @@ options:
 settings:
   base:
     SWIFT_VERSION: "6.0"
-    MACOSX_DEPLOYMENT_TARGET: "26.0"
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
     DEVELOPMENT_TEAM: H6AYG25QVN
     CODE_SIGN_STYLE: Automatic
     ENABLE_HARDENED_RUNTIME: YES

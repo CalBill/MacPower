@@ -44,7 +44,7 @@ sudo xattr -rd com.apple.quarantine /Applications/MacPower.app
 
 ## 运行要求
 
-- macOS 26 或更高（在 macOS 27 上开发）
+- macOS 14 或更高（在 macOS 26+ 上使用 Liquid Glass；14/15 为材质回退）
 - 带电池的 Apple 芯片 MacBook
 
 ## 从源码编译

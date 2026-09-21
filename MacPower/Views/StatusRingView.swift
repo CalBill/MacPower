@@ -83,11 +83,18 @@ struct StatusRingView: View {
             Color(white: 0.88)
                 .frame(width: diameter, height: diameter)
                 .mask { track }
-        } else {
+        } else if #available(macOS 26.0, *) {
+            // Real glass + stroke mask (unchanged from the macOS 26+ design).
             Color.clear
                 .frame(width: diameter, height: diameter)
-                .glassEffect(.regular, in: Circle())
+                .macPowerGlassEffect(.regular, in: Circle())
                 .mask { track }
+        } else {
+            // Material-in-background + mask often goes fully transparent on 14/15;
+            // stroke the material directly as a visible track.
+            Circle()
+                .stroke(.ultraThinMaterial, style: StrokeStyle(lineWidth: lineWidth, lineCap: .butt))
+                .frame(width: diameter - lineWidth, height: diameter - lineWidth)
         }
     }
 }

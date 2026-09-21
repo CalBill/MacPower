@@ -150,7 +150,7 @@ struct PopoverRootView: View {
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundStyle(.primary)
                 .frame(width: 58, height: 58)
-                .glassEffect(.regular.interactive(), in: .circle)
+                .macPowerGlassEffect(.regularInteractive, in: Circle())
                 .overlay(alignment: .bottom) {
                     Text(title)
                         .font(.system(size: 11, weight: .semibold, design: .rounded))
@@ -176,7 +176,7 @@ struct PopoverRootView: View {
                     .font(.system(size: 18, weight: .semibold))
                     .foregroundStyle(.primary)
                     .frame(width: 58, height: 58)
-                    .glassEffect(.regular.interactive(), in: .circle)
+                    .macPowerGlassEffect(.regularInteractive, in: Circle())
                 Text(Localization.string("settings.title", language: language))
                     .font(.system(size: 11, weight: .semibold, design: .rounded))
                     .foregroundStyle(.primary)

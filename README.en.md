@@ -44,7 +44,7 @@ Paste that into Terminal and press Enter. Nothing appears while you type the pas
 
 ## Requirements
 
-- macOS 26 or later (developed on macOS 27)
+- macOS 14 or later (Liquid Glass on macOS 26+; material fallback on 14/15)
 - Apple Silicon MacBook with a battery
 
 ## Build from source
