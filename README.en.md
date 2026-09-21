@@ -28,6 +28,7 @@ A menu-bar battery monitor for MacBook. It stays out of the Dock and opens a **L
 - Liquid Glass menu-bar monitor: energy flow, battery / CPU / GPU / memory rings, remaining runtime or time-to-full
 - Highly customizable: color presets, icon packs, motion styles, menu-bar battery look, and more
 - No Dock icon; optional open-at-login and automatic update checks
+- Languages: Simplified Chinese, Traditional Chinese, English, Japanese, Korean, French, German, Spanish, Brazilian Portuguese, Italian, Russian (follow system or pick one in Settings)
 
 ## Install
 

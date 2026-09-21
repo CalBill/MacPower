@@ -28,6 +28,7 @@ MacBook 菜单栏电池监视器。不进 Dock，点开后是 **Liquid Glass** �
 - 菜单栏 Liquid Glass 监控面板（能量流向、电量 / CPU / GPU / 内存圆环、续航或充满时间）
 - 高度可自定义：配色预设、图标套装、动效样式、菜单栏电池外观等
 - 不进 Dock；可选登录时启动、自动检查更新
+- 多语言：简体中文、繁体中文、English、日本語、한국어、Français、Deutsch、Español、Português (Brasil)、Italiano、Русский（设置里可跟随系统或单独切换）
 
 ## 安装
 
