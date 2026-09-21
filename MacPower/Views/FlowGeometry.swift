@@ -1,5 +1,18 @@
 import SwiftUI
 
+private enum ReadmeGalleryCaptureKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+extension EnvironmentValues {
+    /// When true, Liquid Glass is replaced with opaque fills so README bitmaps
+    /// keep a readable ribbon (cacheDisplay often samples glass as empty black).
+    var readmeGalleryCapture: Bool {
+        get { self[ReadmeGalleryCaptureKey.self] }
+        set { self[ReadmeGalleryCaptureKey.self] = newValue }
+    }
+}
+
 enum FlowRibbon {
     /// Diameter of the settings button, and the horizontal slot reserved for end logos.
     static let nodeDiameter: CGFloat = 32

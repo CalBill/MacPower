@@ -367,6 +367,7 @@ private struct EnergyFlowDiagram<Trailing: View>: View {
         var fillRight: Color
         var bodyPath: Path
         var maskSignature: Int
+        @Environment(\.readmeGalleryCapture) private var readmeGalleryCapture
 
         static func == (lhs: Self, rhs: Self) -> Bool {
             lhs.size == rhs.size
@@ -382,17 +383,19 @@ private struct EnergyFlowDiagram<Trailing: View>: View {
             )
             // Tint glass with a mid mix so neither end of a gradient disappears.
             let glassTint = fillLeft.mix(with: fillRight, by: 0.5).opacity(FlowRibbon.glassTintOpacity)
-            let sampled = Color.clear
-                .frame(width: size.width, height: size.height)
-                .glassEffect(.regular.tint(glassTint), in: stadium)
             ZStack {
                 FlowRibbonShape(path: bodyPath)
                     .fill(ribbonFill)
-                // The hosting slot reserves 120pt of headroom, while a single
-                // ribbon is intentionally 96pt tall. Always mask the sampled
-                // glass to the real silhouette; otherwise the final frame after
-                // a morph expands to the reserved slot and visibly jumps width.
-                sampled.mask { FlowRibbonShape(path: bodyPath) }
+                if readmeGalleryCapture {
+                    // Offscreen bitmaps do not sample Liquid Glass; keep the
+                    // opaque pigment so gradient / smooth presets stay visible.
+                    EmptyView()
+                } else {
+                    let sampled = Color.clear
+                        .frame(width: size.width, height: size.height)
+                        .glassEffect(.regular.tint(glassTint), in: stadium)
+                    sampled.mask { FlowRibbonShape(path: bodyPath) }
+                }
             }
         }
 

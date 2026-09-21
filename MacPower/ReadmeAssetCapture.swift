@@ -12,6 +12,10 @@ enum ReadmeAssetCapture {
         var tint: PopoverTintPreset
     }
 
+    /// Opaque page color so GitHub dark/light both show a real panel, not a
+    /// transparent hole that reads as black.
+    private static let canvasColor = NSColor.windowBackgroundColor
+
     static func startIfNeeded() -> Bool {
         guard CommandLine.arguments.contains("--readme-gallery") else { return false }
         NSApp.setActivationPolicy(.regular)
@@ -53,6 +57,7 @@ enum ReadmeAssetCapture {
         let hosting = NSHostingController(
             rootView: PopoverRootView(appState: state)
                 .environment(\.colorScheme, .light)
+                .environment(\.readmeGalleryCapture, true)
         )
         hosting.sizingOptions = [.intrinsicContentSize]
         let popover = NSPopover()
@@ -96,7 +101,7 @@ enum ReadmeAssetCapture {
             }
             let dest = output.appendingPathComponent("\(shot.name).png")
             if captureView(hosting.view, to: dest) {
-                trimOpaqueContent(at: dest)
+                flattenAndTrim(at: dest)
                 print("wrote \(dest.lastPathComponent)")
             } else {
                 print("failed \(shot.name)")
@@ -121,6 +126,15 @@ enum ReadmeAssetCapture {
         let size = view.bounds.size
         guard size.width > 1, size.height > 1 else { return false }
         guard let rep = view.bitmapImageRepForCachingDisplay(in: view.bounds) else { return false }
+        // Paint an opaque canvas first — transparent glass holes otherwise ship
+        // as empty alpha and look black on GitHub's dark README theme.
+        if let ctx = NSGraphicsContext(bitmapImageRep: rep) {
+            NSGraphicsContext.saveGraphicsState()
+            NSGraphicsContext.current = ctx
+            canvasColor.setFill()
+            NSBezierPath.fill(view.bounds)
+            NSGraphicsContext.restoreGraphicsState()
+        }
         view.cacheDisplay(in: view.bounds, to: rep)
         guard let png = rep.representation(using: .png, properties: [:]) else { return false }
         do {
@@ -131,12 +145,30 @@ enum ReadmeAssetCapture {
         }
     }
 
-    private static func trimOpaqueContent(at url: URL) {
+    private static func flattenAndTrim(at url: URL) {
         guard let image = NSImage(contentsOf: url),
               let tiff = image.tiffRepresentation,
               let rep = NSBitmapImageRep(data: tiff) else { return }
         let width = rep.pixelsWide
         let height = rep.pixelsHigh
+        let bg = canvasColor.usingColorSpace(.deviceRGB) ?? canvasColor
+        let bgR = bg.redComponent
+        let bgG = bg.greenComponent
+        let bgB = bg.blueComponent
+
+        // Flatten remaining alpha onto the canvas color.
+        for y in 0..<height {
+            for x in 0..<width {
+                guard let color = rep.colorAt(x: x, y: y) else { continue }
+                let a = color.alphaComponent
+                if a >= 0.999 { continue }
+                let r = color.redComponent * a + bgR * (1 - a)
+                let g = color.greenComponent * a + bgG * (1 - a)
+                let b = color.blueComponent * a + bgB * (1 - a)
+                rep.setColor(NSColor(deviceRed: r, green: g, blue: b, alpha: 1), atX: x, y: y)
+            }
+        }
+
         var minX = width
         var minY = height
         var maxX = 0
@@ -144,9 +176,11 @@ enum ReadmeAssetCapture {
         for y in 0..<height {
             for x in 0..<width {
                 guard let color = rep.colorAt(x: x, y: y) else { continue }
-                let lum = color.redComponent * 0.3 + color.greenComponent * 0.59 + color.blueComponent * 0.11
-                // Keep glass / colored content; drop near-black empty canvas.
-                if lum > 0.08 || color.alphaComponent < 0.95 {
+                let dr = abs(color.redComponent - bgR)
+                let dg = abs(color.greenComponent - bgG)
+                let db = abs(color.blueComponent - bgB)
+                // Keep anything that is not the empty canvas.
+                if dr + dg + db > 0.04 {
                     minX = min(minX, x)
                     minY = min(minY, y)
                     maxX = max(maxX, x)
@@ -154,7 +188,7 @@ enum ReadmeAssetCapture {
                 }
             }
         }
-        let pad = 6
+        let pad = 8
         minX = max(0, minX - pad)
         minY = max(0, minY - pad)
         maxX = min(width - 1, maxX + pad)
@@ -200,7 +234,7 @@ private extension PowerSnapshot {
                 isCharging: false,
                 externalConnected: true,
                 fullyCharged: true,
-                adapterCeilingWatts: 70,
+                adapterCeilingWatts: 30,
                 adapterInWatts: 12.4,
                 systemLoadWatts: 12.4,
                 batteryWatts: 0,
@@ -225,9 +259,9 @@ private extension PowerSnapshot {
                 batteryWatts: -10.5,
                 remainingCapacityWh: 48,
                 missingCapacityWh: 26,
-                systemTimeToEmptyMinutes: nil,
+                systemTimeToEmptyMinutes: 210,
                 systemTimeToFullMinutes: nil,
-                timeToEmptyMinutes: nil,
+                timeToEmptyMinutes: 210,
                 timeToFullMinutes: nil,
                 flowMode: .underpowered
             )

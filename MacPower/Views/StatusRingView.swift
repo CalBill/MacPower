@@ -8,6 +8,7 @@ struct StatusRingView: View {
     var accessibilityName: String
     var glyph: GlyphSlot
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.readmeGalleryCapture) private var readmeGalleryCapture
 
     private let diameter: CGFloat = 58
     private let lineWidth: CGFloat = 7
@@ -72,15 +73,22 @@ struct StatusRingView: View {
         )
     }
 
+    @ViewBuilder
     private var glassTrack: some View {
-        Color.clear
-            .frame(width: diameter, height: diameter)
-            .glassEffect(.regular, in: Circle())
-            .mask {
-                Circle()
-                    .stroke(style: StrokeStyle(lineWidth: lineWidth, lineCap: .butt))
-                    .frame(width: diameter - lineWidth, height: diameter - lineWidth)
-            }
+        let track = Circle()
+            .stroke(style: StrokeStyle(lineWidth: lineWidth, lineCap: .butt))
+            .frame(width: diameter - lineWidth, height: diameter - lineWidth)
+        if readmeGalleryCapture {
+            // Bitmap capture cannot sample Liquid Glass; keep a light track.
+            Color(white: 0.88)
+                .frame(width: diameter, height: diameter)
+                .mask { track }
+        } else {
+            Color.clear
+                .frame(width: diameter, height: diameter)
+                .glassEffect(.regular, in: Circle())
+                .mask { track }
+        }
     }
 }
 
