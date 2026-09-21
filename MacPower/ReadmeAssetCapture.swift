@@ -87,9 +87,13 @@ enum ReadmeAssetCapture {
                 of: anchor.contentView!,
                 preferredEdge: .maxY
             )
-            try? await Task.sleep(for: .milliseconds(shot.motion == .off ? 500 : 1_050))
-            hosting.view.layoutSubtreeIfNeeded()
-            hosting.view.window?.displayIfNeeded()
+            // Give Liquid Glass / TimelineView time to settle before bitmap capture.
+            for _ in 0..<6 {
+                try? await Task.sleep(for: .milliseconds(500))
+                hosting.view.layoutSubtreeIfNeeded()
+                hosting.view.window?.layoutIfNeeded()
+                hosting.view.window?.displayIfNeeded()
+            }
             let dest = output.appendingPathComponent("\(shot.name).png")
             if captureView(hosting.view, to: dest) {
                 trimOpaqueContent(at: dest)
