@@ -127,6 +127,11 @@ struct SettingsView: View {
                 }
             Toggle("settings.popover.showRings", isOn: $appState.settings.showStatusRings)
             Toggle("settings.popover.showFlow", isOn: $appState.settings.showEnergyFlow)
+            Picker("settings.menuBar.rightClick", selection: $appState.settings.menuBarRightClickAction) {
+                ForEach(MenuBarRightClickAction.allCases) { action in
+                    Text(LocalizedStringKey(action.localizationKey)).tag(action)
+                }
+            }
             Toggle("settings.launchAtLogin", isOn: launchAtLoginBinding)
             Toggle("settings.updates.automatic", isOn: $appState.settings.automaticallyCheckForUpdates)
                 .onChange(of: appState.settings.automaticallyCheckForUpdates) { _, enabled in

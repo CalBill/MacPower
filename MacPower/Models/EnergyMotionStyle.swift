@@ -57,7 +57,7 @@ enum EnergyMotionStyle: String, CaseIterable, Identifiable, Sendable, Codable {
 
     /// Maps persisted values, including deleted light-band / comet styles and old keys.
     static func resolved(stored raw: String?) -> EnergyMotionStyle {
-        guard let raw, !raw.isEmpty else { return .sheen }
+        guard let raw, !raw.isEmpty else { return .filaments }
         if let style = EnergyMotionStyle(rawValue: raw) {
             return style
         }
@@ -67,7 +67,7 @@ enum EnergyMotionStyle: String, CaseIterable, Identifiable, Sendable, Codable {
         case "powder":
             return .particles
         default:
-            return .sheen
+            return .filaments
         }
     }
 }

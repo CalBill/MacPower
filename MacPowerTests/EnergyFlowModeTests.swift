@@ -437,7 +437,7 @@ final class EnergyMotionStyleTests: XCTestCase {
         let defaults = UserDefaults(suiteName: "MacPower.MotionStyleTests")!
         defaults.removePersistentDomain(forName: "MacPower.MotionStyleTests")
         let first = AppSettings(defaults: defaults)
-        XCTAssertEqual(first.motionStyle, .sheen)
+        XCTAssertEqual(first.motionStyle, .filaments)
         first.motionStyle = .particlesSolid
         let second = AppSettings(defaults: defaults)
         XCTAssertEqual(second.motionStyle, .particlesSolid)
@@ -454,8 +454,8 @@ final class EnergyMotionStyleTests: XCTestCase {
         XCTAssertEqual(AppSettings(defaults: defaults).motionStyle, .sheen)
         defaults.set("filaments", forKey: "motionStyle")
         XCTAssertEqual(AppSettings(defaults: defaults).motionStyle, .filaments)
-        XCTAssertEqual(EnergyMotionStyle.resolved(stored: nil), .sheen)
-        XCTAssertEqual(EnergyMotionStyle.resolved(stored: "unknown"), .sheen)
+        XCTAssertEqual(EnergyMotionStyle.resolved(stored: nil), .filaments)
+        XCTAssertEqual(EnergyMotionStyle.resolved(stored: "unknown"), .filaments)
         defaults.removePersistentDomain(forName: suite)
     }
 
@@ -477,7 +477,7 @@ final class EnergyMotionStyleTests: XCTestCase {
         XCTAssertEqual(try decoder.decode(EnergyMotionStyle.self, from: Data("\"comet\"".utf8)), .sheen)
         XCTAssertEqual(try decoder.decode(EnergyMotionStyle.self, from: Data("\"spark\"".utf8)), .sheen)
         XCTAssertEqual(try decoder.decode(EnergyMotionStyle.self, from: Data("\"powder\"".utf8)), .particles)
-        XCTAssertEqual(try decoder.decode(EnergyMotionStyle.self, from: Data("\"unknown\"".utf8)), .sheen)
+        XCTAssertEqual(try decoder.decode(EnergyMotionStyle.self, from: Data("\"unknown\"".utf8)), .filaments)
         XCTAssertEqual(try decoder.decode(EnergyMotionStyle.self, from: Data("\"sheen\"".utf8)), .sheen)
         XCTAssertEqual(try decoder.decode(EnergyMotionStyle.self, from: Data("\"filamentsSolid\"".utf8)), .filamentsSolid)
         let encoded = try JSONEncoder().encode(EnergyMotionStyle.filaments)
@@ -521,6 +521,18 @@ final class EnergyMotionStyleTests: XCTestCase {
         first.showPopoverArrow = false
         let second = AppSettings(defaults: defaults)
         XCTAssertFalse(second.showPopoverArrow)
+        defaults.removePersistentDomain(forName: suite)
+    }
+
+    func testMenuBarRightClickDefaultsToStatusMenuAndPersists() {
+        let suite = "MacPower.RightClickActionTests"
+        let defaults = UserDefaults(suiteName: suite)!
+        defaults.removePersistentDomain(forName: suite)
+        let first = AppSettings(defaults: defaults)
+        XCTAssertEqual(first.menuBarRightClickAction, .statusMenu)
+        first.menuBarRightClickAction = .openPanel
+        let second = AppSettings(defaults: defaults)
+        XCTAssertEqual(second.menuBarRightClickAction, .openPanel)
         defaults.removePersistentDomain(forName: suite)
     }
 

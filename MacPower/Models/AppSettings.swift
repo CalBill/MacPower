@@ -28,6 +28,7 @@ final class AppSettings {
         static let showPopoverArrow = "showPopoverArrow"
         static let showStatusRings = "showStatusRings"
         static let showEnergyFlow = "showEnergyFlow"
+        static let menuBarRightClickAction = "menuBarRightClickAction"
         static let automaticallyCheckForUpdates = "automaticallyCheckForUpdates"
         static let language = "appLanguage"
         static let appleLanguages = "AppleLanguages"
@@ -145,6 +146,10 @@ final class AppSettings {
 
     var showEnergyFlow: Bool {
         didSet { store.set(showEnergyFlow, forKey: Keys.showEnergyFlow) }
+    }
+
+    var menuBarRightClickAction: MenuBarRightClickAction {
+        didSet { store.set(menuBarRightClickAction.rawValue, forKey: Keys.menuBarRightClickAction) }
     }
 
     var automaticallyCheckForUpdates: Bool {
@@ -307,6 +312,10 @@ final class AppSettings {
             showEnergyFlow = defaults.bool(forKey: Keys.showEnergyFlow)
         }
 
+        menuBarRightClickAction = MenuBarRightClickAction.resolved(
+            stored: defaults.string(forKey: Keys.menuBarRightClickAction)
+        )
+
         if defaults.object(forKey: Keys.automaticallyCheckForUpdates) == nil {
             automaticallyCheckForUpdates = true
         } else {
@@ -325,6 +334,7 @@ final class AppSettings {
         language = AppLanguage.resolved(stored: defaults.string(forKey: Keys.language))
 
         store.set(resolvedMotion.rawValue, forKey: Keys.motionStyle)
+        store.set(menuBarRightClickAction.rawValue, forKey: Keys.menuBarRightClickAction)
         store.set(MenuBarIconStyle.from(outlined: outlined, digits: digits).rawValue, forKey: Keys.iconStyle)
         store.set(outlined, forKey: Keys.iconOutlined)
         store.set(digits.rawValue, forKey: Keys.digitPlacement)

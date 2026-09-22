@@ -36,7 +36,7 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
         if let button = statusItem.button {
             button.imagePosition = .imageLeft
             button.target = self
-            button.action = #selector(togglePopover)
+            button.action = #selector(handleStatusItemClick)
             button.sendAction(on: [.leftMouseUp, .rightMouseUp])
             configureHighlightAppearance(for: button)
             // Observe the app appearance — not the button's. Button
@@ -148,6 +148,16 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
     }
 
     @objc
+    private func handleStatusItemClick(_ sender: Any?) {
+        let isRightClick = NSApp.currentEvent?.type == .rightMouseUp
+        if isRightClick, appState.settings.menuBarRightClickAction == .statusMenu {
+            showStatusMenu()
+            return
+        }
+        togglePopover(sender)
+    }
+
+    @objc
     private func togglePopover(_ sender: Any?) {
         guard let button = statusItem.button else { return }
         if popover.isShown {
@@ -166,6 +176,35 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
         hugMenuBarIfArrowHidden()
         popover.contentViewController?.view.window?.makeKey()
+    }
+
+    private func showStatusMenu() {
+        guard let button = statusItem.button else { return }
+        if popover.isShown {
+            setStatusItemHighlighted(false)
+            popover.performClose(nil)
+        }
+
+        let menu = NSMenu()
+        let quitTitle = Localization.string("settings.quit", language: appState.settings.language)
+        let quitItem = NSMenuItem(
+            title: quitTitle,
+            action: #selector(quitApp),
+            keyEquivalent: "q"
+        )
+        quitItem.target = self
+        menu.addItem(quitItem)
+
+        if let event = NSApp.currentEvent {
+            NSMenu.popUpContextMenu(menu, with: event, for: button)
+        } else {
+            menu.popUp(positioning: nil, at: NSPoint(x: 0, y: button.bounds.height), in: button)
+        }
+    }
+
+    @objc
+    private func quitApp(_ sender: Any?) {
+        NSApp.terminate(sender)
     }
 
     func popoverDidShow(_ notification: Notification) {

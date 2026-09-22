@@ -16,6 +16,7 @@
 		1F38AC8223B7A29811F3B13E /* EnergyFlowModeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9B0E2FB7D8D2AA02DDF0C93 /* EnergyFlowModeTests.swift */; };
 		2A95F446F5027526CFD94321 /* MacPowerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 531C675B6E0118D153F44918 /* MacPowerApp.swift */; };
 		32BB523DC26D6D16D0B912B1 /* MenuBarBatteryIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA21DF4EFAFE0D26294AD728 /* MenuBarBatteryIcon.swift */; };
+		38428F7215DB5193836BEE52 /* MenuBarRightClickAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68905535D5587E5BC6B6240E /* MenuBarRightClickAction.swift */; };
 		4FFBD90B79C693E34CD8081F /* IconPackSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = C26090AEDCFA0FA04EE890E0 /* IconPackSettings.swift */; };
 		5C3C597B1BFA1822FD09B878 /* Compatibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3ED65D999AA01B5F39EEF59A /* Compatibility.swift */; };
 		5F595B872BFAA1196FE69194 /* UpdateChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0BE273AFEFD0F7B157013AE /* UpdateChecker.swift */; };
@@ -74,6 +75,7 @@
 		60C6B948DE1AAE52D2E5843A /* SystemSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemSnapshot.swift; sourceTree = "<group>"; };
 		657F5C7C59BE6E53B6C0E514 /* SystemMetricsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemMetricsService.swift; sourceTree = "<group>"; };
 		67BAA20C54FB8A583F882002 /* EnergyMotionStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnergyMotionStyle.swift; sourceTree = "<group>"; };
+		68905535D5587E5BC6B6240E /* MenuBarRightClickAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarRightClickAction.swift; sourceTree = "<group>"; };
 		7A5D8AFD1B7F1B45F51B583B /* EnergyFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnergyFlowView.swift; sourceTree = "<group>"; };
 		7CE2A6B6480F8B121ADADF81 /* MacPower.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MacPower.entitlements; sourceTree = "<group>"; };
 		7F32418AF410C0C43E82CEC2 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
@@ -195,6 +197,7 @@
 				67BAA20C54FB8A583F882002 /* EnergyMotionStyle.swift */,
 				C26090AEDCFA0FA04EE890E0 /* IconPackSettings.swift */,
 				C238426EC73D173324F283A9 /* MenuBarIconStyle.swift */,
+				68905535D5587E5BC6B6240E /* MenuBarRightClickAction.swift */,
 				D2B191D2207AFED12081FC6F /* PopoverTintSettings.swift */,
 				424B895D8EAD698D2709E1C4 /* PowerSnapshot.swift */,
 				FF03A797B593CCB6B7A1D748 /* SavedTintLibrary.swift */,
@@ -336,6 +339,7 @@
 				2A95F446F5027526CFD94321 /* MacPowerApp.swift in Sources */,
 				32BB523DC26D6D16D0B912B1 /* MenuBarBatteryIcon.swift in Sources */,
 				CE824792B085DE3B56568E98 /* MenuBarIconStyle.swift in Sources */,
+				38428F7215DB5193836BEE52 /* MenuBarRightClickAction.swift in Sources */,
 				D00A2FB9CA62CEB4F9D8AE67 /* PopoverRootView.swift in Sources */,
 				121DC64F59FA1C1EB941860E /* PopoverTintSettings.swift in Sources */,
 				F49AC23404C038E06308DDDA /* PowerSnapshot.swift in Sources */,
