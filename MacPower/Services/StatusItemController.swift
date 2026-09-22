@@ -25,8 +25,12 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
         popover.behavior = .transient
         popover.animates = true
         popover.delegate = self
-        hosting.sizingOptions = [.intrinsicContentSize]
+        // Empty options: we set `popover.contentSize` ourselves before each show.
+        // Relying on intrinsicContentSize alone left Sequoia with a too-narrow
+        // frame, and SwiftUI then centered/clipped the 420pt panel on both sides.
+        hosting.sizingOptions = []
         popover.contentViewController = hosting
+        popover.contentSize = NSSize(width: PopoverLayout.width, height: 1)
         applyAnchorPreference()
 
         if let button = statusItem.button {
@@ -59,9 +63,14 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
 
     func applyLocalization() {
         let replacement = NSHostingController(rootView: PopoverRootView(appState: appState))
-        replacement.sizingOptions = [.intrinsicContentSize]
+        replacement.sizingOptions = []
         popover.contentViewController = replacement
         hosting = replacement
+        if popover.isShown {
+            syncPopoverContentSize()
+        } else {
+            popover.contentSize = NSSize(width: PopoverLayout.width, height: 1)
+        }
         refreshIcon(force: true)
     }
 
@@ -69,6 +78,8 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
         applyAnchorPreference()
         guard popover.isShown, let button = statusItem.button else { return }
         applyArrowHeight(hidden: !appState.settings.showPopoverArrow)
+        // Remeasure before re-show so width stays locked at PopoverLayout.width.
+        syncPopoverContentSize()
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
         hugMenuBarIfArrowHidden()
     }
@@ -146,7 +157,12 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
         }
         appState.setPopoverOpen(true)
         setStatusItemHighlighted(true)
-        applyArrowVisibility()
+        // Re-assign so SwiftUI builds the open layout before we measure; Observation
+        // alone can defer the swap past the first sizeThatFits on macOS 15.
+        hosting.rootView = PopoverRootView(appState: appState)
+        applyAnchorPreference()
+        applyArrowHeight(hidden: !appState.settings.showPopoverArrow)
+        syncPopoverContentSize()
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
         hugMenuBarIfArrowHidden()
         popover.contentViewController?.view.window?.makeKey()
@@ -155,9 +171,27 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
     func popoverDidShow(_ notification: Notification) {
         if !appState.isPopoverOpen {
             appState.setPopoverOpen(true)
+            hosting.rootView = PopoverRootView(appState: appState)
+            syncPopoverContentSize()
         }
         setStatusItemHighlighted(true)
         hugMenuBarIfArrowHidden()
+    }
+
+    /// Lock width to the SwiftUI design width and take height from the hosting view.
+    /// Must run while the open content graph is mounted, ideally before `show`.
+    private func syncPopoverContentSize() {
+        if #available(macOS 15.0, *) {
+            hosting.view.window?.updateConstraintsIfNeeded()
+        }
+        hosting.view.layoutSubtreeIfNeeded()
+        let fitted = hosting.sizeThatFits(
+            in: NSSize(width: PopoverLayout.width, height: CGFloat.greatestFiniteMagnitude)
+        )
+        popover.contentSize = NSSize(
+            width: PopoverLayout.width,
+            height: max(ceil(fitted.height), 1)
+        )
     }
 
     func popoverDidClose(_ notification: Notification) {

@@ -1,5 +1,13 @@
 import SwiftUI
 
+enum PopoverLayout {
+    /// Fixed panel width shared with `StatusItemController` so NSPopover's
+    /// `contentSize` cannot drift narrower than the SwiftUI layout (macOS 15
+    /// was clipping both sides when intrinsic width failed to propagate).
+    static let width: CGFloat = 420
+    static let padding: CGFloat = 14
+}
+
 struct PopoverRootView: View {
     @Bindable var appState: AppState
     @Environment(\.colorScheme) private var colorScheme
@@ -9,14 +17,14 @@ struct PopoverRootView: View {
             if appState.isPopoverOpen {
                 let theme = AppTheme.resolved(palette: appState.settings.palette, colorScheme: colorScheme)
                 content(theme: theme)
-                    .padding(14)
-                    .frame(width: 420)
+                    .padding(PopoverLayout.padding)
+                    .frame(width: PopoverLayout.width)
                     .fixedSize(horizontal: false, vertical: true)
             } else {
                 // Keep the hosting graph mounted, but never build glass / TimelineView
                 // while the menu extra is idle. Interactive Liquid Glass in a hidden
                 // NSPopover was burning CPU and UAFing NSViewFocusProxy ~2s after launch.
-                Color.clear.frame(width: 420, height: 1)
+                Color.clear.frame(width: PopoverLayout.width, height: 1)
             }
         }
         .environment(\.locale, appState.settings.resolvedLocale)
