@@ -38,10 +38,16 @@ final class AppSettings {
     @ObservationIgnored
     private let store: UserDefaults
 
+    /// Menu-bar glyph fields changed (outline / digits / tint / charge glyphs).
+    /// Wired by `AppState` so we never need a polling snapshot watch.
+    @ObservationIgnored
+    var onMenuBarChromeChange: (() -> Void)?
+
     var iconOutlined: Bool {
         didSet {
             store.set(iconOutlined, forKey: Keys.iconOutlined)
             store.set(iconStyle.rawValue, forKey: Keys.iconStyle)
+            onMenuBarChromeChange?()
         }
     }
 
@@ -49,6 +55,7 @@ final class AppSettings {
         didSet {
             store.set(digitPlacement.rawValue, forKey: Keys.digitPlacement)
             store.set(iconStyle.rawValue, forKey: Keys.iconStyle)
+            onMenuBarChromeChange?()
         }
     }
 
@@ -59,6 +66,7 @@ final class AppSettings {
     var menuBarTint: MenuBarTintScheme {
         didSet {
             persistTint()
+            onMenuBarChromeChange?()
         }
     }
 
@@ -121,7 +129,10 @@ final class AppSettings {
     private var isApplyingSavedIcon = false
 
     var showChargeGlyphs: Bool {
-        didSet { store.set(showChargeGlyphs, forKey: Keys.showChargeGlyphs) }
+        didSet {
+            store.set(showChargeGlyphs, forKey: Keys.showChargeGlyphs)
+            onMenuBarChromeChange?()
+        }
     }
 
     var motionStyle: EnergyMotionStyle {

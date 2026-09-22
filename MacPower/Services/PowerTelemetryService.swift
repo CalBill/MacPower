@@ -293,8 +293,9 @@ final class PowerTelemetryService {
 
     private func scheduleIdleTimer() {
         // IOPS notifications cover plug/charge flips; this is only a backup for
-        // integer percent drift while the panel is closed.
-        idleTimer = makeTimer(interval: 60, tolerance: 15, selector: #selector(handleIdleTimer))
+        // integer percent drift while the panel is closed. Keep it rare so App Nap
+        // is not woken every minute for a full AppleSmartBattery read.
+        idleTimer = makeTimer(interval: 300, tolerance: 60, selector: #selector(handleIdleTimer))
     }
 
     private func makeTimer(interval: TimeInterval, tolerance: TimeInterval, selector: Selector) -> Timer {

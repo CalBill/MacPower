@@ -16,7 +16,6 @@ struct MacPowerApp: App {
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var appState: AppState?
     private var statusItemController: StatusItemController?
-    private var snapshotWatch: Task<Void, Never>?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         #if DEBUG
@@ -35,23 +34,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         state.onMenuBarNeedsRefresh = { [weak statusItemController] in
             statusItemController?.refreshIcon()
         }
-        // Rare backup for settings edits that don't push a telemetry tick.
-        snapshotWatch = Task { [weak self, weak state] in
-            guard let state else { return }
-            var last = MenuBarIconKey(state)
-            while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(5))
-                let key = MenuBarIconKey(state)
-                guard key != last else { continue }
-                last = key
-                self?.statusItemController?.refreshIcon()
-            }
-        }
         statusItemController?.refreshIcon(force: true)
     }
 
     func applicationWillTerminate(_ notification: Notification) {
-        snapshotWatch?.cancel()
         appState?.stopAutomaticUpdateChecks()
         appState?.telemetry.stop()
         appState?.metricsService.stop()

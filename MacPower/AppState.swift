@@ -38,6 +38,9 @@ final class AppState {
         metricsService.onChange = { [weak self] metrics in
             self?.metrics = metrics
         }
+        settings.onMenuBarChromeChange = { [weak self] in
+            self?.onMenuBarNeedsRefresh?()
+        }
         telemetry.start()
         metricsService.start()
         launchAtLoginEnabled = SMAppService.mainApp.status == .enabled
