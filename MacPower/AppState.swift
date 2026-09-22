@@ -27,6 +27,8 @@ final class AppState {
     private var updateCheckLoop: Task<Void, Never>?
 
     private var settingsWindow: NSWindow?
+    @ObservationIgnored
+    private var settingsCloseObserver: NSObjectProtocol?
 
     init() {
         telemetry.onChange = { [weak self] snapshot in
@@ -128,20 +130,61 @@ final class AppState {
     }
 
     func openSettings() {
+        // Accessory (menu-bar-only) apps on macOS 15 often create the window but
+        // never surface it. Flip to regular briefly so AppKit will key/activate.
+        NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
+
         if let settingsWindow {
             settingsWindow.makeKeyAndOrderFront(nil)
+            settingsWindow.orderFrontRegardless()
             return
         }
+
         let hosting = NSHostingController(rootView: SettingsView(appState: self))
         hosting.sizingOptions = [.intrinsicContentSize]
         let window = NSWindow(contentViewController: hosting)
         window.styleMask = [.titled, .closable, .fullSizeContentView]
         window.title = Localization.string("settings.title", language: settings.language)
         window.isReleasedWhenClosed = false
+
+        // Sequoia lays out hosting controllers lazily; measure before center or
+        // the window can open at ~0 size and look like a no-op.
+        if #available(macOS 15.0, *) {
+            window.updateConstraintsIfNeeded()
+        }
+        window.layoutIfNeeded()
+        let fitted = hosting.sizeThatFits(
+            in: NSSize(width: 440, height: CGFloat.greatestFiniteMagnitude)
+        )
+        window.setContentSize(
+            NSSize(width: 440, height: max(ceil(fitted.height), 120))
+        )
         window.center()
         window.makeKeyAndOrderFront(nil)
+        window.orderFrontRegardless()
         settingsWindow = window
+        observeSettingsWindowClose(window)
+    }
+
+    private func observeSettingsWindowClose(_ window: NSWindow) {
+        if let settingsCloseObserver {
+            NotificationCenter.default.removeObserver(settingsCloseObserver)
+        }
+        settingsCloseObserver = NotificationCenter.default.addObserver(
+            forName: NSWindow.willCloseNotification,
+            object: window,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                self?.handleSettingsWindowClosed()
+            }
+        }
+    }
+
+    private func handleSettingsWindowClosed() {
+        // Return to menu-bar-only once settings is gone.
+        NSApp.setActivationPolicy(.accessory)
     }
 
     func refreshLocalizedChrome() {
