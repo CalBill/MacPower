@@ -1,0 +1,3 @@
+First launch, settings open on the tutorial: 0.10% CPU, memory 119 MB
+Menu bar only, panel closed: 0.12% CPU, memory 77 MB
+system_profiler Bluetooth read: 0.07s CPU, 0.29s wall each

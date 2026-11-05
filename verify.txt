@@ -1,0 +1,61 @@
+PASS An empty outlined battery has a transparent interior
+PASS Charge fills only the used fraction
+PASS A transparent gutter separates the fill from the border at 100%
+PASS The native outline retains its half-opacity stroke
+PASS The terminal stays detached from the frame
+PASS The native terminal retains its opacity
+PASS The outlined charging bolt remains visible over an empty battery
+PASS systemFill: an empty battery keeps a slightly dimmer, visible backing
+PASS systemFill: spent charge remains visible without changing charged fill
+PASS classicBeside: an empty battery keeps a slightly dimmer, visible backing
+PASS classicBeside: spent charge remains visible without changing charged fill
+PASS systemFill, charging=false: the terminal stays dim near and at full charge
+PASS systemFill, charging=true: the terminal stays dim near and at full charge
+PASS classicBeside, charging=false: the terminal stays dim near and at full charge
+PASS classicBeside, charging=true: the terminal stays dim near and at full charge
+PASS systemPercentInside, charging=false: the terminal stays at the measured opacity near and at full charge
+PASS systemPercentInside, charging=true: the terminal stays at the measured opacity near and at full charge
+PASS systemPercentInside: an empty battery keeps the measured 0.50 backing
+PASS The 2.1.1 borderless bolt still extends beyond the battery body
+PASS Inside digits remain visible without a gray backing
+PASS Borderless digits keep about 10.5% of the backing and stay antialiased
+PASS Colored charge is yellow
+PASS Colored outlined battery keeps a neutral frame
+PASS Colored outlined battery keeps a neutral terminal
+PASS Colored borderless battery keeps a neutral empty region
+PASS Colored borderless battery keeps a neutral terminal
+PASS Colored outlined battery keeps a neutral charging bolt
+PASS Colored frame adapts to light appearance
+PASS Colored frame adapts to dark appearance
+PASS Custom gradients still flow from left to right
+  inside digits: ["11x15", "12x15"] area 149
+PASS Borderless inside digits match the system's 15px ink height and 11px glyph width
+PASS Borderless inside digits match the system's stroke weight
+  inside bolt: 9x14 (16 at 0.12), widest row 8, area 43, gap 2
+PASS The inside bolt keeps a 9px core and the system's 16px tips
+PASS The inside bolt matches the system's ink area
+PASS The inside bolt has the system's wide middle bar
+PASS The inside bolt sits as close to the digits as the system's
+  100% runs: ["2-7 6x15 area 38", "11-21 11x15 area 72", "24-34 11x15 area 72"]
+PASS Three idle inside digits match the system's 15px height and 6px / 11px widths
+PASS Three idle inside digits keep the system's 3px and 2px spacing
+PASS Three idle inside digits match the system's stroke weight
+  100% charging runs: ["0-2 3x13 area 24", "6-15 10x13 area 57", "18-27 10x13 area 57", "31-36 6x12 area 27"]
+PASS Three inside digits match the system's 13px height and 9-10px zeros
+PASS Three inside digits keep the system's 3px and 2px spacing
+  100% bolt rows: ["1.0", "1.4", "1.8", "2.1", "2.5", "4.7", "5.3", "2.4", "2.1", "1.8", "1.4", "1.0"]
+PASS The three-digit bolt keeps the system's 12px height and a 6-9px core
+PASS The three-digit bolt matches the system's ink area
+PASS The three-digit bolt has the system's thin stems and two-pixel middle bar
+PASS The three-digit bolt sits as close to the digits as the system's
+  100% charging ink columns: 4-42 in a 1-46px body
+PASS Three digits and the bolt still fit inside the 23pt body
+  top edge starts: circular 3.65, body 4.15
+PASS The borderless body uses continuous corners of a similar size
+  percent-inside top edge starts: circular 3.65, body 3.65
+PASS The percent-inside body uses a 4.04pt circular corner
+  outlined top edge starts: circular 3.0, frame 4.0
+PASS The outlined frame keeps a similar corner size
+PASS Battery frames stay drawn in code instead of the PDF outline
+PASS Outlined and other borderless bodies keep continuous corners
+PASS Only the percent-inside body opts into a circular corner
