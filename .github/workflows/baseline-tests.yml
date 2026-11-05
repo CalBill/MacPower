@@ -1,0 +1,22 @@
+name: Baseline tests (Claude)
+on:
+  push:
+    branches: ['claude/ci-baseline']
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: macos-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test
+        run: |
+          set -o pipefail
+          xcodebuild test -project MacPower.xcodeproj -scheme MacPower -destination 'platform=macOS' -derivedDataPath DerivedData \
+            CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM= CODE_SIGNING_ALLOWED=YES > test.log 2>&1 || {
+              grep -E "error: -\[" test.log | sed "s#$GITHUB_WORKSPACE/##" | sed -E 's/.*-\[MacPowerTests\.([A-Za-z]+) ([A-Za-z0-9_]+)\].*/\1.\2/' | sort -u > fails.txt
+              echo "::error title=Failing tests::$(awk 'BEGIN{ORS="%0A"} {print}' fails.txt)"
+              exit 1
+            }
+          grep -E "Executed [0-9]+ tests" test.log | tail -1 | sed 's/^/::notice title=Tests::/'
