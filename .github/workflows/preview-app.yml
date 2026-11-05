@@ -1,0 +1,90 @@
+name: Preview app (Claude)
+
+# Throwaway: builds a Release copy of the branch for a local look, and pushes
+# it as a tarball to claude/ci-app-out.
+on:
+  push:
+    branches: ['claude/ci-app']
+
+permissions:
+  contents: write
+
+jobs:
+  app:
+    runs-on: macos-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project MacPower.xcodeproj \
+            -scheme MacPower \
+            -configuration Release \
+            -destination 'generic/platform=macOS' \
+            -derivedDataPath DerivedData \
+            ARCHS="arm64 x86_64" ONLY_ACTIVE_ARCH=NO \
+            PRODUCT_BUNDLE_IDENTIFIER=app.macpower.SettingsPreviewb4378cb \
+            PRODUCT_NAME=MacPowerSettingsPreview \
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY=- \
+            DEVELOPMENT_TEAM= \
+            CODE_SIGNING_ALLOWED=YES > build.log 2>&1 || {
+              grep -E '(^|: )error: ' build.log | sort -u | head -20 > errors.txt
+              echo "::error title=Build failed::$(awk 'BEGIN{ORS="%0A"} {print}' errors.txt)"
+              exit 1
+            }
+      - name: Package
+        run: |
+          app=DerivedData/Build/Products/Release/MacPowerSettingsPreview.app
+          codesign --verify --deep --strict "$app" && echo "::notice title=Signature::ok" || echo "::warning title=Signature::verify failed"
+          /usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' "$app/Contents/Info.plist" | sed 's/^/::notice title=Bundle::/'
+          mkdir out
+          tar -czf out/MacPower-settings-pages-preview.tar.gz -C DerivedData/Build/Products/Release MacPowerSettingsPreview.app
+          ls -la out
+          cd out
+          git init -q
+          git config user.name ci
+          git config user.email ci@example.com
+          git add -A
+          git commit -q -m "preview app ${GITHUB_SHA}"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" HEAD:refs/heads/claude/ci-app-out
+      - name: Verify menu bar battery
+        run: |
+          swiftc -module-cache-path /tmp/macpower-swift-cache MacPower/Models/{EnergyFlowMode,SystemSnapshot,PowerSnapshot,MenuBarIconStyle}.swift MacPower/Views/MenuBarBatteryIcon.swift scripts/verify_menu_bar_battery.swift -o /tmp/verify-menu-bar-battery
+          /tmp/verify-menu-bar-battery > verify.txt 2>&1 || true
+          cat verify.txt
+          echo "::notice title=Battery checks::$(grep -c -i 'pass\|ok' verify.txt) ok, $(grep -c -i 'fail' verify.txt) failed"
+          grep -i 'fail' verify.txt | head -10 | sed 's/^/::warning title=Battery check::/' || true
+      - name: Energy probe
+        run: |
+          app=DerivedData/Build/Products/Release/MacPowerSettingsPreview.app/Contents/MacOS/MacPowerSettingsPreview
+          bid=$(/usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' DerivedData/Build/Products/Release/MacPowerSettingsPreview.app/Contents/Info.plist)
+          secs() { ps -o time= -p $1 | awk -F'[:.]' '{ if (NF==3) print $1*60+$2+$3/100; else print $1*3600+$2*60+$3+$4/100 }'; }
+          probe() {
+            "$app" & pid=$!
+            sleep 15
+            a=$(secs $pid); sleep 60; b=$(secs $pid)
+            rss=$(ps -o rss= -p $pid)
+            kill $pid; wait $pid 2>/dev/null || true
+            echo "$1: $(echo "$a $b" | awk '{printf "%.2f%% CPU", ($2-$1)/60*100}'), memory $((rss/1024)) MB" | tee -a energy.txt
+          }
+          probe "First launch, settings open on the tutorial"
+          defaults write "$bid" didCompleteWelcomeGuide -bool true
+          defaults write "$bid" lastLaunchedMarketingVersion "$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' DerivedData/Build/Products/Release/MacPowerSettingsPreview.app/Contents/Info.plist)"
+          probe "Menu bar only, panel closed"
+          for i in 1 2 3; do /usr/bin/time -p system_profiler SPBluetoothDataType -json > /dev/null 2>> sp.txt; done
+          awk '/^user/{u+=$2} /^sys/{s+=$2} /^real/{r+=$2} END {printf "system_profiler Bluetooth read: %.2fs CPU, %.2fs wall each\n", (u+s)/3, r/3}' sp.txt | tee -a energy.txt
+          while read -r line; do echo "::notice title=Energy::$line"; done < energy.txt
+      - name: Publish probe results
+        if: always()
+        run: |
+          mkdir -p probe && cp verify.txt energy.txt probe/ 2>/dev/null || true
+          cd probe
+          git init -q
+          git config user.name ci
+          git config user.email ci@example.com
+          git add -A
+          git commit -q -m "probe ${GITHUB_SHA}"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" HEAD:refs/heads/claude/ci-probe-out
