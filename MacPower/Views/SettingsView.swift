@@ -5604,3 +5604,915 @@ private final class VerticallyCenteredTextFieldCell: NSTextFieldCell {
         )
     }
 }
+
+#if DEBUG
+// Throwaway: renders every settings page to PNG on the CI Mac. Not part of the feature branch.
+extension SettingsView {
+    init(appState: AppState, shotPane: String) {
+        self.init(appState: appState)
+        if let pane = Pane(rawValue: shotPane) {
+            _pane = State(initialValue: pane)
+        }
+    }
+}
+
+@MainActor
+enum SettingsShotCapture {
+    static func startIfNeeded() -> Bool {
+        guard let flag = CommandLine.arguments.first(where: { $0.hasPrefix("--settings-shots=") }) else { return false }
+        let dir = URL(fileURLWithPath: String(flag.dropFirst("--settings-shots=".count)), isDirectory: true)
+        NSApp.setActivationPolicy(.regular)
+        ProcessInfo.processInfo.disableAutomaticTermination("settings-shots")
+        Task { await run(dir) }
+        return true
+    }
+
+    private static func write(_ view: NSView, to url: URL) {
+        let bounds = view.bounds
+        guard let rep = NSBitmapImageRep(
+            bitmapDataPlanes: nil,
+            pixelsWide: Int(bounds.width * 2),
+            pixelsHigh: Int(bounds.height * 2),
+            bitsPerSample: 8,
+            samplesPerPixel: 4,
+            hasAlpha: true,
+            isPlanar: false,
+            colorSpaceName: .deviceRGB,
+            bytesPerRow: 0,
+            bitsPerPixel: 0
+        ) else { return }
+        rep.size = bounds.size
+        view.cacheDisplay(in: bounds, to: rep)
+        try? rep.representation(using: .png, properties: [:])?.write(to: url)
+    }
+
+    private static func scrollViews(in view: NSView) -> [NSScrollView] {
+        var found: [NSScrollView] = []
+        if let scroll = view as? NSScrollView { found.append(scroll) }
+        for sub in view.subviews { found.append(contentsOf: scrollViews(in: sub)) }
+        return found
+    }
+
+    private static func shoot<V: View>(_ view: V, size: NSSize, dark: Bool, to url: URL) async {
+        let hosting = NSHostingView(
+            rootView: view
+                .environment(\.colorScheme, dark ? .dark : .light)
+                .environment(\.readmeGalleryCapture, true)
+        )
+        let window = NSWindow(
+            contentRect: NSRect(origin: NSPoint(x: 0, y: 0), size: size),
+            styleMask: [.borderless],
+            backing: .buffered,
+            defer: false
+        )
+        window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
+        window.backgroundColor = .windowBackgroundColor
+        window.contentView = hosting
+        hosting.frame = NSRect(origin: .zero, size: size)
+        window.orderFrontRegardless()
+        for _ in 0..<4 {
+            try? await Task.sleep(for: .milliseconds(350))
+            hosting.layoutSubtreeIfNeeded()
+            window.displayIfNeeded()
+        }
+        write(hosting, to: url)
+        // Then the rest of a long page, one screen at a time.
+        let detail = scrollViews(in: hosting)
+            .filter { $0.convert($0.bounds, to: hosting).minX > 200 }
+            .max { ($0.documentView?.frame.height ?? 0) < ($1.documentView?.frame.height ?? 0) }
+        if let detail, let document = detail.documentView {
+            let visible = detail.contentView.bounds.height
+            var offset: CGFloat = 0
+            var page = 2
+            while offset + visible < document.frame.height - 1, page < 8 {
+                offset = min(offset + visible - 60, document.frame.height - visible)
+                detail.contentView.scroll(to: NSPoint(x: 0, y: offset))
+                detail.reflectScrolledClipView(detail.contentView)
+                try? await Task.sleep(for: .milliseconds(300))
+                hosting.layoutSubtreeIfNeeded()
+                window.displayIfNeeded()
+                let name = url.deletingPathExtension().lastPathComponent + "-\(page).png"
+                write(hosting, to: url.deletingLastPathComponent().appendingPathComponent(name))
+                page += 1
+            }
+        }
+        window.orderOut(nil)
+    }
+
+    private static func run(_ dir: URL) async {
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let state = AppState()
+        state.telemetry.stop()
+        state.metricsService.stop()
+        state.telemetry.onChange = nil
+        state.metricsService.onChange = nil
+        state.settings.language = .simplifiedChinese
+        state.metrics = SystemSnapshot(cpuPercent: 19, gpuPercent: 31, memoryPercent: 67)
+        state.snapshot = PowerSnapshot(
+            hasBattery: true, percent: 62, isCharging: false, externalConnected: false, fullyCharged: false,
+            adapterCeilingWatts: 0, adapterInWatts: 0, systemLoadWatts: 12, batteryWatts: -12,
+            remainingCapacityWh: 40, missingCapacityWh: 20, systemTimeToEmptyMinutes: 245, systemTimeToFullMinutes: nil,
+            timeToEmptyMinutes: 245, timeToFullMinutes: nil, flowMode: .discharging
+        )
+        let panes = ["general", "menuBar", "panel", "rings", "flow", "topApps", "lowPower", "localIP", "batteryCycle", "tutorial", "about"]
+        for dark in [false, true] {
+            NSApp.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
+            for pane in panes {
+                let height: CGFloat = pane == "tutorial" ? 760 : 2600
+                await shoot(
+                    SettingsView(appState: state, shotPane: pane),
+                    size: NSSize(width: SettingsColumn.width, height: height),
+                    dark: dark,
+                    to: dir.appendingPathComponent("\(dark ? "dark" : "light")-\(pane).png")
+                )
+            }
+            let band = MenuBarTintBand(throughPercent: 20, swatch: .systemYellow, blend: .slide, lowRight: .systemRed)
+            let editor = TintSegmentEditor(
+                band: band,
+                lower: 10,
+                previous: nil,
+                language: .simplifiedChinese,
+                rangeKey: "settings.tint.segment.range %lld %lld",
+                captionKey: "settings.tint.segment.caption",
+                atKey: "settings.tint.color.at %lld",
+                followName: "settings.tint.menuBarDefault",
+                followNote: "settings.tint.menuBarDefault.note",
+                canDelete: true,
+                upperRange: 11...99,
+                onSetUpper: { _ in },
+                onChange: { _ in },
+                onDelete: {}
+            ) {
+                Circle().fill(Color.yellow).frame(width: 20, height: 20)
+            }
+            .background(Color(nsColor: .windowBackgroundColor))
+            .environment(\.locale, Locale(identifier: "zh-Hans"))
+            await shoot(editor, size: NSSize(width: 380, height: 520), dark: dark, to: dir.appendingPathComponent("\(dark ? "dark" : "light")-segment-editor.png"))
+        }
+        NSApp.terminate(nil)
+    }
+}
+#endif
+
+#if DEBUG
+// Throwaway: presses the settings controls through accessibility, the way
+// VoiceOver would, and checks that each one changed what it claims to.
+@MainActor
+final class SettingsUITest {
+    static func startIfNeeded() -> Bool {
+        guard let flag = CommandLine.arguments.first(where: { $0.hasPrefix("--settings-ui-test=") }) else { return false }
+        let dir = URL(fileURLWithPath: String(flag.dropFirst("--settings-ui-test=".count)), isDirectory: true)
+        NSApp.setActivationPolicy(.regular)
+        ProcessInfo.processInfo.disableAutomaticTermination("settings-ui-test")
+        reportDir = dir
+        Task { @MainActor in
+            let test = SettingsUITest()
+            await test.run()
+            try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+            try? test.lines.joined(separator: "\n").write(to: dir.appendingPathComponent("ui-test.txt"), atomically: true, encoding: .utf8)
+            try? test.debugLines.joined(separator: "\n").write(to: dir.appendingPathComponent("ui-tree.txt"), atomically: true, encoding: .utf8)
+            NSApp.terminate(nil)
+        }
+        return true
+    }
+
+    let state = AppState()
+    var lines: [String] = []
+    var window: NSWindow?
+    var hosting: NSView?
+    var passed = 0
+    var failed = 0
+
+    init() {
+        state.telemetry.stop()
+        state.metricsService.stop()
+        state.telemetry.onChange = nil
+        state.metricsService.onChange = nil
+        state.settings.language = .simplifiedChinese
+    }
+
+    func L(_ key: String, _ args: CVarArg...) -> String {
+        let plain = Localization.string(key, language: .simplifiedChinese)
+        guard !args.isEmpty else { return plain }
+        let template = plain
+            .replacingOccurrences(of: "%", with: "%%")
+            .replacingOccurrences(of: "%%lld", with: "%lld")
+            .replacingOccurrences(of: "%%@", with: "%@")
+        return String(format: template, locale: AppLanguage.simplifiedChinese.resolvedLocale, arguments: args)
+    }
+
+    func sleep(_ ms: Int) async { try? await Task.sleep(for: .milliseconds(ms)) }
+
+    func check(_ name: String, _ ok: Bool, _ detail: String = "") {
+        if ok { passed += 1 } else { failed += 1 }
+        lines.append("\(ok ? "PASS" : "FAIL") \(name)\(detail.isEmpty ? "" : " — \(detail)")")
+    }
+
+    // MARK: Accessibility, asked the way VoiceOver asks: through the AX API, off the main thread
+
+    func scrollTo(_ fraction: CGFloat) async {
+        guard let hosting else { return }
+        func scrolls(_ v: NSView) -> [NSScrollView] {
+            var found: [NSScrollView] = []
+            if let s = v as? NSScrollView { found.append(s) }
+            for sub in v.subviews { found += scrolls(sub) }
+            return found
+        }
+        guard let scroll = scrolls(hosting)
+            .filter({ $0.convert($0.bounds, to: hosting).minX > 200 })
+            .max(by: { ($0.documentView?.frame.height ?? 0) < ($1.documentView?.frame.height ?? 0) }),
+              let document = scroll.documentView else { return }
+        let range = max(0, document.frame.height - scroll.contentView.bounds.height)
+        scroll.contentView.scroll(to: NSPoint(x: 0, y: range * fraction))
+        scroll.reflectScrolledClipView(scroll.contentView)
+        await sleep(250)
+    }
+
+    /// In-process AX calls may be answered on the calling thread; if the main
+    /// thread gets a quick answer, every query runs there.
+    static var axOnMain = false
+    static var probed = false
+
+    func probeAX() {
+        guard !Self.probed else { return }
+        Self.probed = true
+        let app = AXUIElementCreateApplication(getpid())
+        AXUIElementSetMessagingTimeout(app, 2)
+        let start = Date()
+        var value: CFTypeRef?
+        let err = AXUIElementCopyAttributeValue(app, kAXWindowsAttribute as CFString, &value)
+        let elapsed = Date().timeIntervalSince(start)
+        let windows = (value as? [AXUIElement]) ?? []
+        Self.axOnMain = err == .success && elapsed < 1 && !windows.isEmpty
+        let line = "  ax probe on main: err \(err.rawValue), \(windows.count) windows, \(String(format: "%.3f", elapsed))s → \(Self.axOnMain ? "main" : "background")"
+        lines.append(line)
+        FileHandle.standardError.write(Data((line + "\n").utf8))
+    }
+
+    func hideStrays() {
+        for w in NSApp.windows where w.isVisible && w !== window && w.sheetParent == nil
+            && !String(describing: type(of: w)).contains("Popover") && !String(describing: type(of: w)).contains("StatusBar") {
+            w.orderOut(nil)
+        }
+    }
+
+    func axSearch(_ text: String, role: String?, all: Bool = false) async -> [AXBox] {
+        let pid = getpid()
+        hideStrays()
+        if Self.axOnMain { return AXQ.search(pid: pid, text: text, role: role, all: all) }
+        return await Task.detached { AXQ.search(pid: pid, text: text, role: role, all: all) }.value
+    }
+
+    func perform(_ e: AXBox, _ action: String) async -> Bool {
+        if Self.axOnMain { return AXUIElementPerformAction(e.element, action as CFString) == .success }
+        return await Task.detached { AXUIElementPerformAction(e.element, action as CFString) == .success }.value
+    }
+
+    /// Finds an element, scrolling the page from top to bottom until it shows up.
+    func find(_ text: String, role: String? = nil, in root: AnyObject? = nil) async -> AXBox? {
+        if let hit = await axSearch(text, role: role).first { return hit }
+        for step in 0...8 {
+            await scrollTo(CGFloat(step) / 8)
+            if let hit = await axSearch(text, role: role).first { return hit }
+        }
+        return nil
+    }
+
+    func count(_ text: String, role: String? = nil) -> Int {
+        let pid = getpid()
+        if Self.axOnMain { return AXQ.search(pid: pid, text: text, role: role, all: true).count }
+        let semaphoreResult = SyncBox()
+        Thread.detachNewThread {
+            semaphoreResult.value = AXQ.search(pid: pid, text: text, role: role, all: true).count
+            semaphoreResult.done.signal()
+        }
+        while semaphoreResult.done.wait(timeout: .now() + 0.01) == .timedOut {
+            RunLoop.main.run(mode: .default, before: Date(timeIntervalSinceNow: 0.01))
+        }
+        return semaphoreResult.value
+    }
+
+    @discardableResult
+    func press(_ text: String, role: String? = "AXButton", in root: AnyObject? = nil) async -> Bool {
+        var hit = await find(text, role: role)
+        if hit == nil, role != nil, let loose = await axSearch(text, role: nil).first(where: { ["AXLink", "AXButton", "AXCheckBox", "AXRadioButton", "AXPopUpButton", "AXMenuButton"].contains(AXQ.string($0.element, kAXRoleAttribute)) }) {
+            lines.append("  (found “\(text)” as \(AXQ.string(loose.element, kAXRoleAttribute)))")
+            hit = loose
+        }
+        guard let e = hit else {
+            lines.append("  ? not found: \(role ?? "any") “\(text)”")
+            return false
+        }
+        await reveal(e)
+        let ok = await perform(e, kAXPressAction)
+        await sleep(500)
+        if !ok { lines.append("  ? press refused: \(role ?? "") “\(text)”") }
+        return ok
+    }
+
+    /// Scrolls so the element sits mid-window; a popover will not open on an anchor that is clipped away.
+    func reveal(_ e: AXBox) async {
+        guard let window, let hosting else { return }
+        var pos = CGPoint.zero, size = CGSize.zero
+        guard let pv = AXQ.attribute(e.element, kAXPositionAttribute), let sv = AXQ.attribute(e.element, kAXSizeAttribute),
+              AXValueGetValue(pv as! AXValue, .cgPoint, &pos), AXValueGetValue(sv as! AXValue, .cgSize, &size) else { return }
+        let screenTop = (NSScreen.screens.first?.frame.height ?? 0)
+        let windowTop = screenTop - window.frame.maxY
+        let relY = pos.y + size.height / 2 - windowTop
+        guard relY < 120 || relY > 560 else { return }
+        func scrolls(_ v: NSView) -> [NSScrollView] {
+            var found: [NSScrollView] = []
+            if let s = v as? NSScrollView { found.append(s) }
+            for sub in v.subviews { found += scrolls(sub) }
+            return found
+        }
+        guard let scroll = scrolls(hosting).filter({ $0.convert($0.bounds, to: hosting).minX > 200 })
+            .max(by: { ($0.documentView?.frame.height ?? 0) < ($1.documentView?.frame.height ?? 0) }),
+              let document = scroll.documentView else { return }
+        let range = max(0, document.frame.height - scroll.contentView.bounds.height)
+        let target = min(range, max(0, scroll.contentView.bounds.origin.y + (relY - 340)))
+        scroll.contentView.scroll(to: NSPoint(x: 0, y: target))
+        scroll.reflectScrolledClipView(scroll.contentView)
+        await sleep(300)
+    }
+
+    func increment(_ text: String, role: String = "AXIncrementor", in root: AnyObject? = nil) async -> Bool {
+        guard let e = await find(text, role: role) else {
+            lines.append("  ? not found: \(role) “\(text)”")
+            return false
+        }
+        let ok = await perform(e, kAXIncrementAction)
+        await sleep(500)
+        return ok
+    }
+
+    func popoverRoot() -> NSView? {
+        NSApp.windows.first { $0.isVisible && String(describing: type(of: $0)).contains("Popover") }?.contentView
+    }
+
+    func waitPopover(_ ms: Int = 1500) async -> NSView? {
+        var waited = 0
+        while waited <= ms {
+            if let p = popoverRoot() { return p }
+            await sleep(100)
+            waited += 100
+        }
+        lines.append("  (no popover; windows: " + NSApp.windows.map { "\(type(of: $0))\($0.isVisible ? "+" : "-")" }.joined(separator: ", ") + ")")
+        return nil
+    }
+
+    /// Escape, the way a person dismisses a popover, so SwiftUI hears about it.
+    func closePopovers() async {
+        for w in NSApp.windows where w.isVisible && String(describing: type(of: w)).contains("Popover") {
+            w.makeKey()
+            if let esc = NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime,
+                                          windowNumber: w.windowNumber, context: nil, characters: "\u{1b}", charactersIgnoringModifiers: "\u{1b}",
+                                          isARepeat: false, keyCode: 53) {
+                w.sendEvent(esc)
+            }
+        }
+        await sleep(500)
+        for w in NSApp.windows where w.isVisible && String(describing: type(of: w)).contains("Popover") {
+            w.orderOut(nil)
+            lines.append("  (popover did not close on Escape)")
+        }
+        window?.makeKey()
+        await sleep(200)
+    }
+
+    /// Opens a pull-down or pop-up menu through AX and picks an item while the
+    /// menu is tracking: a timer in the common modes fires inside the menu's loop.
+    func pickChecked(_ item: String, from opener: String, role: String, verify: () -> Bool) async -> Bool {
+        let first = await pick(item, from: opener, role: role)
+        if first, verify() { return true }
+        lines.append("  (first try changed nothing, trying once more)")
+        let second = await pick(item, from: opener, role: role)
+        return second && verify()
+    }
+
+    func pick(_ item: String, from opener: String, role: String) async -> Bool {
+        guard let e = await find(opener, role: role) else {
+            lines.append("  ? not found: \(role) “\(opener)”")
+            return false
+        }
+        let box = MenuPick()
+        let observer = NotificationCenter.default.addObserver(forName: NSMenu.didBeginTrackingNotification, object: nil, queue: nil) { note in
+            nonisolated(unsafe) let menu = note.object as? NSMenu
+            MainActor.assumeIsolated { box.tracked = menu }
+        }
+        let pid = getpid()
+        let timer = Timer(timeInterval: 0.3, repeats: true) { t in
+            let finished = MainActor.assumeIsolated { () -> Bool in
+                box.attempts += 1
+                if let menu = box.tracked, let index = menu.items.firstIndex(where: { $0.title == item }) {
+                    box.how = "nsmenu"
+                    menu.performActionForItem(at: index)
+                    menu.cancelTracking()
+                    box.done = true
+                } else if let hit = AXQ.search(pid: pid, text: item, role: "AXMenuItem", all: false).first {
+                    box.how = AXUIElementPerformAction(hit.element, kAXPressAction as CFString) == .success ? "ax" : "ax-refused"
+                    box.done = true
+                } else if box.attempts > 14 {
+                    box.how = "missing; menu had: " + (box.tracked?.items.map(\.title).joined(separator: " / ") ?? "no menu")
+                    box.tracked?.cancelTracking()
+                    box.done = true
+                }
+                return box.done
+            }
+            if finished { t.invalidate() }
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        _ = AXUIElementPerformAction(e.element, kAXPressAction as CFString)
+        var waited = 0
+        while !box.done, waited < 6000 { await sleep(100); waited += 100 }
+        NotificationCenter.default.removeObserver(observer)
+        timer.invalidate()
+        await sleep(900)
+        lines.append("  (menu “\(opener)” → “\(item)”: \(box.how))")
+        return box.how == "ax" || box.how == "nsmenu"
+    }
+
+    func open(_ pane: String) async {
+        window?.orderOut(nil)
+        let hosting = NSHostingView(rootView: SettingsView(appState: state, shotPane: pane))
+        let size = NSSize(width: SettingsColumn.width, height: 680)
+        let window = NSWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: [.titled, .closable, .fullSizeContentView], backing: .buffered, defer: false)
+        window.contentView = hosting
+        window.isReleasedWhenClosed = false
+        window.makeKeyAndOrderFront(nil)
+        self.window = window
+        self.hosting = hosting
+        await sleep(900)
+        lines.append("— \(pane)")
+        flush()
+        FileHandle.standardError.write(Data("open \(pane) trusted=\(AXIsProcessTrusted())\n".utf8))
+        probeAX()
+        flush()
+        if pane == "menuBar" || pane == "rings" {
+            let pid = getpid()
+            let tree = Self.axOnMain ? AXQ.dump(pid: pid) : await Task.detached { AXQ.dump(pid: pid) }.value
+            debugLines += ["== \(pane)"] + tree
+        }
+        flush()
+    }
+
+    var debugLines: [String] = []
+    static var reportDir: URL?
+
+    func flush() {
+        guard let dir = Self.reportDir else { return }
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        try? lines.joined(separator: "\n").write(to: dir.appendingPathComponent("ui-test.txt"), atomically: true, encoding: .utf8)
+        try? debugLines.joined(separator: "\n").write(to: dir.appendingPathComponent("ui-tree.txt"), atomically: true, encoding: .utf8)
+    }
+
+    /// Mouse events straight into the ramp's AppKit surface: the real drag path.
+    func rampSurface() -> NSView? {
+        guard let hosting else { return nil }
+        func walk(_ v: NSView) -> NSView? {
+            if String(describing: type(of: v)).contains("RampMouseView") { return v }
+            for sub in v.subviews { if let hit = walk(sub) { return hit } }
+            return nil
+        }
+        return walk(hosting)
+    }
+
+    func mouse(_ type: NSEvent.EventType, _ view: NSView, x: CGFloat) -> NSEvent? {
+        let point = view.convert(NSPoint(x: x, y: view.bounds.midY), to: nil)
+        return NSEvent.mouseEvent(
+            with: type, location: point, modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime,
+            windowNumber: view.window?.windowNumber ?? 0, context: nil, eventNumber: 0, clickCount: 1, pressure: 1
+        )
+    }
+
+    func drag(_ view: NSView, from: CGFloat, to: CGFloat) async {
+        if let down = mouse(.leftMouseDown, view, x: from) { view.mouseDown(with: down) }
+        for step in 1...4 {
+            let x = from + (to - from) * CGFloat(step) / 4
+            if let move = mouse(.leftMouseDragged, view, x: x) { view.mouseDragged(with: move) }
+            await sleep(60)
+        }
+        if let up = mouse(.leftMouseUp, view, x: to) { view.mouseUp(with: up) }
+        await sleep(450)
+    }
+
+    func click(_ view: NSView, x: CGFloat) async {
+        if let down = mouse(.leftMouseDown, view, x: x) { view.mouseDown(with: down) }
+        if let up = mouse(.leftMouseUp, view, x: x) { view.mouseUp(with: up) }
+        await sleep(700)
+    }
+
+    // MARK: Pages
+
+    func run() async {
+        await menuBar()
+        await flow()
+        await rings()
+        await tutorial()
+        await simplePages()
+        lines.insert("\(passed) passed, \(failed) failed", at: 0)
+    }
+
+    func menuBar() async {
+        let s = state.settings
+        s.applyTintPreset(.systemDefault)
+        await open("menuBar")
+
+        await press(L(MenuBarTintPreset.sunset.localizationKey))
+        check("菜单栏：点预设「日落」会套用", s.menuBarTint.preset == .sunset, "\(s.menuBarTint.preset)")
+        await press(L(MenuBarTintPreset.systemDefault.localizationKey))
+        check("菜单栏：点预设「默认」会套用", s.menuBarTint.preset == .systemDefault)
+
+        let modeBefore = s.menuBarTint.mode
+        await press(L("settings.icon.tint.onBatteryOnly"), role: "AXCheckBox")
+        check("菜单栏：「仅在使用电池时变色」开关", s.menuBarTint.mode != modeBefore, "\(modeBefore) → \(s.menuBarTint.mode)")
+
+        await press(L("settings.tint.transition.smooth"), role: "AXRadioButton")
+        check("菜单栏：过渡「平滑」", TintRamp.transition(of: s.menuBarTint.bands) == .smooth)
+        await press(L("settings.tint.transition.stepped"), role: "AXRadioButton")
+        check("菜单栏：过渡「分段」", TintRamp.transition(of: s.menuBarTint.bands) == .stepped)
+
+        let firstBefore = TintRamp.sorted(s.menuBarTint.bands)[0].throughPercent
+        _ = await increment(L("settings.tint.boundary"), role: "AXSlider")
+        check("菜单栏：旁白调整分界点（滑块）", TintRamp.sorted(s.menuBarTint.bands)[0].throughPercent > firstBefore, "\(firstBefore) → \(TintRamp.sorted(s.menuBarTint.bands)[0].throughPercent)")
+
+        _ = await find(L("settings.tint.addBoundary"))
+        if let surface = rampSurface() {
+            let ordered = TintRamp.sorted(s.menuBarTint.bands)
+            let start = ordered[0].throughPercent
+            let width = surface.bounds.width
+            await drag(surface, from: width * CGFloat(start) / 100, to: width * CGFloat(start + 4) / 100)
+            let after = TintRamp.sorted(s.menuBarTint.bands)[0].throughPercent
+            check("菜单栏：鼠标拖动白色把手", after == start + 4, "\(start)% → \(after)%")
+
+            surface.scrollToVisible(surface.bounds)
+            await sleep(300)
+            await click(surface, x: width * 0.7)
+            let opened = await waitPopover()
+            check("菜单栏：点色段打开编辑框", opened != nil)
+            debugLines += ["== popover"] + AXQ.dumpPopovers(pid: getpid())
+            if let pop = popoverRoot() {
+                let top = TintRamp.sorted(s.menuBarTint.bands).last!.id
+                await press(L("settings.tint.effect.gradient"), in: pop)
+                let band = s.menuBarTint.bands.first { $0.id == top }
+                check("编辑框：效果「左右渐变」", band?.blend == .gradient, "\(String(describing: band?.blend))")
+                if let pop = popoverRoot() {
+                    await press(L("settings.tint.swatch.red"), in: pop)
+                    let band = s.menuBarTint.bands.first { $0.id == top }
+                    check("编辑框：点「红色」色块", band?.highLeft == .systemRed || band?.highRight == .systemRed)
+                }
+            }
+            await closePopovers()
+        } else {
+            check("菜单栏：找到色带的鼠标层", false)
+        }
+
+        let countBefore = s.menuBarTint.bands.count
+        await press(L("settings.tint.addBoundary"))
+        check("菜单栏：「添加分界点」", s.menuBarTint.bands.count == countBefore + 1, "\(countBefore) → \(s.menuBarTint.bands.count)")
+        if let pop = await waitPopover() {
+            check("菜单栏：新分界点自动打开编辑框", true)
+            let beforeEnds = TintRamp.sorted(s.menuBarTint.bands).map(\.throughPercent)
+            let stepped = await increment(L("settings.tint.segment.endsAt"), in: pop)
+            var afterEnds = TintRamp.sorted(s.menuBarTint.bands).map(\.throughPercent)
+            if afterEnds == beforeEnds, let e = await find(L("settings.tint.segment.endsAt"), role: "AXIncrementor") {
+                _ = await perform(e, kAXDecrementAction)
+                await sleep(500)
+                afterEnds = TintRamp.sorted(s.menuBarTint.bands).map(\.throughPercent)
+            }
+            check("编辑框：「这一段到」步进器", afterEnds != beforeEnds, "found=\(stepped) \(beforeEnds) → \(afterEnds)")
+            if let pop = popoverRoot() {
+                let before = s.menuBarTint.bands.count
+                await press(L("settings.tint.segment.delete"), in: pop)
+                check("编辑框：「删除此段」", s.menuBarTint.bands.count == before - 1, "\(before) → \(s.menuBarTint.bands.count)")
+            }
+        } else {
+            check("菜单栏：新分界点自动打开编辑框", false)
+        }
+        await closePopovers()
+
+        await press(L(MenuBarTintPreset.sunset.localizationKey))
+        await press(L("settings.tint.addBoundary"))
+        await closePopovers()
+        check("菜单栏：改动后状态显示「已修改」", count(L("settings.tint.status.modified %@", L(MenuBarTintPreset.sunset.localizationKey)), role: "AXStaticText") > 0)
+        await press(L("settings.tint.revert"))
+        check("菜单栏：「还原」", s.menuBarTint.preset == .sunset && s.menuBarTint.bands == MenuBarTintScheme.preset(.sunset).bands)
+
+        let outlined = s.iconOutlined
+        await press(L(outlined ? "settings.icon.border.off" : "settings.icon.border.on"), role: "AXRadioButton")
+        check("菜单栏：边框", s.iconOutlined != outlined)
+        let target: MenuBarDigitPlacement = s.digitPlacement == .beside ? .inside : .beside
+        await press(L(target.localizationKey), role: "AXRadioButton")
+        check("菜单栏：数字位置", s.digitPlacement == target, "\(s.digitPlacement)")
+        let glyphs = s.showChargeGlyphs
+        await press(L("settings.icon.chargeGlyphs"), role: "AXCheckBox")
+        check("菜单栏：显示充电标志", s.showChargeGlyphs != glyphs)
+
+        let featured: [MenuBarTintPreset] = [.systemDefault, .defaultSlide, .defaultGradient, .batteryLevel, .smoothLevel, .sunset, .ocean, .aurora, .lava, .off]
+        let extra = MenuBarTintPreset.pickerCases.first { $0 != .custom && !featured.contains($0) }!
+        let hiddenBefore = count(L(extra.localizationKey), role: "AXButton")
+        await press(L("settings.tint.showAll %lld", 15))
+        check("菜单栏：「显示全部 15 个预设」", count(L(extra.localizationKey), role: "AXButton") > hiddenBefore, "\(extra) \(hiddenBefore) → \(count(L(extra.localizationKey), role: "AXButton"))")
+
+        await press(L("settings.tint.saveAsPreset"))
+        check("菜单栏：「存为预设…」弹出命名", window?.attachedSheet != nil)
+        if let sheet = window?.attachedSheet { window?.endSheet(sheet) }
+        await sleep(300)
+    }
+
+    func flow() async {
+        let s = state.settings
+        s.applyFlowTintPreset(.semantic)
+        await open("flow")
+        await press(L("settings.flow.tint.charging"))
+        check("能量流：点「充电中」卡片切换预览", count(L("settings.flow.preview %@", L("settings.flow.tint.charging"))) > 0)
+
+        await press(L(PopoverTintPreset.highContrast.localizationKey))
+        check("能量流：预设「高对比」", s.flowTint.preset == .highContrast, "\(s.flowTint.preset)")
+
+        let before = s.flowTint.scheme(for: .charging).bands.count
+        await press(L("settings.tint.addBoundary"))
+        await closePopovers()
+        check("能量流：给当前状态「添加分界点」", s.flowTint.scheme(for: .charging).bands.count == before + 1, "\(before) → \(s.flowTint.scheme(for: .charging).bands.count)")
+
+        if let surface = rampSurface() {
+            let first = TintRamp.sorted(s.flowTint.scheme(for: .charging).bands)[0].throughPercent
+            let width = surface.bounds.width
+            await drag(surface, from: width * CGFloat(first) / 100, to: width * CGFloat(first + 3) / 100)
+            let after = TintRamp.sorted(s.flowTint.scheme(for: .charging).bands)[0].throughPercent
+            check("能量流：鼠标拖动白色把手", after == first + 3, "\(first)% → \(after)%")
+        }
+
+        await press(L("settings.flow.applyToAll"))
+        let charging = s.flowTint.scheme(for: .charging)
+        check("能量流：「用到全部 4 种状态」", [EnergyFlowMode.discharging, .adapterHold, .underpowered].allSatisfy { s.flowTint.scheme(for: $0) == charging })
+
+        if s.motionStyle.pigment == nil { s.motionStyle = .filaments; await sleep(300) }
+        await press(L("settings.flow.motionColor.custom"), role: "AXRadioButton")
+        check("能量流：粒子颜色「自选颜色」", s.flowTint.motionColor != nil)
+        await press(L("settings.flow.motionColor.ribbon"), role: "AXRadioButton")
+        check("能量流：粒子颜色「跟随能量带」", s.flowTint.motionColor == nil)
+
+        let pulse = s.pulseFlowIcons
+        await press(L("settings.motion.pulseIcons"), role: "AXCheckBox")
+        check("能量流：图标呼吸", s.pulseFlowIcons != pulse)
+    }
+
+    func rings() async {
+        let s = state.settings
+        await open("rings")
+        let rows = s.ringRows.count
+        await press(L("settings.rings.addRow"))
+        check("圆环：「加一行」", s.ringRows.count == rows + 1, "\(rows) → \(s.ringRows.count)")
+        check("圆环：新行显示为空行", count(L("settings.rings.row.empty")) > 0)
+        await press(L("settings.rings.removeRow"))
+        check("圆环：「删掉这一行」", s.ringRows.count == rows, "→ \(s.ringRows.count)")
+
+        let colors = s.ringTint.colors.count
+        await press(L("settings.rings.color.new"))
+        check("圆环：「新建颜色」", s.ringTint.colors.count == colors + 1, "\(colors) → \(s.ringTint.colors.count)")
+        check("圆环：新颜色进入编辑", count(L("settings.rings.color.edit %@", L("settings.tint.color %lld", colors + 1))) > 0)
+        await press(L("settings.rings.color.delete"))
+        check("圆环：「删除这个颜色」", s.ringTint.colors.count == colors)
+
+        if s.ringTint.colors.count > 1 {
+            await press(L("settings.tint.color %lld", 2))
+            check("圆环：点「颜色 2」切换编辑对象", count(L("settings.rings.color.edit %@", L("settings.tint.color %lld", 2))) > 0)
+        }
+        let id = s.ringTint.colors.count > 1 ? s.ringTint.colors[1].id : s.ringTint.colors[0].id
+        let bands = s.ringTint.colors.first { $0.id == id }?.scheme.bands.count ?? 0
+        await press(L("settings.tint.addBoundary"))
+        await closePopovers()
+        let afterBands = s.ringTint.colors.first { $0.id == id }?.scheme.bands.count ?? 0
+        check("圆环：颜色色带「添加分界点」", afterBands == bands + 1, "\(bands) → \(afterBands)")
+
+        let download = s.downloadHalfKilobytes
+        _ = await increment(L("settings.rings.half.download.title"))
+        check("圆环：下载半圈步进器", s.downloadHalfKilobytes != download, "\(download) → \(s.downloadHalfKilobytes)")
+        let swap = s.swapHalfMegabytes
+        _ = await increment(L("settings.rings.half.swap.title"))
+        check("圆环：交换半圈步进器", s.swapHalfMegabytes != swap, "\(swap) → \(s.swapHalfMegabytes)")
+
+        let unit: TemperatureUnit = s.temperatureUnit == .celsius ? .fahrenheit : .celsius
+        await press(L(unit.localizationKey), role: "AXRadioButton")
+        check("圆环：温度单位", s.temperatureUnit == unit)
+        let odd: RingOddRow = s.ringOddRow == .stagger ? .align : .stagger
+        await press(L(odd == .stagger ? "settings.rings.oddStagger.title" : "settings.rings.oddAlign.title"), role: "AXRadioButton")
+        check("圆环：第 2 行较少时的排法", s.ringOddRow == odd)
+
+        await press(L("settings.rings.thermal.adjust"))
+        let thermal = await waitPopover()
+        check("圆环：热状态「调整…」打开", thermal != nil)
+        await closePopovers()
+
+        // Menus
+        let hidden = s.ringCatalog.filter { !s.enabledRingSlots.contains($0) }
+        if let first = hidden.first {
+            let ok = await pickChecked(L("settings.rings.addToRow %lld", 1), from: L("settings.rings.show"), role: "AXMenuButton") {
+                s.enabledRingSlots.contains(first) && s.ringRows[0].contains { $0.slot == first }
+            }
+            check("圆环菜单：「显示 → 加到第 1 行」", ok, "\(first) enabled=\(s.enabledRingSlots.contains(first)) rows=\(s.ringRows.map { $0.map(\.id) })")
+        }
+        if let second = s.ringCatalog.filter({ !s.enabledRingSlots.contains($0) }).first {
+            let rowsBefore = s.ringRows.count
+            let ok = await pick(L("settings.rings.addToNewRow"), from: L("settings.rings.show"), role: "AXMenuButton")
+            check("圆环菜单：「显示 → 加到新的一行」", ok && s.ringRows.count == rowsBefore + 1 && (s.ringRows.last ?? []).contains { $0.slot == second }, "\(second) rows \(rowsBefore) → \(s.ringRows.count)")
+        }
+        if s.ringRows.count > 1, let lead = s.ringRows[0].first {
+            let ok = await pick(L("settings.rings.moveToRow %lld", 2), from: L("settings.rings.more"), role: "AXMenuButton")
+            check("圆环菜单：「更多 → 移到第 2 行」", ok && s.ringRows[1].contains { $0.id == lead.id }, lead.id)
+        }
+        if let lead = s.ringRows[0].first, let slot = lead.slot {
+            let ok = await pick(L("settings.rings.hide"), from: L("settings.rings.more"), role: "AXMenuButton")
+            check("圆环菜单：「更多 → 隐藏」", ok && !s.enabledRingSlots.contains(slot), "\(slot)")
+        }
+        let popups = await axSearch("", role: "AXPopUpButton", all: true)
+        lines.append("  (popups: " + popups.map { AXQ.string($0.element, kAXDescriptionAttribute) + "=" + AXQ.string($0.element, kAXValueAttribute) }.joined(separator: " | ") + ")")
+        if s.ringTint.colors.count >= 3 {
+            let target = s.ringTint.colors[2].id
+            let ok = await pick(L("settings.tint.color %lld", 3), from: L("ring.gpu"), role: "AXPopUpButton")
+            check("圆环菜单：GPU 的颜色选「颜色 3」", ok && s.ringTint.assignments[.gpu] == target)
+        }
+        let packTarget = RingIconPreset.allCases.first { $0 != .custom && $0 != s.ringIcons.preset }!
+        let packOK = await pick(L(packTarget.localizationKey), from: L(s.ringIcons.preset.localizationKey), role: "AXPopUpButton")
+        check("圆环菜单：图标套装", packOK && s.ringIcons.preset == packTarget, "\(s.ringIcons.preset)")
+        await press(L("settings.rings.bluetooth.addDevice"))
+        check("圆环：「添加蓝牙设备…」打开选择窗口", window?.attachedSheet != nil)
+        if let sheet = window?.attachedSheet { window?.endSheet(sheet) }
+        await sleep(300)
+    }
+
+    func tutorial() async {
+        await open("tutorial")
+        await press(L("tutorial.next"))
+        check("教程：「下一页」", count(L("tutorial.pageOf %lld %lld", 2, 9)) > 0)
+        await press(L("tutorial.previous"))
+        check("教程：「上一页」", count(L("tutorial.pageOf %lld %lld", 1, 9)) > 0)
+        await press(L("tutorial.next"))
+        let linkPrefix = String(L("tutorial.openSettings %@", "\u{1}").prefix { $0 != "\u{1}" })
+        await press(linkPrefix)
+        check("教程：「在设置里打开」跳到对应页", count(L("tutorial.pageOf %lld %lld", 2, 9)) == 0 && count(L("tutorial.next")) == 0)
+    }
+
+    func simplePages() async {
+        let s = state.settings
+        await open("general")
+        let auto = s.automaticallyCheckForUpdates
+        await press(L("settings.updates.automatic"), role: "AXCheckBox")
+        check("通用：自动检查更新", s.automaticallyCheckForUpdates != auto)
+
+        await open("panel")
+        let placement = SettingsButtonPlacement.allCases.first { $0 != s.settingsButtonPlacement }!
+        let placed = await pick(L(placement.localizationKey), from: L("settings.button.placement"), role: "AXPopUpButton")
+        check("面板菜单：设置按钮位置", placed && s.settingsButtonPlacement == placement, "\(s.settingsButtonPlacement)")
+        let arrow = s.showPopoverArrow
+        await press(L("settings.popover.arrow"), role: "AXCheckBox")
+        check("面板：显示箭头", s.showPopoverArrow != arrow)
+
+        await open("topApps")
+        let chart: TopAppsChartStyle = s.topAppsChart == TopAppsChartStyle.allCases[0] ? TopAppsChartStyle.allCases[1] : TopAppsChartStyle.allCases[0]
+        await press(L(chart.localizationKey))
+        check("耗电：图表样式卡片", s.topAppsChart == chart, "\(s.topAppsChart)")
+        let limit = s.topAppLimit
+        _ = await increment(L("settings.topApps.limit.title"))
+        check("耗电：显示几个", s.topAppLimit != limit, "\(limit) → \(s.topAppLimit)")
+
+        await open("lowPower")
+        await press(L(LowPowerButtonVisibility.lowPower.localizationKey))
+        check("能耗模式：按钮卡片", s.lowPowerButtonVisibility == .lowPower)
+        await press(L(LowPowerButtonVisibility.both.localizationKey))
+        let layout: LowPowerButtonLayout = s.lowPowerButtonLayout == LowPowerButtonLayout.allCases[0] ? LowPowerButtonLayout.allCases[1] : LowPowerButtonLayout.allCases[0]
+        await press(L(layout.localizationKey))
+        check("能耗模式：排列卡片", s.lowPowerButtonLayout == layout)
+
+        await open("localIP")
+        let scopes = s.ipScopes
+        await press(L(IPAddressScope.allCases[0].localizationKey), role: "AXCheckBox")
+        check("IP：类型开关", s.ipScopes != scopes)
+        await press("IPv6", role: "AXRadioButton")
+        check("IP：只显示 IPv6", s.ipFamilies == [.ipv6], "\(s.ipFamilies)")
+        await press(L("settings.localIP.families.both"), role: "AXRadioButton")
+        check("IP：两种都显示", s.ipFamilies.count == 2)
+
+        await open("batteryCycle")
+        let style: BatteryCapacityStyle = s.batteryCapacityStyle == .both ? .percent : .both
+        await press(L(style.localizationKey))
+        check("电池循环：显示方式卡片", s.batteryCapacityStyle == style)
+
+        await open("about")
+        await press(L("settings.about.tip"))
+        check("关于：打赏弹出", popoverRoot() != nil)
+        await closePopovers()
+    }
+}
+#endif
+
+#if DEBUG
+struct AXBox: @unchecked Sendable {
+    let element: AXUIElement
+}
+
+final class MenuPick: @unchecked Sendable {
+    var tracked: NSMenu?
+    var attempts = 0
+    var how = "not opened"
+    var done = false
+}
+
+final class SyncBox: @unchecked Sendable {
+    var value = 0
+    let done = DispatchSemaphore(value: 0)
+}
+
+enum AXQ {
+    static func attribute(_ e: AXUIElement, _ name: String) -> CFTypeRef? {
+        var value: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(e, name as CFString, &value) == .success else { return nil }
+        return value
+    }
+
+    static func string(_ e: AXUIElement, _ name: String) -> String {
+        guard let value = attribute(e, name) else { return "" }
+        if let s = value as? String { return s }
+        if let n = value as? NSNumber { return n.stringValue }
+        return ""
+    }
+
+    static func titleUIText(_ e: AXUIElement) -> String {
+        guard let ref = attribute(e, kAXTitleUIElementAttribute), CFGetTypeID(ref) == AXUIElementGetTypeID() else { return "" }
+        let t = ref as! AXUIElement
+        let v = string(t, kAXValueAttribute)
+        return v.isEmpty ? string(t, kAXTitleAttribute) : v
+    }
+
+    static func dumpPopovers(pid: pid_t) -> [String] {
+        let app = AXUIElementCreateApplication(pid)
+        var out = ["app children: " + children(app).map { string($0, kAXRoleAttribute) + "/" + string($0, kAXSubroleAttribute) }.joined(separator: ", ")]
+        var queue = [app]
+        var visited = 0
+        while !queue.isEmpty, visited < 8000 {
+            let e = queue.removeFirst()
+            visited += 1
+            if string(e, kAXRoleAttribute) == "AXPopover" || string(e, kAXSubroleAttribute) == "AXPopover" {
+                func walk(_ e: AXUIElement, _ depth: Int) {
+                    guard out.count < 300 else { return }
+                    out.append(String(repeating: " ", count: depth) + [kAXRoleAttribute, kAXTitleAttribute, kAXDescriptionAttribute, kAXValueAttribute].map { string(e, $0) }.joined(separator: "|"))
+                    for c in children(e) { walk(c, depth + 1) }
+                }
+                walk(e, 0)
+                continue
+            }
+            queue += children(e)
+        }
+        return out
+    }
+
+    static func children(_ e: AXUIElement) -> [AXUIElement] {
+        (attribute(e, kAXChildrenAttribute) as? [AXUIElement]) ?? []
+    }
+
+    static func dump(pid: pid_t) -> [String] {
+        var out: [String] = []
+        func walk(_ e: AXUIElement, _ depth: Int) {
+            guard out.count < 400, depth < 25 else { return }
+            let ui = titleUIText(e)
+            let line = String(repeating: " ", count: depth) + [kAXRoleAttribute, kAXTitleAttribute, kAXDescriptionAttribute, kAXValueAttribute].map { string(e, $0) }.joined(separator: "|") + (ui.isEmpty ? "" : " ui=" + ui)
+            out.append(line)
+            for child in children(e) { walk(child, depth + 1) }
+        }
+        let app = AXUIElementCreateApplication(pid)
+        AXUIElementSetMessagingTimeout(app, 4)
+        walk(app, 0)
+        return out
+    }
+
+    /// Exact title or label first, then any that contains the text.
+    static func search(pid: pid_t, text: String, role: String?, all: Bool) -> [AXBox] {
+        let app = AXUIElementCreateApplication(pid)
+        AXUIElementSetMessagingTimeout(app, 4)
+        var queue = [app]
+        var exact: [AXBox] = []
+        var loose: [AXBox] = []
+        var visited = 0
+        while !queue.isEmpty, visited < 12000 {
+            let e = queue.removeFirst()
+            visited += 1
+            let r = string(e, kAXRoleAttribute)
+            if role == nil || r == role {
+                var names = [string(e, kAXTitleAttribute), string(e, kAXDescriptionAttribute)]
+                    + (r == "AXStaticText" || role == nil ? [string(e, kAXValueAttribute)] : [])
+                if r != "AXStaticText", names[0].isEmpty, names[1].isEmpty { names.append(titleUIText(e)) }
+                if r == "AXPopUpButton" { names.append(string(e, kAXValueAttribute)) }
+                if names.contains(text) {
+                    exact.append(AXBox(element: e))
+                    if !all { return exact }
+                } else if names.contains(where: { $0.contains(text) }) {
+                    loose.append(AXBox(element: e))
+                }
+            }
+            queue += children(e)
+        }
+        return exact + loose
+    }
+}
+#endif

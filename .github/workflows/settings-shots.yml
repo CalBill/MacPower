@@ -1,0 +1,82 @@
+name: Settings UI test (Claude)
+
+# Throwaway: builds Debug, renders every settings page to PNG, and pushes the
+# images to claude/ci-ui so they can be reviewed away from a Mac.
+on:
+  push:
+    branches: ['claude/ci-build']
+
+permissions:
+  contents: write
+
+jobs:
+  shots:
+    runs-on: macos-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project MacPower.xcodeproj \
+            -scheme MacPower \
+            -configuration Debug \
+            -destination 'platform=macOS' \
+            -derivedDataPath DerivedData \
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY=- \
+            DEVELOPMENT_TEAM= \
+            CODE_SIGNING_ALLOWED=YES > build.log 2>&1
+      - name: Report compiler errors
+        if: failure()
+        run: |
+          grep -E '(^|: )error: ' build.log | sed "s#$GITHUB_WORKSPACE/##" | sort -u | head -40 > errors.txt || true
+          echo "::error title=Compiler errors::$(sed 's/%/%25/g' errors.txt | awk 'BEGIN{ORS="%0A"} {print}')"
+      - name: Test
+        if: always()
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project MacPower.xcodeproj \
+            -scheme MacPower \
+            -destination 'platform=macOS' \
+            -derivedDataPath DerivedDataTest \
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY=- \
+            DEVELOPMENT_TEAM= \
+            CODE_SIGNING_ALLOWED=YES > test.log 2>&1 || {
+              grep -E "error: -\[" test.log | sed -E 's/.*-\[MacPowerTests\.([A-Za-z]+) ([A-Za-z0-9_]+)\].*/\1.\2/' | sort -u > fails.txt
+              grep -E "(^|: )error: " test.log | grep -v "error: -\[" | sed "s#$GITHUB_WORKSPACE/##" | sort -u | head -20 >> fails.txt
+              echo "::error title=Failing tests::$(sed 's/%/%25/g' fails.txt | awk 'BEGIN{ORS="%0A"} {print}')"
+              exit 1
+            }
+          grep -E "Executed [0-9]+ tests" test.log | tail -1 | sed 's/^/::notice title=Tests::/'
+      - name: UI test
+        if: always()
+        run: |
+          mkdir -p shots
+          app=DerivedData/Build/Products/Debug/MacPower.app/Contents/MacOS/MacPower
+          "$app" --settings-ui-test="$PWD/shots" > shots/ui-log.txt 2>&1 &
+          pid=$!
+          for i in $(seq 1 300); do kill -0 $pid 2>/dev/null || break; sleep 1; done
+          kill $pid 2>/dev/null || true
+          wait $pid; echo "exit status $?" >> shots/ui-log.txt
+          sleep 8
+          for f in ~/Library/Logs/DiagnosticReports/MacPower* /Library/Logs/DiagnosticReports/MacPower*; do [ -f "$f" ] && cp "$f" shots/ || true; done
+          ls shots
+          head -1 shots/ui-test.txt | sed 's/^/::notice title=UI test::/' || echo "::warning title=UI test::no report"
+          tail -1 shots/ui-log.txt | sed 's/^/::notice title=UI exit::/'
+          grep '^FAIL' shots/ui-test.txt | head -40 | sed 's/^/::warning title=UI test::/' || true
+      - name: Publish
+        if: always()
+        run: |
+          cd shots
+          tail -150 ../test.log > test-tail.txt 2>/dev/null || true
+          grep -E "error|Failing|failed|Executed|Test Suite .* (passed|failed)" ../test.log | grep -v linkd | tail -120 > test-summary.txt 2>/dev/null || true
+          git init -q
+          git config user.name ci
+          git config user.email ci@example.com
+          git add -A
+          git commit -q -m "settings shots ${GITHUB_SHA}"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" HEAD:refs/heads/claude/ci-ui

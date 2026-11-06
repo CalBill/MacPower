@@ -19,6 +19,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         #if DEBUG
+        if SettingsUITest.startIfNeeded() { return }
+        if SettingsShotCapture.startIfNeeded() { return }
         if ReadmeAssetCapture.startIfNeeded() { return }
         #endif
         NSApp.setActivationPolicy(.accessory)
