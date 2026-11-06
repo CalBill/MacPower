@@ -1,0 +1,13 @@
+open menuBar trusted=true
+  ax probe on main: err 0, 2 windows, 0.028s → main
+open flow trusted=true
+open rings trusted=true
+open tutorial trusted=true
+open general trusted=true
+open panel trusted=true
+open topApps trusted=true
+open lowPower trusted=true
+open localIP trusted=true
+open batteryCycle trusted=true
+open about trusted=true
+exit status 0

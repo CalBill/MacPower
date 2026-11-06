@@ -1,0 +1,623 @@
+== menuBar
+AXApplication|MacPower||
+ AXWindow|设置||
+  AXGroup|||
+   AXHeading||教程|
+   AXScrollArea|||
+    AXButton||通用|
+    AXButton||菜单栏|
+    AXButton||面板|
+    AXButton||圆环|
+    AXButton||能量流|
+    AXButton||耗电|
+    AXButton||能耗模式|
+    AXButton||IP 地址|
+    AXButton||电池循环|
+    AXButton||教程|
+    AXButton||关于|
+   AXMenuButton|目录||
+   AXStaticText|||第 1 页，共 9 页
+   AXScrollArea|||
+    AXStaticText|||欢迎使用 MacPower
+    AXStaticText|||MacPower 待在菜单栏里，不会出现在程序坞。先把图标打开，以后就从这里进出。
+    AXImage|||
+    AXStaticText|||菜单栏图标
+    AXStaticText|||打开设置
+    AXStaticText|||退出 MacPower
+    AXStaticText|||1
+    AXStaticText|||打开菜单栏图标
+    AXStaticText|||打开「系统设置 → 菜单栏」，在「允许在菜单栏显示」里打开 MacPower。这一项关掉时，图标不会出现。同时关掉系统自带的「电池」，菜单栏里只留 MacPower，避免两个电池图标叠在一起。
+    AXButton||打开「菜单栏」设置|
+    AXStaticText|||2
+    AXStaticText|||右键图标
+    AXStaticText|||右键菜单栏图标可以打开设置，也可以退出 MacPower。左键用来打开电量面板。
+   AXButton||上一页|
+   AXButton||知道了|
+   AXButton||下一页|
+  AXToolbar|||
+  AXButton|||
+  AXButton|||
+   AXGroup|||
+  AXButton|||
+ AXWindow|||
+  AXGroup|||
+   AXHeading||菜单栏|
+   AXScrollArea|||
+    AXButton||通用|
+    AXButton||菜单栏|
+    AXButton||面板|
+    AXButton||圆环|
+    AXButton||能量流|
+    AXButton||耗电|
+    AXButton||能耗模式|
+    AXButton||IP 地址|
+    AXButton||电池循环|
+    AXButton||教程|
+    AXButton||关于|
+   AXScrollArea|||
+    AXGroup|||
+     AXStaticText|||你现在的图标
+     AXStaticText|||周五 01:55
+     AXStaticText|||不同电量下
+     AXImage|||
+     AXStaticText|||5%
+     AXImage|||
+     AXStaticText|||15%
+     AXImage|||
+     AXStaticText|||50%
+     AXImage|||
+     AXStaticText|||100%
+     AXImage|||
+     AXStaticText|||充电中
+    AXHeading||图标|
+    AXGroup|||
+     AXStaticText|||边框
+     AXRadioGroup||| ui=边框
+      AXRadioButton||无边框|1
+      AXRadioButton||有边框|0
+     AXStaticText|||数字位置
+     AXRadioGroup||| ui=数字位置
+      AXRadioButton||不显示|0
+      AXRadioButton||电池内|1
+      AXRadioButton||旁注|0
+     AXStaticText|||显示充电标志
+     AXStaticText|||充电时图标上出现闪电。
+     AXCheckBox|||1 ui=显示充电标志
+    AXHeading||颜色|
+    AXGroup|||
+     AXStaticText|||预设
+     AXStaticText|||默认
+     AXButton||存为预设…|
+     AXOpaqueProviderGroup|||
+      AXButton||默认|
+      AXButton||默认·无极|
+      AXButton||默认·渐变|
+      AXButton||按电量|
+      AXButton||无极电量|
+      AXButton||日落|
+      AXButton||海洋|
+      AXButton||极光|
+      AXButton||熔岩|
+      AXButton||关闭|
+     AXLink||显示全部 15 个预设|
+     AXStaticText|||仅在使用电池时变色
+     AXStaticText|||接上电源时，图标保持菜单栏默认颜色。
+     AXCheckBox|||1 ui=仅在使用电池时变色
+     AXStaticText|||按电量变色
+     AXStaticText|||过渡
+     AXRadioGroup||过渡|
+      AXRadioButton||分段|1
+      AXRadioButton||平滑|0
+     AXButton||电量 0% – 10%|
+     AXButton||电量 10% – 20%|
+     AXButton||电量 20% – 100%|
+     AXSlider||分界点|10
+     AXSlider||分界点|20
+     AXStaticText|||拖动白色把手调整电量范围，点按色段更改颜色。
+     AXButton||添加分界点|
+    AXScrollBar|||0
+     AXValueIndicator|||0
+     AXButton|||
+     AXButton|||
+     AXButton|||
+     AXButton|||
+  AXButton|||
+  AXButton|||
+   AXGroup|||
+  AXButton|||
+  AXStaticText|||
+ AXMenuBar|||
+  AXMenuBarItem|Apple||
+   AXMenu||| ui=Apple
+    AXMenuItem|About This Mac||
+    AXMenuItem|System Information||
+    AXMenuItem|||
+    AXMenuItem|System Settings…, 1 update||
+    AXMenuItem|App Store||
+    AXMenuItem|||
+    AXMenuItem|Recent Items||
+     AXMenu||| ui=Recent Items
+      AXMenuItem|Applications||
+      AXMenuItem|Installer||
+      AXMenuItem|Show “Installer” in Finder||
+      AXMenuItem|System Settings||
+      AXMenuItem|Show “System Settings” in Finder||
+      AXMenuItem|||
+      AXMenuItem|Documents||
+      AXMenuItem|AnkaGuestAddons.pkg||
+      AXMenuItem|Show “AnkaGuestAddons.pkg” in Finder||
+      AXMenuItem|||
+      AXMenuItem|Servers||
+      AXMenuItem|Macintosh HD||
+      AXMenuItem|||
+      AXMenuItem|Clear Menu||
+    AXMenuItem|||
+    AXMenuItem|Force Quit…||
+    AXMenuItem|Force Quit MacPower||
+    AXMenuItem|||
+    AXMenuItem|Sleep||
+    AXMenuItem|Restart…||
+    AXMenuItem|Restart||
+    AXMenuItem|Shut Down…||
+    AXMenuItem|Shut Down||
+    AXMenuItem|||
+    AXMenuItem|Lock Screen||
+    AXMenuItem|Log Out Anka…||
+    AXMenuItem|Log Out Anka||
+    AXMenuItem|||
+  AXMenuBarItem|MacPower||
+   AXMenu||| ui=MacPower
+    AXMenuItem|About MacPower||
+    AXMenuItem|||
+    AXMenuItem|Settings…||
+    AXMenuItem|||
+    AXMenuItem|Services||
+     AXMenu||| ui=Services
+      AXMenuItem|Activity Monitor||
+      AXMenuItem|Allocations & Leaks||
+      AXMenuItem|File Activity||
+      AXMenuItem|System Trace||
+      AXMenuItem|Time Profile Active Application||
+      AXMenuItem|Time Profile App Under Mouse||
+      AXMenuItem|Time Profile Entire System||
+      AXMenuItem|Toggle Instruments Recording||
+      AXMenuItem|Services Settings…||
+    AXMenuItem|||
+    AXMenuItem|Hide MacPower||
+    AXMenuItem|Hide Others||
+    AXMenuItem|Show All||
+    AXMenuItem|||
+    AXMenuItem|Quit MacPower||
+  AXMenuBarItem|Edit||
+   AXMenu||| ui=Edit
+    AXMenuItem|Undo||
+    AXMenuItem|Redo||
+    AXMenuItem|||
+    AXMenuItem|Cut||
+    AXMenuItem|Copy||
+    AXMenuItem|Paste||
+    AXMenuItem|Delete||
+    AXMenuItem|Select All||
+    AXMenuItem|||
+    AXMenuItem|AutoFill||
+     AXMenu||| ui=AutoFill
+      AXMenuItem|Contact…||
+      AXMenuItem|Passwords…||
+      AXMenuItem|Credit Card…||
+    AXMenuItem|Start Dictation…||
+    AXMenuItem|Emoji & Symbols||
+  AXMenuBarItem|View||
+   AXMenu||| ui=View
+    AXMenuItem|Enter Full Screen||
+  AXMenuBarItem|Window||
+   AXMenu||| ui=Window
+    AXMenuItem|Close||
+    AXMenuItem|Close All||
+    AXMenuItem|Minimize||
+    AXMenuItem|Minimize All||
+    AXMenuItem|Zoom||
+    AXMenuItem|Zoom All||
+    AXMenuItem|Fill||
+    AXMenuItem|Center||
+    AXMenuItem|||
+    AXMenuItem|Move & Resize||
+     AXMenu||| ui=Move & Resize
+      AXMenuItem|Halves||
+      AXMenuItem|Left||
+      AXMenuItem|Right||
+      AXMenuItem|Top||
+      AXMenuItem|Bottom||
+      AXMenuItem|||
+      AXMenuItem|Quarters||
+      AXMenuItem|Top Left||
+      AXMenuItem|Top Right||
+      AXMenuItem|Bottom Left||
+      AXMenuItem|Bottom Right||
+      AXMenuItem|||
+      AXMenuItem|Arrange||
+      AXMenuItem|Left & Right||
+      AXMenuItem|Left & Quarters||
+      AXMenuItem|Right & Left||
+      AXMenuItem|Right & Quarters||
+      AXMenuItem|Top & Bottom||
+      AXMenuItem|Top & Quarters||
+      AXMenuItem|Bottom & Top||
+      AXMenuItem|Bottom & Quarters||
+      AXMenuItem|Quarters||
+      AXMenuItem|||
+      AXMenuItem|Return to Previous Size||
+    AXMenuItem|Full Screen Tile||
+    AXMenuItem|||
+    AXMenuItem|Remove Window from Set||
+    AXMenuItem|||
+    AXMenuItem|Bring All to Front||
+    AXMenuItem|Arrange in Front||
+    AXMenuItem|||
+    AXMenuItem|设置||
+  AXMenuBarItem|Help||
+   AXMenu||| ui=Help
+    AXMenuItem|MacPower Help||
+== popover
+app children: AXWindow/AXStandardWindow, AXMenuBar/
+AXPopover|||
+ AXGroup|||
+  AXImage|||
+  AXStaticText|||电量 20% – 100%
+  AXStaticText|||电量落在这个范围时，图标这样显示
+  AXButton||删除此段|
+  AXStaticText|||效果
+  AXOpaqueProviderGroup|||
+   AXButton||纯色、整段一个颜色|
+   AXButton||随电量变化、从一个颜色慢慢变成另一个|
+   AXButton||左右渐变、图标里左右两种颜色|
+   AXButton||两者都有、左右渐变，并随电量变化|
+  AXStaticText|||颜色
+  AXStaticText|||颜色
+  AXButton||菜单栏默认色|
+  AXButton||红色|
+  AXButton||橙色|
+  AXButton||黄色|
+  AXButton||绿色|
+  AXColorWell||其他颜色|#$dynamic Catalog color: #$customDynamic 80356AC9-24AC-4161-A325-67F65A2D8601+{<NSAlphaComponentModifier: 0x8cf6a0750>}
+  AXStaticText|||「菜单栏默认色」在浅色菜单栏里是黑色，在深色菜单栏里是白色。
+== rings
+AXApplication|MacPower||
+ AXWindow|||
+  AXGroup|||
+   AXHeading||圆环|
+   AXScrollArea|||
+    AXButton||通用|
+    AXButton||菜单栏|
+    AXButton||面板|
+    AXButton||圆环|
+    AXButton||能量流|
+    AXButton||耗电|
+    AXButton||能耗模式|
+    AXButton||IP 地址|
+    AXButton||电池循环|
+    AXButton||教程|
+    AXButton||关于|
+   AXScrollArea|||
+    AXGroup|||
+     AXStaticText|||面板里的样子
+     AXUnknown||电量 0%、CPU 0%、GPU 0%、内存 0%、磁盘 0%、上传下载 ↓ 0 KB/s ↑ 0 KB/s|
+    AXStaticText|||第 1 行
+    AXGroup|||
+     AXImage||拖移|
+     AXStaticText|||电量
+     AXPopUpButton||电量|颜色 1
+     AXMenuButton|更多||
+     AXImage||拖移|
+     AXStaticText|||CPU
+     AXPopUpButton||CPU|颜色 2
+     AXMenuButton|更多||
+     AXImage||拖移|
+     AXStaticText|||GPU
+     AXPopUpButton||GPU|颜色 2
+     AXMenuButton|更多||
+     AXImage||拖移|
+     AXStaticText|||内存
+     AXPopUpButton||内存|颜色 2
+     AXMenuButton|更多||
+     AXImage||拖移|
+     AXStaticText|||磁盘
+     AXPopUpButton||磁盘|颜色 2
+     AXMenuButton|更多||
+     AXImage||拖移|
+     AXStaticText|||上传下载
+     AXStaticText|||下载和上传合成一圈
+     AXImage||向下|
+     AXPopUpButton||下载速度|颜色 3
+     AXImage||向上|
+     AXPopUpButton||上传速度|颜色 4
+     AXMenuButton|更多||
+    AXHeading||没有显示|
+    AXGroup|||
+     AXStaticText|||内存压力
+     AXMenuButton|显示||
+     AXStaticText|||交换
+     AXMenuButton|显示||
+     AXStaticText|||下载速度
+     AXMenuButton|显示||
+     AXStaticText|||上传速度
+     AXMenuButton|显示||
+     AXStaticText|||电池温度
+     AXMenuButton|显示||
+     AXStaticText|||热状态
+     AXMenuButton|显示||
+    AXGroup|||
+     AXButton||加一行|
+     AXButton||添加蓝牙设备…|
+     AXStaticText|||第 2 行比第 1 行少时
+     AXRadioGroup||| ui=第 2 行比第 1 行少时
+      AXRadioButton||左右对齐|0
+      AXRadioButton||错开插空|1
+    AXStaticText|||按住 ≡ 拖动，可在行内或跨行移动。
+    AXStaticText|||先在系统设置的「蓝牙」里连上耳机，再点「添加设备」，选择系统已经读到电量的设备。
+    AXHeading||颜色|
+    AXGroup|||
+     AXStaticText|||预设
+     AXStaticText|||系统
+     AXButton||存为预设…|
+     AXOpaqueProviderGroup|||
+     AXStaticText|||这套预设里的颜色
+     AXButton||颜色 1、电量在用|
+     AXButton||颜色 2、CPU、GPU、内存、磁盘、内存压力、交换、电池温度和热状态在用|
+     AXButton||颜色 3、下载速度在用|
+     AXButton||颜色 4、上传速度在用|
+     AXButton||新建颜色|
+     AXButton||删除这个颜色|
+     AXStaticText|||编辑「颜色 1」
+     AXStaticText|||过渡
+     AXRadioGroup||过渡|
+      AXRadioButton||分段|1
+      AXRadioButton||平滑|0
+     AXButton||电量 0% – 10%|
+     AXButton||电量 10% – 25%|
+     AXButton||电量 25% – 40%|
+     AXButton||电量 40% – 100%|
+     AXSlider||分界点|10
+     AXSlider||分界点|25
+     AXSlider||分界点|40
+     AXStaticText|||拖动白色把手调整范围，点按色段更改颜色。
+     AXButton||添加分界点|
+    AXStaticText|||点按一种颜色，用和菜单栏一样的色带编辑。哪个圆环用哪种颜色，在上面每个圆环右侧更换。
+    AXHeading||刻度|
+    AXGroup|||
+     AXStaticText|||下载速度到多少时走半圈
+     AXStaticText|||1 MB/s
+     AXIncrementor||下载速度到多少时走半圈|1024
+      AXButton|||
+      AXButton|||
+     AXStaticText|||上传速度到多少时走半圈
+     AXStaticText|||1 MB/s
+     AXIncrementor||上传速度到多少时走半圈|1024
+      AXButton|||
+      AXButton|||
+     AXStaticText|||电池温度到多少时走半圈
+     AXStaticText|||30
+     AXStaticText|||°C
+     AXIncrementor||电池温度到多少时走半圈|30
+      AXButton|||
+      AXButton|||
+     AXStaticText|||交换到多少时走半圈
+     AXStaticText|||满圈始终是这台 Mac 的全部内存。
+     AXStaticText|||1.8 GB
+     AXIncrementor||交换到多少时走半圈|1792
+      AXButton|||
+      AXButton|||
+     AXStaticText|||热状态各档走到哪里
+     AXStaticText|||正常 25% · 偏高 50% · 严重 75% · 危急 100%
+     AXButton||调整…|
+     AXStaticText|||温度单位
+     AXRadioGroup||| ui=温度单位
+      AXRadioButton||摄氏度|1
+      AXRadioButton||华氏度|0
+    AXStaticText|||速度和温度没有上限，圆环却只有一圈，所以要指定「走到半圈」时对应的数值。
+    AXHeading||图标|
+    AXGroup|||
+     AXStaticText|||图标套装
+     AXPopUpButton|||经典 ui=图标套装
+     AXStaticText|||电量
+     AXButton||更换「电量」图标|
+     AXSlider||「电量」图标缩放|1
+      AXValueIndicator|||1
+     AXStaticText|||100%
+     AXStaticText|||CPU
+     AXButton||更换「CPU」图标|
+     AXSlider||「CPU」图标缩放|1
+      AXValueIndicator|||1
+     AXStaticText|||100%
+     AXStaticText|||GPU
+     AXButton||更换「GPU」图标|
+     AXSlider||「GPU」图标缩放|1
+      AXValueIndicator|||1
+     AXStaticText|||100%
+     AXStaticText|||内存
+     AXButton||更换「内存」图标|
+     AXSlider||「内存」图标缩放|1
+      AXValueIndicator|||1
+     AXStaticText|||100%
+     AXStaticText|||磁盘
+     AXButton||更换「磁盘」图标|
+     AXSlider||「磁盘」图标缩放|1
+      AXValueIndicator|||1
+     AXStaticText|||100%
+     AXStaticText|||内存压力
+     AXButton||更换「内存压力」图标|
+     AXSlider||「内存压力」图标缩放|1
+      AXValueIndicator|||1
+     AXStaticText|||100%
+     AXStaticText|||交换
+     AXButton||更换「交换」图标|
+     AXSlider||「交换」图标缩放|1
+      AXValueIndicator|||1
+     AXStaticText|||100%
+     AXStaticText|||下载速度
+     AXButton||更换「下载速度」图标|
+     AXSlider||「下载速度」图标缩放|1
+      AXValueIndicator|||1
+     AXStaticText|||100%
+     AXStaticText|||上传速度
+     AXButton||更换「上传速度」图标|
+     AXSlider||「上传速度」图标缩放|1
+      AXValueIndicator|||1
+     AXStaticText|||100%
+     AXStaticText|||电池温度
+     AXButton||更换「电池温度」图标|
+     AXSlider||「电池温度」图标缩放|1
+      AXValueIndicator|||1
+     AXStaticText|||100%
+     AXStaticText|||热状态
+     AXButton||更换「热状态」图标|
+     AXSlider||「热状态」图标缩放|1
+      AXValueIndicator|||1
+     AXStaticText|||100%
+     AXButton||存为预设…|
+     AXStaticText|||电池温度
+     AXStaticText|||图标颜色
+     AXPopUpButton|||跟随系统 ui=图标颜色
+     AXStaticText|||热状态
+     AXStaticText|||图标颜色
+     AXPopUpButton|||跟随系统 ui=图标颜色
+    AXStaticText|||点按图标可以换成别的系统图标，或者上传图片。
+    AXScrollBar|||0
+     AXValueIndicator|||0
+     AXButton|||
+     AXButton|||
+     AXButton|||
+     AXButton|||
+  AXButton|||
+  AXButton|||
+   AXGroup|||
+  AXButton|||
+  AXStaticText|||
+ AXMenuBar|||
+  AXMenuBarItem|Apple||
+   AXMenu||| ui=Apple
+    AXMenuItem|About This Mac||
+    AXMenuItem|System Information||
+    AXMenuItem|||
+    AXMenuItem|System Settings…, 1 update||
+    AXMenuItem|App Store||
+    AXMenuItem|||
+    AXMenuItem|Recent Items||
+     AXMenu||| ui=Recent Items
+      AXMenuItem|Applications||
+      AXMenuItem|Installer||
+      AXMenuItem|Show “Installer” in Finder||
+      AXMenuItem|System Settings||
+      AXMenuItem|Show “System Settings” in Finder||
+      AXMenuItem|||
+      AXMenuItem|Documents||
+      AXMenuItem|AnkaGuestAddons.pkg||
+      AXMenuItem|Show “AnkaGuestAddons.pkg” in Finder||
+      AXMenuItem|||
+      AXMenuItem|Servers||
+      AXMenuItem|Macintosh HD||
+      AXMenuItem|||
+      AXMenuItem|Clear Menu||
+    AXMenuItem|||
+    AXMenuItem|Force Quit…||
+    AXMenuItem|Force Quit MacPower||
+    AXMenuItem|||
+    AXMenuItem|Sleep||
+    AXMenuItem|Restart…||
+    AXMenuItem|Restart||
+    AXMenuItem|Shut Down…||
+    AXMenuItem|Shut Down||
+    AXMenuItem|||
+    AXMenuItem|Lock Screen||
+    AXMenuItem|Log Out Anka…||
+    AXMenuItem|Log Out Anka||
+    AXMenuItem|||
+  AXMenuBarItem|MacPower||
+   AXMenu||| ui=MacPower
+    AXMenuItem|About MacPower||
+    AXMenuItem|||
+    AXMenuItem|Settings…||
+    AXMenuItem|||
+    AXMenuItem|Services||
+     AXMenu||| ui=Services
+      AXMenuItem|Activity Monitor||
+      AXMenuItem|Allocations & Leaks||
+      AXMenuItem|File Activity||
+      AXMenuItem|System Trace||
+      AXMenuItem|Time Profile Active Application||
+      AXMenuItem|Time Profile App Under Mouse||
+      AXMenuItem|Time Profile Entire System||
+      AXMenuItem|Toggle Instruments Recording||
+      AXMenuItem|Services Settings…||
+    AXMenuItem|||
+    AXMenuItem|Hide MacPower||
+    AXMenuItem|Hide Others||
+    AXMenuItem|Show All||
+    AXMenuItem|||
+    AXMenuItem|Quit MacPower||
+  AXMenuBarItem|Edit||
+   AXMenu||| ui=Edit
+    AXMenuItem|Undo||
+    AXMenuItem|Redo||
+    AXMenuItem|||
+    AXMenuItem|Cut||
+    AXMenuItem|Copy||
+    AXMenuItem|Paste||
+    AXMenuItem|Delete||
+    AXMenuItem|Select All||
+    AXMenuItem|||
+    AXMenuItem|AutoFill||
+     AXMenu||| ui=AutoFill
+      AXMenuItem|Contact…||
+      AXMenuItem|Passwords…||
+      AXMenuItem|Credit Card…||
+    AXMenuItem|Start Dictation…||
+    AXMenuItem|Emoji & Symbols||
+  AXMenuBarItem|View||
+   AXMenu||| ui=View
+    AXMenuItem|Enter Full Screen||
+  AXMenuBarItem|Window||
+   AXMenu||| ui=Window
+    AXMenuItem|Close||
+    AXMenuItem|Close All||
+    AXMenuItem|Minimize||
+    AXMenuItem|Minimize All||
+    AXMenuItem|Zoom||
+    AXMenuItem|Zoom All||
+    AXMenuItem|Fill||
+    AXMenuItem|Center||
+    AXMenuItem|||
+    AXMenuItem|Move & Resize||
+     AXMenu||| ui=Move & Resize
+      AXMenuItem|Halves||
+      AXMenuItem|Left||
+      AXMenuItem|Right||
+      AXMenuItem|Top||
+      AXMenuItem|Bottom||
+      AXMenuItem|||
+      AXMenuItem|Quarters||
+      AXMenuItem|Top Left||
+      AXMenuItem|Top Right||
+      AXMenuItem|Bottom Left||
+      AXMenuItem|Bottom Right||
+      AXMenuItem|||
+      AXMenuItem|Arrange||
+      AXMenuItem|Left & Right||
+      AXMenuItem|Left & Quarters||
+      AXMenuItem|Right & Left||
+      AXMenuItem|Right & Quarters||
+      AXMenuItem|Top & Bottom||
+      AXMenuItem|Top & Quarters||
+      AXMenuItem|Bottom & Top||
+      AXMenuItem|Bottom & Quarters||
+      AXMenuItem|Quarters||
+      AXMenuItem|||
+      AXMenuItem|Return to Previous Size||
+    AXMenuItem|Full Screen Tile||
+    AXMenuItem|||
+    AXMenuItem|Remove Window from Set||
+    AXMenuItem|||
+    AXMenuItem|Bring All to Front||
+    AXMenuItem|Arrange in Front||
+  AXMenuBarItem|Help||
+   AXMenu||| ui=Help
+    AXMenuItem|MacPower Help||

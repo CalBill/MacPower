@@ -1,0 +1,88 @@
+64 passed, 0 failed
+— menuBar
+  ax probe on main: err 0, 2 windows, 0.028s → main
+PASS 菜单栏：点预设「日落」会套用 — sunset
+PASS 菜单栏：点预设「默认」会套用
+PASS 菜单栏：「仅在使用电池时变色」开关 — onBattery → always
+PASS 菜单栏：过渡「平滑」
+PASS 菜单栏：过渡「分段」
+PASS 菜单栏：旁白调整分界点（滑块） — 10 → 11
+PASS 菜单栏：鼠标拖动白色把手 — 11% → 15%
+PASS 菜单栏：点色段打开编辑框
+PASS 编辑框：效果「左右渐变」 — Optional(MacPower.MenuBarTintBlend.gradient)
+PASS 编辑框：点「红色」色块
+PASS 菜单栏：「添加分界点」 — 3 → 4
+PASS 菜单栏：新分界点自动打开编辑框
+PASS 编辑框：「这一段到」步进器 — found=true [15, 20, 60, 100] → [15, 20, 61, 100]
+PASS 编辑框：「删除此段」 — 4 → 3
+PASS 菜单栏：改动后状态显示「已修改」
+PASS 菜单栏：「还原」
+PASS 菜单栏：边框
+PASS 菜单栏：数字位置 — beside
+PASS 菜单栏：显示充电标志
+  (found “显示全部 15 个预设” as AXLink)
+PASS 菜单栏：「显示全部 15 个预设」 — defaultSlideGradient 0 → 1
+PASS 菜单栏：「存为预设…」弹出命名
+— flow
+PASS 能量流：点「充电中」卡片切换预览
+PASS 能量流：预设「高对比」 — highContrast
+PASS 能量流：给当前状态「添加分界点」 — 1 → 2
+PASS 能量流：鼠标拖动白色把手 — 50% → 53%
+PASS 能量流：「用到全部 4 种状态」
+PASS 能量流：粒子颜色「自选颜色」
+PASS 能量流：粒子颜色「跟随能量带」
+PASS 能量流：图标呼吸
+— rings
+PASS 圆环：「加一行」 — 1 → 2
+PASS 圆环：新行显示为空行
+  (found “删掉这一行” as AXLink)
+PASS 圆环：「删掉这一行」 — → 1
+PASS 圆环：「新建颜色」 — 4 → 5
+PASS 圆环：新颜色进入编辑
+PASS 圆环：「删除这个颜色」
+PASS 圆环：点「颜色 2」切换编辑对象
+PASS 圆环：颜色色带「添加分界点」 — 4 → 5
+PASS 圆环：下载半圈步进器 — 1024 → 1088
+PASS 圆环：交换半圈步进器 — 1792 → 2048
+PASS 圆环：温度单位
+PASS 圆环：第 2 行较少时的排法
+PASS 圆环：热状态「调整…」打开
+  (menu “显示” → “加到第 1 行”: nsmenu)
+PASS 圆环菜单：「显示 → 加到第 1 行」 — memoryPressure enabled=true rows=[["slot:battery", "slot:cpu", "slot:gpu", "slot:memory", "slot:disk", "slot:speedPair", "slot:thermalState", "slot:batteryTemperature", "slot:upload", "slot:download", "slot:swap", "slot:memoryPressure"]]
+  (menu “显示” → “加到新的一行”: nsmenu)
+PASS 圆环菜单：「显示 → 加到新的一行」 — thermalState rows 1 → 2
+  (menu “更多” → “移到第 2 行”: nsmenu)
+PASS 圆环菜单：「更多 → 移到第 2 行」 — slot:battery
+  (menu “更多” → “不显示”: nsmenu)
+PASS 圆环菜单：「更多 → 隐藏」 — cpu
+  (popups: GPU=颜色 2 | 内存=颜色 2 | 磁盘=颜色 2 | 下载速度=颜色 3 | 上传速度=颜色 4 | 内存压力=颜色 2 | 热状态=颜色 2 | 电量=颜色 1 | =经典 | =跟随系统 | =跟随系统)
+  (menu “GPU” → “颜色 3”: nsmenu)
+PASS 圆环菜单：GPU 的颜色选「颜色 3」
+  (menu “经典” → “设备”: nsmenu)
+PASS 圆环菜单：图标套装 — devices
+PASS 圆环：「添加蓝牙设备…」打开选择窗口
+— tutorial
+PASS 教程：「下一页」
+PASS 教程：「上一页」
+  (found “在设置里打开「” as AXLink)
+PASS 教程：「在设置里打开」跳到对应页
+— general
+PASS 通用：自动检查更新
+— panel
+  (menu “设置按钮出现位置” → “单独一个区块”: nsmenu)
+PASS 面板菜单：设置按钮位置 — ownBlock
+PASS 面板：显示箭头
+— topApps
+PASS 耗电：图表样式卡片 — list
+PASS 耗电：显示几个 — 3 → 4
+— lowPower
+PASS 能耗模式：按钮卡片
+PASS 能耗模式：排列卡片
+— localIP
+PASS IP：类型开关
+PASS IP：只显示 IPv6 — [MacPower.IPAddressFamily.ipv6]
+PASS IP：两种都显示
+— batteryCycle
+PASS 电池循环：显示方式卡片
+— about
+PASS 关于：打赏弹出

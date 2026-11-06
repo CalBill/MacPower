@@ -1,0 +1,50 @@
+Test Suite 'AppVersionTests' passed at 2026-11-06 01:55:41.079.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.021 (0.025) seconds
+Test Suite 'AutoUpdateSettingsTests' passed at 2026-11-06 01:55:41.104.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.024 (0.025) seconds
+Test Suite 'BatteryTimeFallbackTests' passed at 2026-11-06 01:55:41.132.
+	 Executed 3 tests, with 0 failures (0 unexpected) in 0.005 (0.027) seconds
+Test Suite 'EnergyFlowFooterTests' passed at 2026-11-06 01:55:41.145.
+	 Executed 3 tests, with 0 failures (0 unexpected) in 0.010 (0.012) seconds
+Test Suite 'EnergyFlowModeTests' passed at 2026-11-06 01:55:41.170.
+	 Executed 4 tests, with 0 failures (0 unexpected) in 0.007 (0.024) seconds
+Test Suite 'EnergyMotionStyleTests' passed at 2026-11-06 01:55:41.349.
+	 Executed 14 tests, with 0 failures (0 unexpected) in 0.173 (0.179) seconds
+Test Suite 'FlowRibbonTests' passed at 2026-11-06 01:55:41.405.
+	 Executed 21 tests, with 0 failures (0 unexpected) in 0.046 (0.056) seconds
+Test Suite 'GitHubLatestReleaseTests' passed at 2026-11-06 01:55:41.413.
+	 Executed 3 tests, with 0 failures (0 unexpected) in 0.005 (0.007) seconds
+Test Suite 'HeldLoadWattsTests' passed at 2026-11-06 01:55:41.424.
+	 Executed 3 tests, with 0 failures (0 unexpected) in 0.002 (0.011) seconds
+Test Suite 'LocalizationTests' passed at 2026-11-06 01:55:41.451.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.026 (0.027) seconds
+Test Suite 'LoginLaunchTests' passed at 2026-11-06 01:55:41.493.
+	 Executed 11 tests, with 0 failures (0 unexpected) in 0.038 (0.042) seconds
+Test Suite 'MenuBarIconStyleTests' passed at 2026-11-06 01:55:41.502.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 0.004 (0.008) seconds
+Test Suite 'MenuBarTintTests' passed at 2026-11-06 01:55:41.609.
+	 Executed 18 tests, with 0 failures (0 unexpected) in 0.100 (0.107) seconds
+2026-11-06 01:55:41.936653+0000 MacPower[8189:27425] fopen failed for data file: errno = 2 (No such file or directory)
+2026-11-06 01:55:42.244252+0000 MacPower[8189:27425] fopen failed for data file: errno = 2 (No such file or directory)
+Test Suite 'PopoverExtrasTests' passed at 2026-11-06 01:55:46.274.
+	 Executed 39 tests, with 0 failures (0 unexpected) in 4.648 (4.664) seconds
+Test Suite 'ReleaseNotesTests' passed at 2026-11-06 01:55:46.288.
+	 Executed 7 tests, with 0 failures (0 unexpected) in 0.010 (0.013) seconds
+Test Suite 'RibbonMorphTests' passed at 2026-11-06 01:55:46.295.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.004 (0.007) seconds
+Test Suite 'RingColorTests' passed at 2026-11-06 01:55:46.393.
+	 Executed 18 tests, with 0 failures (0 unexpected) in 0.090 (0.098) seconds
+Test Suite 'RingPlacementTests' passed at 2026-11-06 01:55:46.409.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.015 (0.016) seconds
+Test Suite 'SystemSnapshotTests' passed at 2026-11-06 01:55:46.429.
+	 Executed 11 tests, with 0 failures (0 unexpected) in 0.013 (0.020) seconds
+Test Suite 'TimeEstimateTests' passed at 2026-11-06 01:55:46.475.
+	 Executed 14 tests, with 0 failures (0 unexpected) in 0.035 (0.046) seconds
+Test Suite 'TintRampTests' passed at 2026-11-06 01:55:46.500.
+	 Executed 8 tests, with 0 failures (0 unexpected) in 0.020 (0.024) seconds
+Test Suite 'UpdateCheckPolicyTests' passed at 2026-11-06 01:55:46.505.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.004 (0.005) seconds
+Test Suite 'MacPowerTests.xctest' passed at 2026-11-06 01:55:46.506.
+	 Executed 197 tests, with 0 failures (0 unexpected) in 5.300 (5.452) seconds
+Test Suite 'All tests' passed at 2026-11-06 01:55:46.506.
+	 Executed 197 tests, with 0 failures (0 unexpected) in 5.300 (5.453) seconds
