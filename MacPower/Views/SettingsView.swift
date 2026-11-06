@@ -2441,7 +2441,7 @@ struct SettingsView: View {
                 .monospacedDigit()
                 .foregroundStyle(.secondary)
             Stepper(
-                "",
+                title,
                 value: Binding(get: { kilobytes }, set: set),
                 in: AppSettings.halfSpeedRange,
                 step: 64
@@ -2472,7 +2472,7 @@ struct SettingsView: View {
                 }
             }
             .foregroundStyle(.secondary)
-            Stepper("", value: Binding(get: { value }, set: set), in: range, step: step)
+            Stepper(title, value: Binding(get: { value }, set: set), in: range, step: step)
                 .labelsHidden()
                 .fixedSize()
         }
@@ -3174,7 +3174,7 @@ struct SettingsView: View {
                     .monospacedDigit()
                     .foregroundStyle(.secondary)
                 Stepper(
-                    "",
+                    "settings.rings.half.swap.title",
                     value: Binding(
                         get: { appState.settings.swapHalfMegabytes },
                         set: { appState.settings.swapHalfMegabytes = $0 }
@@ -4843,7 +4843,7 @@ struct SettingsView: View {
                         .monospacedDigit()
                         .foregroundStyle(.secondary)
                     Stepper(
-                        "",
+                        "settings.rings.half.swap",
                         value: Binding(
                             get: { appState.settings.swapHalfMegabytes },
                             set: { appState.settings.swapHalfMegabytes = $0 }
