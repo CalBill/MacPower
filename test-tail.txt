@@ -1,0 +1,150 @@
+Test Case '-[MacPowerTests.RibbonMorphTests testFinishedMorphStartsFresh]' passed (0.001 seconds).
+Test Case '-[MacPowerTests.RibbonMorphTests testPluginDuringUnplugReversesElapsedTime]' started.
+Test Case '-[MacPowerTests.RibbonMorphTests testPluginDuringUnplugReversesElapsedTime]' passed (0.002 seconds).
+Test Case '-[MacPowerTests.RibbonMorphTests testUnplugDischargeThenHoldKeepsTheSameChargingClose]' started.
+Test Case '-[MacPowerTests.RibbonMorphTests testUnplugDischargeThenHoldKeepsTheSameChargingClose]' passed (0.001 seconds).
+Test Case '-[MacPowerTests.RibbonMorphTests testUnplugHoldThenDischargeKeepsTheSameChargingClose]' started.
+Test Case '-[MacPowerTests.RibbonMorphTests testUnplugHoldThenDischargeKeepsTheSameChargingClose]' passed (0.002 seconds).
+Test Suite 'RibbonMorphTests' passed at 2026-11-06 00:51:59.522.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.006 (0.007) seconds
+Test Suite 'RingColorTests' started at 2026-11-06 00:51:59.523.
+Test Case '-[MacPowerTests.RingColorTests testBatteryLevelFillBands]' started.
+Test Case '-[MacPowerTests.RingColorTests testBatteryLevelFillBands]' passed (0.004 seconds).
+Test Case '-[MacPowerTests.RingColorTests testCustomIconStoreSavesPNG]' started.
+Test Case '-[MacPowerTests.RingColorTests testCustomIconStoreSavesPNG]' passed (0.014 seconds).
+Test Case '-[MacPowerTests.RingColorTests testFlowTintPresetSeedsFourModes]' started.
+Test Case '-[MacPowerTests.RingColorTests testFlowTintPresetSeedsFourModes]' passed (0.001 seconds).
+Test Case '-[MacPowerTests.RingColorTests testLegacyPackScaleMigratesOntoGlyphSlots]' started.
+Test Case '-[MacPowerTests.RingColorTests testLegacyPackScaleMigratesOntoGlyphSlots]' passed (0.001 seconds).
+Test Case '-[MacPowerTests.RingColorTests testLegacyPaletteMigratesIntoRingAndFlowTint]' started.
+Test Case '-[MacPowerTests.RingColorTests testLegacyPaletteMigratesIntoRingAndFlowTint]' passed (0.009 seconds).
+Test Case '-[MacPowerTests.RingColorTests testLegacyRingTintJSONBecomesColorCatalog]' started.
+Test Case '-[MacPowerTests.RingColorTests testLegacyRingTintJSONBecomesColorCatalog]' passed (0.002 seconds).
+Test Case '-[MacPowerTests.RingColorTests testLoadFillBands]' started.
+Test Case '-[MacPowerTests.RingColorTests testLoadFillBands]' passed (0.001 seconds).
+Test Case '-[MacPowerTests.RingColorTests testRingAndFlowIconPresetsAndPersistence]' started.
+Test Case '-[MacPowerTests.RingColorTests testRingAndFlowIconPresetsAndPersistence]' passed (0.014 seconds).
+Test Case '-[MacPowerTests.RingColorTests testRingColorCatalogEditsStaySharedUntilReassigned]' started.
+Test Case '-[MacPowerTests.RingColorTests testRingColorCatalogEditsStaySharedUntilReassigned]' passed (0.001 seconds).
+Test Case '-[MacPowerTests.RingColorTests testRingTintEditingForksCustom]' started.
+Test Case '-[MacPowerTests.RingColorTests testRingTintEditingForksCustom]' passed (0.001 seconds).
+Test Case '-[MacPowerTests.RingColorTests testRingTintMapAllUpdatesFourRings]' started.
+Test Case '-[MacPowerTests.RingColorTests testRingTintMapAllUpdatesFourRings]' passed (0.001 seconds).
+Test Case '-[MacPowerTests.RingColorTests testSavingAndSelectingNamedTintPresets]' started.
+Test Case '-[MacPowerTests.RingColorTests testSavingAndSelectingNamedTintPresets]' passed (0.015 seconds).
+Test Case '-[MacPowerTests.RingColorTests testSavingAndUpdatingNamedIconPresets]' started.
+Test Case '-[MacPowerTests.RingColorTests testSavingAndUpdatingNamedIconPresets]' passed (0.022 seconds).
+Test Case '-[MacPowerTests.RingColorTests testShowcasePresetsUseSlideAndGradientBlends]' started.
+Test Case '-[MacPowerTests.RingColorTests testShowcasePresetsUseSlideAndGradientBlends]' passed (0.001 seconds).
+Test Case '-[MacPowerTests.RingColorTests testTintSchemeMergeNilForMixedFields]' started.
+Test Case '-[MacPowerTests.RingColorTests testTintSchemeMergeNilForMixedFields]' passed (0.005 seconds).
+Test Case '-[MacPowerTests.RingColorTests testUpdateTintPresetRequiresActiveSavedID]' started.
+Test Case '-[MacPowerTests.RingColorTests testUpdateTintPresetRequiresActiveSavedID]' passed (0.016 seconds).
+Test Case '-[MacPowerTests.RingColorTests testValueTintSchemeBatteryLevelUsesRoundStops]' started.
+Test Case '-[MacPowerTests.RingColorTests testValueTintSchemeBatteryLevelUsesRoundStops]' passed (0.001 seconds).
+Test Case '-[MacPowerTests.RingColorTests testValueTintSchemeLoadLevelUsesRoundStops]' started.
+Test Case '-[MacPowerTests.RingColorTests testValueTintSchemeLoadLevelUsesRoundStops]' passed (0.001 seconds).
+Test Suite 'RingColorTests' passed at 2026-11-06 00:51:59.647.
+	 Executed 18 tests, with 0 failures (0 unexpected) in 0.109 (0.124) seconds
+Test Suite 'SystemSnapshotTests' started at 2026-11-06 00:51:59.647.
+Test Case '-[MacPowerTests.SystemSnapshotTests testCPUUsageIgnoresIdleDelta]' started.
+Test Case '-[MacPowerTests.SystemSnapshotTests testCPUUsageIgnoresIdleDelta]' passed (0.002 seconds).
+Test Case '-[MacPowerTests.SystemSnapshotTests testCPUUsageZeroWhenNoDelta]' started.
+Test Case '-[MacPowerTests.SystemSnapshotTests testCPUUsageZeroWhenNoDelta]' passed (0.001 seconds).
+Test Case '-[MacPowerTests.SystemSnapshotTests testMemoryOccupancy]' started.
+Test Case '-[MacPowerTests.SystemSnapshotTests testMemoryOccupancy]' passed (0.001 seconds).
+Test Case '-[MacPowerTests.SystemSnapshotTests testResolvedPercentIsNilWithoutDeltaOrLastValue]' started.
+Test Case '-[MacPowerTests.SystemSnapshotTests testResolvedPercentIsNilWithoutDeltaOrLastValue]' passed (0.002 seconds).
+Test Case '-[MacPowerTests.SystemSnapshotTests testResolvedPercentKeepsLastWhenSampleMissing]' started.
+Test Case '-[MacPowerTests.SystemSnapshotTests testResolvedPercentKeepsLastWhenSampleMissing]' passed (0.002 seconds).
+Test Case '-[MacPowerTests.SystemSnapshotTests testResolvedPercentKeepsLastWhenTicksUnchanged]' started.
+Test Case '-[MacPowerTests.SystemSnapshotTests testResolvedPercentKeepsLastWhenTicksUnchanged]' passed (0.001 seconds).
+Test Case '-[MacPowerTests.SystemSnapshotTests testResolvedPercentUsesDeltaWhenTicksAdvance]' started.
+Test Case '-[MacPowerTests.SystemSnapshotTests testResolvedPercentUsesDeltaWhenTicksAdvance]' passed (0.001 seconds).
+Test Case '-[MacPowerTests.SystemSnapshotTests testRingDisplayChangesWhenAnyRingIntegerChanges]' started.
+Test Case '-[MacPowerTests.SystemSnapshotTests testRingDisplayChangesWhenAnyRingIntegerChanges]' passed (0.002 seconds).
+Test Case '-[MacPowerTests.SystemSnapshotTests testRingDisplayChangesWhenCaptionIntegerChanges]' started.
+Test Case '-[MacPowerTests.SystemSnapshotTests testRingDisplayChangesWhenCaptionIntegerChanges]' passed (0.002 seconds).
+Test Case '-[MacPowerTests.SystemSnapshotTests testRingDisplayChangesWhenTintIntegerChanges]' started.
+Test Case '-[MacPowerTests.SystemSnapshotTests testRingDisplayChangesWhenTintIntegerChanges]' passed (0.001 seconds).
+Test Case '-[MacPowerTests.SystemSnapshotTests testRingDisplayIgnoresSubIntegerNoise]' started.
+Test Case '-[MacPowerTests.SystemSnapshotTests testRingDisplayIgnoresSubIntegerNoise]' passed (0.001 seconds).
+Test Suite 'SystemSnapshotTests' passed at 2026-11-06 00:51:59.681.
+	 Executed 11 tests, with 0 failures (0 unexpected) in 0.015 (0.034) seconds
+Test Suite 'TimeEstimateTests' started at 2026-11-06 00:51:59.681.
+Test Case '-[MacPowerTests.TimeEstimateTests testComputedRuntimeWhenPluggedUsesAverageLoad]' started.
+Test Case '-[MacPowerTests.TimeEstimateTests testComputedRuntimeWhenPluggedUsesAverageLoad]' passed (0.001 seconds).
+Test Case '-[MacPowerTests.TimeEstimateTests testDischargingEmptyEstimateKeepsAverageLoad]' started.
+Test Case '-[MacPowerTests.TimeEstimateTests testDischargingEmptyEstimateKeepsAverageLoad]' passed (0.001 seconds).
+Test Case '-[MacPowerTests.TimeEstimateTests testEmptyTimeFromEnergy]' started.
+Test Case '-[MacPowerTests.TimeEstimateTests testEmptyTimeFromEnergy]' passed (0.001 seconds).
+Test Case '-[MacPowerTests.TimeEstimateTests testEmptyTimeNilNearZeroWatts]' started.
+Test Case '-[MacPowerTests.TimeEstimateTests testEmptyTimeNilNearZeroWatts]' passed (0.002 seconds).
+Test Case '-[MacPowerTests.TimeEstimateTests testFullTimeNilWhenNotCharging]' started.
+Test Case '-[MacPowerTests.TimeEstimateTests testFullTimeNilWhenNotCharging]' passed (0.001 seconds).
+Test Case '-[MacPowerTests.TimeEstimateTests testFullTimeUsesChargeRateWhenSystemMissing]' started.
+Test Case '-[MacPowerTests.TimeEstimateTests testFullTimeUsesChargeRateWhenSystemMissing]' passed (0.001 seconds).
+Test Case '-[MacPowerTests.TimeEstimateTests testNominalVoltageWhileCharging]' started.
+Test Case '-[MacPowerTests.TimeEstimateTests testNominalVoltageWhileCharging]' passed (0.018 seconds).
+Test Case '-[MacPowerTests.TimeEstimateTests testPrefersSystemMinutesWhenOnBattery]' started.
+Test Case '-[MacPowerTests.TimeEstimateTests testPrefersSystemMinutesWhenOnBattery]' passed (0.001 seconds).
+Test Case '-[MacPowerTests.TimeEstimateTests testPresentationShowsFullyChargedWhenPluggedAndFull]' started.
+Test Case '-[MacPowerTests.TimeEstimateTests testPresentationShowsFullyChargedWhenPluggedAndFull]' passed (0.001 seconds).
+Test Case '-[MacPowerTests.TimeEstimateTests testPresentationShowsRuntimeOnBattery]' started.
+Test Case '-[MacPowerTests.TimeEstimateTests testPresentationShowsRuntimeOnBattery]' passed (0.001 seconds).
+Test Case '-[MacPowerTests.TimeEstimateTests testPresentationShowsRuntimeWhenUnderpowered]' started.
+Test Case '-[MacPowerTests.TimeEstimateTests testPresentationShowsRuntimeWhenUnderpowered]' passed (0.001 seconds).
+Test Case '-[MacPowerTests.TimeEstimateTests testPresentationShowsUntilFullWhileCharging]' started.
+Test Case '-[MacPowerTests.TimeEstimateTests testPresentationShowsUntilFullWhileCharging]' passed (0.001 seconds).
+Test Case '-[MacPowerTests.TimeEstimateTests testSentinelIsUnknown]' started.
+Test Case '-[MacPowerTests.TimeEstimateTests testSentinelIsUnknown]' passed (0.001 seconds).
+Test Case '-[MacPowerTests.TimeEstimateTests testUnderpoweredEmptyEstimateUsesBatteryDischarge]' started.
+Test Case '-[MacPowerTests.TimeEstimateTests testUnderpoweredEmptyEstimateUsesBatteryDischarge]' passed (0.014 seconds).
+Test Suite 'TimeEstimateTests' passed at 2026-11-06 00:51:59.727.
+	 Executed 14 tests, with 0 failures (0 unexpected) in 0.042 (0.046) seconds
+Test Suite 'TintRampTests' started at 2026-11-06 00:51:59.727.
+Test Case '-[MacPowerTests.TintRampTests testAddingBoundarySplitsTheWidestSegment]' started.
+Test Case '-[MacPowerTests.TintRampTests testAddingBoundarySplitsTheWidestSegment]' passed (0.001 seconds).
+Test Case '-[MacPowerTests.TintRampTests testBoundaryStaysBetweenItsNeighbors]' started.
+Test Case '-[MacPowerTests.TintRampTests testBoundaryStaysBetweenItsNeighbors]' passed (0.001 seconds).
+Test Case '-[MacPowerTests.TintRampTests testRemovingTheTopSegmentHandsItsRangeDown]' started.
+Test Case '-[MacPowerTests.TintRampTests testRemovingTheTopSegmentHandsItsRangeDown]' passed (0.016 seconds).
+Test Case '-[MacPowerTests.TintRampTests testSmoothStartsEachSegmentWhereTheOneBelowEnds]' started.
+Test Case '-[MacPowerTests.TintRampTests testSmoothStartsEachSegmentWhereTheOneBelowEnds]' passed (0.002 seconds).
+Test Case '-[MacPowerTests.TintRampTests testSolidColorFillsEverySide]' started.
+Test Case '-[MacPowerTests.TintRampTests testSolidColorFillsEverySide]' passed (0.001 seconds).
+Test Case '-[MacPowerTests.TintRampTests testSplittingASlideKeepsTheColorAtTheSplit]' started.
+Test Case '-[MacPowerTests.TintRampTests testSplittingASlideKeepsTheColorAtTheSplit]' passed (0.007 seconds).
+Test Case '-[MacPowerTests.TintRampTests testSwitchingASlideToLeftRightKeepsBothColors]' started.
+Test Case '-[MacPowerTests.TintRampTests testSwitchingASlideToLeftRightKeepsBothColors]' passed (0.002 seconds).
+Test Case '-[MacPowerTests.TintRampTests testTwoSegmentsAreEnough]' started.
+Test Case '-[MacPowerTests.TintRampTests testTwoSegmentsAreEnough]' passed (0.002 seconds).
+Test Suite 'TintRampTests' passed at 2026-11-06 00:51:59.777.
+	 Executed 8 tests, with 0 failures (0 unexpected) in 0.032 (0.049) seconds
+Test Suite 'UpdateCheckPolicyTests' started at 2026-11-06 00:51:59.777.
+Test Case '-[MacPowerTests.UpdateCheckPolicyTests testDeferredUpdateStaysQuietUntilANewerRelease]' started.
+Test Case '-[MacPowerTests.UpdateCheckPolicyTests testDeferredUpdateStaysQuietUntilANewerRelease]' passed (0.002 seconds).
+Test Case '-[MacPowerTests.UpdateCheckPolicyTests testDisabledNeverChecks]' started.
+Test Case '-[MacPowerTests.UpdateCheckPolicyTests testDisabledNeverChecks]' passed (0.001 seconds).
+Test Case '-[MacPowerTests.UpdateCheckPolicyTests testLaunchAndToggleAlwaysCheckWhenEnabled]' started.
+Test Case '-[MacPowerTests.UpdateCheckPolicyTests testLaunchAndToggleAlwaysCheckWhenEnabled]' passed (0.001 seconds).
+Test Case '-[MacPowerTests.UpdateCheckPolicyTests testNextCheckLandsOnTheFollowingHour]' started.
+Test Case '-[MacPowerTests.UpdateCheckPolicyTests testNextCheckLandsOnTheFollowingHour]' passed (0.001 seconds).
+Test Case '-[MacPowerTests.UpdateCheckPolicyTests testPeriodicChecksOncePerClockHour]' started.
+Test Case '-[MacPowerTests.UpdateCheckPolicyTests testPeriodicChecksOncePerClockHour]' passed (0.002 seconds).
+Test Suite 'UpdateCheckPolicyTests' passed at 2026-11-06 00:51:59.794.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.006 (0.017) seconds
+Test Suite 'MacPowerTests.xctest' passed at 2026-11-06 00:51:59.795.
+	 Executed 192 tests, with 0 failures (0 unexpected) in 6.539 (6.689) seconds
+Test Suite 'All tests' passed at 2026-11-06 00:51:59.795.
+	 Executed 192 tests, with 0 failures (0 unexpected) in 6.539 (6.691) seconds
+2026-11-06 00:52:00.233 xcodebuild[2765:12116] [MT] IDETestOperationsObserverDebug: 10.786 elapsed -- Testing started completed.
+2026-11-06 00:52:00.233 xcodebuild[2765:12116] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-11-06 00:52:00.233 xcodebuild[2765:12116] [MT] IDETestOperationsObserverDebug: 10.786 sec, +10.786 sec -- end
+
+Test session results, code coverage, and logs:
+	/Users/runner/work/MacPower/MacPower/DerivedDataTest/Logs/Test/Test-MacPower-2026.11.06_00-50-46-+0000.xcresult
+
+** TEST SUCCEEDED **
+
+Testing started

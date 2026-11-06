@@ -1,0 +1,46 @@
+Test Suite 'AppVersionTests' passed at 2026-11-06 00:51:53.116.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.007 (0.010) seconds
+Test Suite 'AutoUpdateSettingsTests' passed at 2026-11-06 00:51:53.128.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.011 (0.011) seconds
+Test Suite 'BatteryTimeFallbackTests' passed at 2026-11-06 00:51:53.146.
+	 Executed 3 tests, with 0 failures (0 unexpected) in 0.004 (0.017) seconds
+Test Suite 'EnergyFlowFooterTests' passed at 2026-11-06 00:51:53.149.
+	 Executed 3 tests, with 0 failures (0 unexpected) in 0.002 (0.003) seconds
+Test Suite 'EnergyFlowModeTests' passed at 2026-11-06 00:51:53.159.
+	 Executed 4 tests, with 0 failures (0 unexpected) in 0.008 (0.010) seconds
+Test Suite 'EnergyMotionStyleTests' passed at 2026-11-06 00:51:53.294.
+	 Executed 14 tests, with 0 failures (0 unexpected) in 0.129 (0.134) seconds
+Test Suite 'FlowRibbonTests' passed at 2026-11-06 00:51:53.339.
+	 Executed 21 tests, with 0 failures (0 unexpected) in 0.037 (0.045) seconds
+Test Suite 'GitHubLatestReleaseTests' passed at 2026-11-06 00:51:53.357.
+	 Executed 3 tests, with 0 failures (0 unexpected) in 0.005 (0.007) seconds
+Test Suite 'HeldLoadWattsTests' passed at 2026-11-06 00:51:53.363.
+	 Executed 3 tests, with 0 failures (0 unexpected) in 0.005 (0.006) seconds
+Test Suite 'LocalizationTests' passed at 2026-11-06 00:51:53.382.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.019 (0.019) seconds
+Test Suite 'LoginLaunchTests' passed at 2026-11-06 00:51:53.414.
+	 Executed 11 tests, with 0 failures (0 unexpected) in 0.029 (0.032) seconds
+Test Suite 'MenuBarIconStyleTests' passed at 2026-11-06 00:51:53.417.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 0.001 (0.002) seconds
+Test Suite 'MenuBarTintTests' passed at 2026-11-06 00:51:53.506.
+	 Executed 16 tests, with 0 failures (0 unexpected) in 0.083 (0.089) seconds
+Test Suite 'PopoverExtrasTests' passed at 2026-11-06 00:51:59.497.
+	 Executed 37 tests, with 0 failures (0 unexpected) in 5.974 (5.991) seconds
+Test Suite 'ReleaseNotesTests' passed at 2026-11-06 00:51:59.514.
+	 Executed 7 tests, with 0 failures (0 unexpected) in 0.013 (0.017) seconds
+Test Suite 'RibbonMorphTests' passed at 2026-11-06 00:51:59.522.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.006 (0.007) seconds
+Test Suite 'RingColorTests' passed at 2026-11-06 00:51:59.647.
+	 Executed 18 tests, with 0 failures (0 unexpected) in 0.109 (0.124) seconds
+Test Suite 'SystemSnapshotTests' passed at 2026-11-06 00:51:59.681.
+	 Executed 11 tests, with 0 failures (0 unexpected) in 0.015 (0.034) seconds
+Test Suite 'TimeEstimateTests' passed at 2026-11-06 00:51:59.727.
+	 Executed 14 tests, with 0 failures (0 unexpected) in 0.042 (0.046) seconds
+Test Suite 'TintRampTests' passed at 2026-11-06 00:51:59.777.
+	 Executed 8 tests, with 0 failures (0 unexpected) in 0.032 (0.049) seconds
+Test Suite 'UpdateCheckPolicyTests' passed at 2026-11-06 00:51:59.794.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.006 (0.017) seconds
+Test Suite 'MacPowerTests.xctest' passed at 2026-11-06 00:51:59.795.
+	 Executed 192 tests, with 0 failures (0 unexpected) in 6.539 (6.689) seconds
+Test Suite 'All tests' passed at 2026-11-06 00:51:59.795.
+	 Executed 192 tests, with 0 failures (0 unexpected) in 6.539 (6.691) seconds
