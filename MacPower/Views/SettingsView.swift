@@ -4345,12 +4345,15 @@ struct SettingsView: View {
 
     private var iconSlotColumnWidth: CGFloat { 56 }
 
-    private func iconZoomSlider(value: Binding<Double>, width: CGFloat? = nil) -> some View {
+    private func iconZoomSlider(value: Binding<Double>, name: String, width: CGFloat? = nil) -> some View {
         let percent = Int((value.wrappedValue * 100).rounded())
+        let language = appState.settings.language
         return VStack(spacing: 2) {
             Slider(value: value, in: GlyphSlot.minScale...GlyphSlot.maxScale, step: 0.01)
                 .controlSize(.mini)
                 .labelsHidden()
+                .accessibilityLabel(Text(verbatim: Localization.string("settings.icons.zoom.for %@", language: language, name)))
+                .accessibilityValue(Text(verbatim: "\(percent)%"))
             Text("\(percent)%")
                 .font(.caption2.monospacedDigit())
                 .foregroundStyle(.secondary)
@@ -4926,6 +4929,7 @@ struct SettingsView: View {
             }
             .buttonStyle(.plain)
             .help(Localization.string("settings.icons.clickToChange", language: language))
+            .accessibilityLabel(Text(verbatim: Localization.string("settings.icons.change.for %@", language: language, Localization.string(ring.localizationKey, language: language))))
             .popover(isPresented: ringIconEditorPresented(ring), arrowEdge: .bottom) {
                 ringIconChoicePopover(ring)
             }
@@ -4934,6 +4938,7 @@ struct SettingsView: View {
                     get: { appState.settings.ringIcons.slot(for: ring).scale },
                     set: { appState.settings.ringIcons = appState.settings.ringIcons.withScale($0, for: ring) }
                 ),
+                name: Localization.string(ring.localizationKey, language: language),
                 width: column
             )
         }
@@ -4979,11 +4984,13 @@ struct SettingsView: View {
                     }
                 }
             }
+            .accessibilityLabel(Text(verbatim: Localization.string("settings.icons.change.for %@", language: language, Localization.string(role.localizationKey, language: language))))
             iconZoomSlider(
                 value: Binding(
                     get: { appState.settings.flowIcons.slot(for: role).scale },
                     set: { appState.settings.flowIcons = appState.settings.flowIcons.withScale($0, for: role) }
-                )
+                ),
+                name: Localization.string(role.localizationKey, language: language)
             )
         }
         .frame(width: iconSlotColumnWidth)
