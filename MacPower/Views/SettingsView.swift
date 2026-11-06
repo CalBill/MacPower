@@ -2538,6 +2538,7 @@ struct SettingsView: View {
             .buttonStyle(.plain)
             .popover(isPresented: $showingAuthorSupport, arrowEdge: .trailing) {
                 authorSupportPopover
+                    .environment(\.locale, appState.settings.resolvedLocale)
             }
         }
     }
@@ -3198,6 +3199,7 @@ struct SettingsView: View {
                 }
                 .popover(isPresented: ringScalePresented(.thermalState), arrowEdge: .bottom) {
                     ringScalePopover(.thermalState)
+                        .environment(\.locale, appState.settings.resolvedLocale)
                 }
             }
             Picker("settings.rings.temperatureUnit", selection: $appState.settings.temperatureUnit) {
@@ -3390,6 +3392,7 @@ struct SettingsView: View {
                     set: { if !$0, ringOptionsItemID == item.id { ringOptionsItemID = nil } }
                 ), arrowEdge: .bottom) {
                     ringBluetoothOptions(item)
+                        .environment(\.locale, appState.settings.resolvedLocale)
                 }
             }
             ringMoveMenu(item, rowIndex: rowIndex)
@@ -4655,6 +4658,7 @@ struct SettingsView: View {
                 .buttonStyle(.plain)
                 .popover(isPresented: bluetoothIconPresented(ring.id, part: target.part), arrowEdge: .bottom) {
                     bluetoothIconChoices(device: target.device, ring: ring, part: target.part)
+                        .environment(\.locale, appState.settings.resolvedLocale)
                 }
                 Text(title)
                     .lineLimit(2)
@@ -4932,6 +4936,7 @@ struct SettingsView: View {
             .accessibilityLabel(Text(verbatim: Localization.string("settings.icons.change.for %@", language: language, Localization.string(ring.localizationKey, language: language))))
             .popover(isPresented: ringIconEditorPresented(ring), arrowEdge: .bottom) {
                 ringIconChoicePopover(ring)
+                    .environment(\.locale, appState.settings.resolvedLocale)
             }
             iconZoomSlider(
                 value: Binding(
